@@ -6,15 +6,19 @@ ChainMaker是将区块链深度模块化，抽象区块链整体执行流程，�
 
 本期概要设计着重于ChainMaker的模块化及各模块通用流程、接口的说明。
 
+<u>从基础数据结构和接口设计上需考虑未来的规划，如：对于多链、跨链、多种共识算法、账本存储的可扩展性。具体模块内部设计优先针对本期实施范围细化。</u>
+
 ## 1.2 文档读者
 
 ChainMaker的设计、研发、测试和系统运维人员。
 
-## 1.3 ChainMaker版本规划
+## 1.3 术语解释
+
+
+
+## 1.4 ChainMaker版本规划
 
 - ChainMaker整体规划
-
-
 
 |                   | **V1.0**（**2020.12**）            | **V2.0**                     | **V3.0**                 |
 | ----------------- | ---------------------------------- | ---------------------------- | ------------------------ |
@@ -22,7 +26,7 @@ ChainMaker的设计、研发、测试和系统运维人员。
 | 节点组网          | libp2p（4/7/10节点）               | 大范围组网优化               | 结合混合共识和多类型节点 |
 | 身份权限管理      | 公私钥+白名单                      | 证书+细粒度权限（合约/操作） | DID                      |
 | 共识算法          | BFT                                | hotstuff共识                 | 混合共识/竞争性共识/性能 |
-| 智能合约          | WASM通用合约                       | WASM（RUST）                 | WASM多语言/其他合约引擎  |
+| 智能合约          | WASM通用合约（go和java）           | WASM多语言                   | 其他合约引擎             |
 | 交易调度          | 无冲突并行DAG                      | 有冲突并行DAG，合约重新执行  | 支持跨链的合约反向操作   |
 | 交易接收和校验    | 队列持久化+防重                    | 双花验证，交易补偿           | 跨链交易验证             |
 | 跨链              | --                                 | --                           | 中继方式的跨链           |
@@ -43,7 +47,7 @@ ChainMaker的设计、研发、测试和系统运维人员。
 | 节点组网          | libp2p（4节点）  gRPC              | libp2p（4/7/10节点）         |
 | 身份权限管理      | 公私钥+白名单                      | 公私钥+白名单                |
 | 共识算法          | ***腾讯确定具体算法***             | BFT                          |
-| 智能合约          | WASM通用合约                       | WASM通用合约                 |
+| 智能合约          | WASM通用合约（go和java）           | WASM通用合约（go和java）     |
 | 交易调度          | 并行                               | 无冲突并行DAG                |
 | 交易接收和校验    | 防重                               | 队列持久化+防重              |
 | 跨链              | --                                 | --                           |
@@ -70,21 +74,29 @@ ChainMaker的设计、研发、测试和系统运维人员。
 
 ## 2.3 模块架构
 
-【微芯院】更新版本，【腾讯】可先参照2.5小节流程设计
+【腾讯】可先参照2.5小节流程设计
 
-![ChainMaker模块架构图](./images/system-module.png)
+<img src="./images/system-module-new.png" alt="ChainMaker模块架构图" style="zoom:150%;" />
 
 
 
 ## 2.4 模块说明
 
-【微芯院】	
+- 核心引擎——核心引擎是链工厂的主程序，根据模块之间的依赖关系和配置参数调用其他模块， 完成区块链系统的整体功能；
+- P2P——对节点p2p网络进行管理，实现节点发现，邻居管理、节点的状态管理、区块及交易消息同步和广播；
+- 密码算法——密码学模块需实现加解密、哈希、认证与证明等基础功能接口，供其他模块使用；
+- 身份权限管理——身份管理模块需实现权限配置与权限校验接口，对成员接入、智能合约调用等操作权限进行控制；
+- 共识算法——共识算法模块需实现共识接口，输出在网络节点达成一致的区块数据；
+- 智能合约——合约引擎模块需在资源受限的安全环境内模拟执行接口，根据给定的用户输入生成读写集合；
+- 交易调度——交易调度模块需实现交易打包与排序接口，将输入的一批交易生成基于DAG的执行计划；
+- 交易验证——对原始交易合法性的校验，如：交易签名合法性、防重、防双花等；
+- TxPool交易池——缓存已验证的待出块合法交易，需支持批量操作，可按照预定规则批量持久化至磁盘；
+- 账本存储——数据存储模块需实现最基本的CRUD接口，方便对数据库进行增删改查的操作，需支持多类型数据库的账本存储；
+- 多语言SDK——符合系统RPC接入标准的SDK，方便应用系统接入，需支持多语言，如：java、go等。
 
 ## 2.5 整体流程
 
-### 2.5.1 交易处理
-
-【微芯院】Txid的两种机制
+### 2.5.1 交易提交至交易池
 
 ![ChainMaker模块流程交易处理](./images/交易处理.png)
 
@@ -102,7 +114,9 @@ ChainMaker的设计、研发、测试和系统运维人员。
 
 ### 2.5.5 智能合约生命周期管理
 
-【微芯院】
+![智能合约生命周期](./images/智能合约生命周期.png)
+
+
 
 ### 2.5.6 共识节点动态增删
 
@@ -118,17 +132,17 @@ ChainMaker的设计、研发、测试和系统运维人员。
 
 ## 3.1 核心引擎
 
-【微芯院】
+### 3.1.1 模块流程
 
-### 3.1.1 模块功能说明
+- 核心引擎初始化
 
+![核心引擎初始化](./images/核心引擎初始化.png)
 
+- 核心引擎交易处理
 
-### 3.1.2 模块流程
+![核心引擎](./images/核心引擎.png)
 
-
-
-### 3.1.3 模块接口
+### 3.1.2 模块接口
 
 与网络和身份权限管理模块间采用接口调用或管道传递指针的方式
 
@@ -248,42 +262,118 @@ message ConsensusMsg {
 
 ## 3.6 智能合约
 
-【微芯院】
+### 3.6.1 模块说明
 
-外部依赖
+ChainMaker的智能合约虚拟机模块需要考虑以下问题：
 
-- 被执行的指令代码的账户地址
-- 最近的256个区块头
-- 要执行的代码
-- 执行的输入参数
-- 合约的状态数据
+- 隔离运行：每个虚拟机都运行在隔离的环境中，确保资源访问安全性，只能修改属于该合约自己的状态记录
+- 合约终止：合约需要有执行终止条件，以限制对资源的消耗。终止条件可以是按照时间、指令数量、指令执行代价（类似ETH gas）等方式
+- 智能合约开发环境：提供基于ChainMaker区块链的智能合约开发环境
+- 轻量化实现：提供轻量级虚拟机，可以快速启动和快速运行，占用系统资源小
+- 支持高级语言：支持Java、Go等高级语言的编写智能合约代码
+- 测试和验证：提供测试合约代码，要求执行的结果是正确可验证的
+- 低耦合设计：要求虚拟机可以在ChainMaker提供的数据接口上，就可以独立运行而不依赖其他的环境
+- 跨合约调用：支持多层的跨合约相互调用
+- 工具链和文档：提供各种工具、虚拟机设计实现文档、API文档，降低编写智能合约的入门难度
+- 并行调用：ChainMaker将通过并行调用的方式，启动虚拟机
 
-```mermaid
- classDiagram
-      智能合约模块 .. 存储模块 : 读写操作
-      交易调度模块 .. 智能合约模块 : 启动虚拟机，获取执行结果
-      交易调度模块 .. DAG : 添加DAG节点
-      class 智能合约模块{
-          +Context
-          +GetResult()
-          +GetReceipt()
-          +GetReadSet()
-          +GetWriteSet()
-          +Execute()
-      }
-      class 交易调度模块{
-          +StartVM()
-      }
-      class 存储模块{
-          SnapshotDB
-          +GetKey()
-          +PutKey()
-      }
-      class DAG{
-          dag
-          +AddNode()
-      }
+ChainMaker将能够支持多种形式的虚拟机，并且把虚拟机看作是一个黑匣子，为虚拟机提供统一的数据访问和密码算法访问接口。当一批交易被发送至虚拟机时，虚拟机将解析交易中的智能合约调用参数，并且在运行时，通过数据访问接口获取运行时必要的数据，最后执行生成交易的读写集、交易执行结果和交易执行的日志信息。
+
+虚拟机本身应当是无状态的，不需要存储额外的数据。当交易批量地、持续地发送给虚拟机时，虚拟机需要并行启动多个实例来执行这些交易里对智能合约的调用。随后由ChainMaker来根据交易执行的读写集来分析和解决交易的冲突。
+
+![智能合约](./images/outline.png)
+
+### 3.6.2 接口设计
+
+在ChainMaker的交易调度模块启动虚拟机时，会通过接口调用的方式调用，同时存储接口和密码算法接口将被**注入**到虚拟机中，供智能合约调用。
+
+其中存储接口store_interface将能够对三类数据进行操作：
+
+- ChainData：链数据库，主要包含历史区块、历史交易等数据
+- StateDB：状态数据库，主要为智能合约的状态数据
+- ReadWriteSet：读写集，智能合约类型的交易预执行过程中，虚拟机对ChainData和StateDB的模拟读写，将记录在ReadWriteSet。
+
+#### 3.6.2.1 vm_interface接口
+
+创建智能合约，该接口需要虚拟机实现，并由ChainMaker的交易调度模块来调用。
+
 ```
+	import "chainmaker-go/pb"
+
+type VM interface {
+
+	//创建智能合约 ABI？
+	// 入参
+	// byteCode 字节码
+	// input 构造函数入参
+	// option 可选项
+	// 返回
+	// []*pb.TxRead 读集
+	// []*pb.TxWrite 写集
+	// []byte 结果
+	// []byte 日志
+	Create(byteCode []byte, input []byte, option map[string]string) ([]*pb.TxRead, []*pb.TxWrite, []byte, []byte)
+
+	//执行智能合约
+	// 入参
+	// address 合约地址
+	// input 函数入参
+	// 返回
+	// []*pb.TxRead 读集
+	// []*pb.TxWrite 写集
+	// []byte 结果
+	// []byte 日志
+	Call(address []byte, input []byte, ABI??) ([]*pb.TxRead, []*pb.TxWrite, []byte, []byte)
+}
+
+```
+
+
+#### 3.6.2.2 store_interface接口
+
+store_interface为虚拟机提供对ChainData、StateDB、ReadWriteSet的读写能力。（需要请百度的专家进行评估）
+
+```
+type ContractStore interface {
+	//StateDB & ReadWriteSet
+	//获取合约账户状态、Code
+	ReadState(address []byte, key []byte) ([]byte, error)
+	//写入合约账户状态
+	WriteState(address []byte, key []byte, value []byte) error
+	//删除合约账户状态
+	DeleteState(address []byte, key []byte) error
+
+
+	//ChainData
+	//获取智能合约发布者
+	GetPublisher(address []byte) []byte
+	//获取智能合约的调用者
+	GetCaller() []byte
+	//获取当前区块高度
+	GetCurrentBlockHeight() int64
+	//获取当前区块链Hash
+	GetCurrentBlockHash() []byte
+
+	//Log
+	WriteLog(address []byte, key []byte, value []byte) error
+	
+	//Result
+	WriteResult(address []byte, key []byte, value []byte) error
+
+}
+
+```
+
+### 3.6.3 字节码
+
+- 编译，通过编译器，将高级语言java、go等编译为wasm字节码
+
+- 存储，wasm字节码将以状态的形式存储在StateDB中，在创建智能合约的时候写入到StateDB
+- 调用，在启动虚拟机执行时，字节码从StateDB中通过GetState获取到以后，以解释执行或者编译执行的方式运行。
+
+### 3.6.4 合约终止
+
+当智能合约被虚拟机中止执行时，应通过store_interface写入Result，表明终止的原因
 
 ## 3.7 交易调度
 
@@ -319,11 +409,15 @@ message ConsensusMsg {
 
 
 
-## 3.8 交易校验
+## 3.8 交易与区块校验
 
-【微芯院】
+### 3.8.1 原始交易校验
 
+![原始交易校验](./images/原始交易校验.png)
 
+### 3.8.2 候选区块交易校验
+
+![候选区块交易校验](./images/候选区块交易校验.png)
 
 ## 3.9 账本存储
 
@@ -401,8 +495,6 @@ type Iterator interface {
 
 ## 3.11 核心数据模型
 
-【微芯院，扩展支持多链、多合约调用】
-
 【腾讯，补充身份权限管理、跨链等场景相关字段】
 
 - block定义
@@ -411,13 +503,9 @@ block为区块总结构体，block结构按其三个子部分，即区块头、D
 
 ```go
 type Block struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Header *Header        `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
-	Dag    *DAG           `protobuf:"bytes,2,opt,name=dag,proto3" json:"dag,omitempty"`
-	Txs    []*Transaction `protobuf:"bytes,3,rep,name=txs,proto3" json:"txs,omitempty"`
+	Header  *Header        `protobuf:"bytes,2,opt,name=header,proto3" json:"header,omitempty"`
+	Dag     *DAG           `protobuf:"bytes,3,opt,name=dag,proto3" json:"dag,omitempty"`
+	Txs     []*Transaction `protobuf:"bytes,4,rep,name=txs,proto3" json:"txs,omitempty"`
 }
 ```
 
@@ -430,14 +518,27 @@ key：BlockHeight+BlockHash。
 value：按照下述结构图，其余字段，按照XX格式序列化后存储。
 
 ```go
+type Header struct {
+	ChainId           []byte      `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`                                  // 子链标识
+	BlockHeight       int64       `protobuf:"varint,2,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`                     // 块高度
+	PreBlockHash      []byte      `protobuf:"bytes,3,opt,name=pre_block_hash,json=preBlockHash,proto3" json:"pre_block_hash,omitempty"`                 // 前块哈希
+	BlockHash         []byte      `protobuf:"bytes,4,opt,name=block_hash,json=blockHash,proto3" json:"block_hash,omitempty"`                            // 本块哈希（块标识）
+	BlockVersion      []byte      `protobuf:"bytes,5,opt,name=block_version,json=blockVersion,proto3" json:"block_version,omitempty"`                   // 版本
+	DagDigest         []byte      `protobuf:"bytes,6,opt,name=dag_digest,json=dagDigest,proto3" json:"dag_digest,omitempty"`                            // 保存DAG特征摘要
+	StateRoot         []byte      `protobuf:"bytes,7,opt,name=state_root,json=stateRoot,proto3" json:"state_root,omitempty"`                            // 本块状态树根 非MPT
+	MerkleRoot        []byte      `protobuf:"bytes,8,opt,name=merkle_root,json=merkleRoot,proto3" json:"merkle_root,omitempty"`                         // 本块merkle根
+	BlockTimestamp    int64       `protobuf:"varint,9,opt,name=block_timestamp,json=blockTimestamp,proto3" json:"block_timestamp,omitempty"`            // 区块时间戳
+	ProposerPublicKey []byte      `protobuf:"bytes,10,opt,name=proposer_public_key,json=proposerPublicKey,proto3" json:"proposer_public_key,omitempty"` // 提案节点标识（公钥）
+	ConsensusArgs     []byte      `protobuf:"bytes,11,opt,name=consensus_args,json=consensusArgs,proto3" json:"consensus_args,omitempty"`               // 共识参数，此处存放影响块hash计算的信息
+	AdditionalData    []byte      `protobuf:"bytes,12,opt,name=additional_data,json=additionalData,proto3" json:"additional_data,omitempty"`            // 扩展字段，此处存放不影响块hash计算的信息
+	TxsCount          int64       `protobuf:"varint,13,opt,name=txs_count,json=txsCount,proto3" json:"txs_count,omitempty"`                             // 本块交易笔数，便于统计
+	Signature         *Signature  `protobuf:"bytes,14,opt,name=signature,proto3" json:"signature,omitempty"`                                            // 提案者对本块签名
+	QuorumCert        *QuorumCert `protobuf:"bytes,15,opt,name=quorum_cert,json=quorumCert,proto3" json:"quorum_cert,omitempty"`                        // 流水线BFT共识扩展，不参与区块哈希计算
+}
+
 type Signature struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-PublicKeys [][]byte `protobuf:"bytes,1,rep,name=public_keys,json=publicKeys,proto3" json:"public_keys,omitempty"`
-Signature  []byte   `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
-
+	PublicKeys [][]byte `protobuf:"bytes,1,rep,name=public_keys,json=publicKeys,proto3" json:"public_keys,omitempty"`
+    Signature  []byte   `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
 }
 ```
 
@@ -452,48 +553,76 @@ value：按照下述结构图，其余字段，按照XX格式序列化后存储�
 
 ```go
 type Transaction struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
 	Metadata      *Transaction_MetaData `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`                                // 交易元数据
-	Contract      *Contract             `protobuf:"bytes,2,opt,name=contract,proto3" json:"contract,omitempty"`                                // 合约调用
-	SenderAddress []byte                `protobuf:"bytes,3,opt,name=sender_address,json=senderAddress,proto3" json:"sender_address,omitempty"` // 交易发送者地址
-	Result        *Transaction_Result   `protobuf:"bytes,4,opt,name=result,proto3" json:"result,omitempty"`                                    // 返回
-	TxHash        []byte                `protobuf:"bytes,5,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`                      // 交易哈希 Contract+sender_address
+	Contracts     []*Contract           `protobuf:"bytes,2,rep,name=contracts,proto3" json:"contracts,omitempty"`                              // 合约调用
+	Sender        []byte                `protobuf:"bytes,3,opt,name=sender_address,json=senderAddress,proto3" json:"sender_address,omitempty"` // 交易发送者
+	Results       []*Transaction_Result `protobuf:"bytes,4,rep,name=results,proto3" json:"results,omitempty"`                                  // 合约执行返回
+	TxHash        []byte                `protobuf:"bytes,5,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`                      // 交易哈希 contracts+sender_address
 	Signature     *Signature            `protobuf:"bytes,6,opt,name=signature,proto3" json:"signature,omitempty"`                              // 交易签名 Contract+sender_address
+	Payload       *Transaction_Payload  `protobuf:"bytes,7,opt,name=payload,proto3" json:"payload,omitempty"`                                  // 账户类数据
 }
 
 type Transaction_MetaData struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Height      []byte `protobuf:"bytes,1,opt,name=height,proto3" json:"height,omitempty"`                               // 交易所属块高度
-	TxId        []byte `protobuf:"bytes,2,opt,name=tx_id,json=txId,proto3" json:"tx_id,omitempty"`                       // 交易标识，便于外围应用系统检索本交易
-	TxTimestamp int64  `protobuf:"varint,3,opt,name=tx_timestamp,json=txTimestamp,proto3" json:"tx_timestamp,omitempty"` // 交易时间戳
-	Expiration  int64  `protobuf:"varint,4,opt,name=expiration,proto3" json:"expiration,omitempty"`                      // 交易有效期
-	RefBlock    []byte `protobuf:"bytes,5,opt,name=ref_block,json=refBlock,proto3" json:"ref_block,omitempty"`           // 本交易引用的块高度
+	ChainId     []byte `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`              // 子链标识
+	Height      []byte `protobuf:"bytes,2,opt,name=height,proto3" json:"height,omitempty"`                               // 交易所属块高度
+	TxId        []byte `protobuf:"bytes,3,opt,name=tx_id,json=txId,proto3" json:"tx_id,omitempty"`                       // 交易标识，便于外围应用系统检索本交易
+	TxTimestamp int64  `protobuf:"varint,4,opt,name=tx_timestamp,json=txTimestamp,proto3" json:"tx_timestamp,omitempty"` // 交易时间戳
+	Expiration  int64  `protobuf:"varint,5,opt,name=expiration,proto3" json:"expiration,omitempty"`                      // 交易有效期
 }
 
-type Contract struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+type Contract struct {// TODO 合约标识、函数名、版本
 	Type       Contract_ContractType `protobuf:"varint,1,opt,name=type,proto3,enum=pb.Contract_ContractType" json:"type,omitempty"`
-	Parameters []byte                `protobuf:"bytes,2,opt,name=parameters,proto3" json:"parameters,omitempty"` // 合约参数
+	Parameters [][]byte              `protobuf:"bytes,2,rep,name=parameters,proto3" json:"parameters,omitempty"` // 合约参数
 }
 
 type Transaction_Result struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	Code               Transaction_Result_Code `protobuf:"varint,1,opt,name=code,proto3,enum=pb.Transaction_Result_Code" json:"code,omitempty"`
+	Logs               [][]byte                `protobuf:"bytes,2,rep,name=logs,proto3" json:"logs,omitempty"`
+	ReadWriteSetDigest []byte                  `protobuf:"bytes,3,opt,name=read_write_set_digest,json=readWriteSetDigest,proto3" json:"read_write_set_digest,omitempty"` // 读写集特征摘要
+}
 
-	Code     Transaction_Result_Code `protobuf:"varint,1,opt,name=code,proto3,enum=pb.Transaction_Result_Code" json:"code,omitempty"`
-	Logs     [][]byte                `protobuf:"bytes,2,rep,name=logs,proto3" json:"logs,omitempty"`
-	TxReads  []*Transaction_TxRead   `protobuf:"bytes,3,rep,name=tx_reads,json=txReads,proto3" json:"tx_reads,omitempty"`
-	TxWrites []*Transaction_TxWrite  `protobuf:"bytes,4,rep,name=tx_writes,json=txWrites,proto3" json:"tx_writes,omitempty"`
+// UTXO交易相关
+type Transaction_Payload struct {
+	// Transaction input list
+	TxInputs []*Transaction_TxInput `protobuf:"bytes,1,rep,name=tx_inputs,json=txInputs,proto3" json:"tx_inputs,omitempty"`
+	// Transaction output list
+	TxOutputs []*Transaction_TxOutput `protobuf:"bytes,2,rep,name=tx_outputs,json=txOutputs,proto3" json:"tx_outputs,omitempty"`
+	// Mining rewards
+	Coinbase []byte `protobuf:"bytes,3,opt,name=coinbase,proto3" json:"coinbase,omitempty"`
+	// Random number used to avoid replay attacks
+	Nonce int64 `protobuf:"varint,4,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	// 交易发起者, 可以是一个Address或者一个Account
+	Initiator []byte `protobuf:"bytes,5,opt,name=initiator,proto3" json:"initiator,omitempty"`
+	// 交易发起需要被收集签名的AddressURL集合信息，包括用于utxo转账和用于合约调用
+	AuthRequire [][]byte `protobuf:"bytes,6,rep,name=auth_require,json=authRequire,proto3" json:"auth_require,omitempty"`
+	// 交易发起者对交易元数据签名，签名的内容包括auth_require字段
+	InitiatorSigns []*Signature `protobuf:"bytes,7,rep,name=initiator_signs,json=initiatorSigns,proto3" json:"initiator_signs,omitempty"`
+	// 收集到的签名
+	AuthRequireSigns []*Signature `protobuf:"bytes,8,rep,name=auth_require_signs,json=authRequireSigns,proto3" json:"auth_require_signs,omitempty"`
+}
+
+// UTXO交易的输入集
+type Transaction_TxInput struct {
+	// The transaction id referenced to
+	RefTxid []byte `protobuf:"bytes,1,opt,name=ref_txid,json=refTxid,proto3" json:"ref_txid,omitempty"`
+	// The output offset of the transaction referenced to
+	RefOffset int32 `protobuf:"varint,2,opt,name=ref_offset,json=refOffset,proto3" json:"ref_offset,omitempty"`
+	// The address of the launcher
+	FromAddr []byte `protobuf:"bytes,3,opt,name=from_addr,json=fromAddr,proto3" json:"from_addr,omitempty"`
+	// The amount of the transaction
+	Amount int64 `protobuf:"varint,4,opt,name=amount,proto3" json:"amount,omitempty"`
+	// Frozen height
+	FrozenHeight int64 `protobuf:"varint,5,opt,name=frozen_height,json=frozenHeight,proto3" json:"frozen_height,omitempty"`
+}
+
+// UTXO交易的输出集
+type Transaction_TxOutput struct {
+	// The amount of the transaction
+	Amount int64 `protobuf:"varint,1,opt,name=amount,proto3" json:"amount,omitempty"`
+	// The address of the launcher
+	ToAddr []byte `protobuf:"bytes,2,opt,name=to_addr,json=toAddr,proto3" json:"to_addr,omitempty"`
+	// Fronzen height
+	FrozenHeight int64 `protobuf:"varint,3,opt,name=frozen_height,json=frozenHeight,proto3" json:"frozen_height,omitempty"`
 }
 ```
 
@@ -507,19 +636,11 @@ value：按照下述结构图，TxHashes和Vertexes，按照XX格式序列化后
 
 ```go
 type DAG struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
 	TxHashes [][]byte                `protobuf:"bytes,1,rep,name=tx_hashes,json=txHashes,proto3" json:"tx_hashes,omitempty"`
 	Vertexes map[int32]*DAG_Neighbor `protobuf:"bytes,2,rep,name=vertexes,proto3" json:"vertexes,omitempty" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
 type DAG_Neighbor struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
 	Neighbors []int32 `protobuf:"varint,1,rep,packed,name=neighbors,proto3" json:"neighbors,omitempty"`
 }
 ```
