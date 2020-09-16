@@ -207,6 +207,132 @@ ChainMaker的设计、研发、测试和系统运维人员。
 
 【腾讯，国密算法公钥及参数信息配置，与加密通信的结合】
 
+> 该节以下为草稿，待讨论。
+
+### 3.3.1 支持加密算法
+
+> 一期优先来支持国密算法
+
+- 对称密码
+  - `SM4`
+  - `AES`
+
+- 非对称密码
+  - `SM2`
+  - `RSA`
+  - `Secp256k1`
+  - `ECDSA_P256`
+  - `ECDSA_P384`
+  - `ECDSA_P521`
+  - `Ed25519`
+- 哈希算法
+  - `SM3`
+  - `SHA256`
+  - `Keccak256`
+
+### 3.3.2 国密技术选型
+
+| 可选方案                                                     | 特点                                                         |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| [tjfoc](https://github.com/tjfoc)/[gmsm](https://github.com/tjfoc/gmsm) | 开源<br />纯Go语言实现<br />支持SM2/SM3/SM4                  |
+| [guanzhi](https://github.com/guanzhi)/[GmSSL](https://github.com/guanzhi/GmSSL) | 开源<br />C实现<br />基于OpenSSL开发，保持了接口兼容，工具丰富<br />支持SM2/SM3/SM4/SM9/ZUC等国密算法 |
+| [TencentSM](http://techmap.oa.com/project/9631)              | 腾讯自研，尚未开源                                           |
+
+### 3.3.3 实现方案
+
+```go
+package crypto
+
+// 秘钥类型
+type KeyType int
+const (
+	// 对称秘钥
+	AES KeyType = iota
+	SM4
+
+	// 非对称秘钥
+	RSA
+	Secp256k1
+	SM2
+	ECDSA_P256
+	ECDSA_P384
+	ECDSA_P521
+	Ed25519
+)
+
+// === 秘钥接口 ===
+type Key interface {
+	// 获取秘钥字节数组
+	Bytes() ([]byte, error)
+
+	// 获取秘钥类型
+	Type() KeyType
+    
+    // 获取编码后字符串格式秘钥
+    String() (string, error)
+}
+
+// === 对称秘钥加解密接口 ===
+type SymmetricKey interface {
+	Key
+
+	// 加密接口
+	Encrypt(plain []byte) (cipher []byte, err error)
+
+	// 解密接口
+	Decrypt(cipher []byte) (plain []byte, err error)
+}
+
+// === 非对称秘钥签名+验签接口 ===
+// 私钥签名接口
+type PrivateKey interface {
+	Key
+
+	// 私钥签名
+	Sign(data []byte) ([]byte, error)
+
+	// 返回公钥
+	PublicKey() PublicKey
+}
+
+// 公钥验签接口
+type PublicKey interface {
+	Key
+
+	// 公钥验签
+	Verify(data []byte, sig []byte) (bool, error)
+}
+```
+
+### 3.3.4 提供接口
+
+#### （1）非对称加密
+
+```go
+// 生成公私钥对
+func GenerateKeyPair(keyType crypto.KeyType) (crypto.PrivateKey, error) {}
+// func GenerateKeyPair(keyType crypto.KeyType) (pk string, sk string, err error) {}
+
+// 签名
+func Sign(keyType crypto.KeyType, sk string, data []byte) (sign string,  err error) {}
+
+// 验签
+func Verify(keyType crypto.KeyType, pk string, sign string, data []byte) (bool, error) {}
+```
+
+#### （2）对称加密
+
+```go
+// 创建对称秘钥对象
+func GenerateSymKey(opt crypto.KeyType, key []byte) (crypto.SymmetricKey, error) {}
+
+// 加密
+func (symKey *SymKey) Encrypt(plain []byte) ([]byte, error) {}
+
+// 解密
+func (symKey *SymKey) Decrypt(crypted []byte) ([]byte, error) {}
+```
+
 
 
 ## 3.4 身份权限管理
