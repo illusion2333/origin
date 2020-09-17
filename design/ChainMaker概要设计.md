@@ -948,26 +948,42 @@ message Header {
 # 6. 账本KV存储结构
 
 【腾讯】
+KV采用RocksDB
 
 ## 6.1 区块存储结构
 
+区块结构分为三部分，区块头、DAG、区块体（原始交易集），以KV的形式存储区块头：
 
+key：BlockHeaderPrefix+ChainId+BlockNum.
+
+value: {BlockHeader, DAG}，value包括区块头与DAG的序列化后的数据，以及交易的txid集合，并且DAG中已经包含区块txid的列表。
+
+由于区块信息散步在多个kv项中，查询一个完整的区块需要查询多个kv数据再合并成一个完整的区块，先查询区块链头，恢复区块头与DAG，再根据DAG中的txid列表，依次查询交易数据恢复交易集列表，组成区块体
 
 ## 6.2 交易存储结构
 
+Key：TransactionPrefix+ChainId+TxID
 
+Value: Transaction序列化后的数据
 
 ## 6.3 读写集存储结构
 
+读写集与交易关联，存储txid与读写集的kv集
 
+Key: RWSetPrefix+ChainId+TxID
+
+Value: [{ContractId, TxRead, TxWrite}, …]
 
 ## 6.4 状态数据存储结构
+状态数据按合约的ContractId进行分表。
 
+Key: StateWorldPrefix+ChainId+ContractId+stateKey
 
+Value: {stateValue, version}， version由blockNum+txNum
 
 ## 6.5 索引存储结构
-
-
+1. blockHash -> blockNum
+2. blockNum+txNum -> txid
 
 # 7. 其他模块
 
