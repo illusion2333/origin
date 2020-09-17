@@ -948,7 +948,6 @@ message Header {
 # 6. 账本KV存储结构
 
 【腾讯】
-KV采用RocksDB
 
 ## 6.1 区块存储结构
 
