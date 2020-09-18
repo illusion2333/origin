@@ -459,6 +459,8 @@ message ConsensusMsg {
 
 【腾讯】
 
+![BFT共识流程](./images/BFT流程.png)
+
 
 
 
