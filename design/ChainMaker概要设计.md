@@ -78,8 +78,6 @@ ChainMaker的设计、研发、测试和系统运维人员。
 
 <img src="./images/system-module-new.png" alt="ChainMaker模块架构图" style="zoom:150%;" />
 
-## 2.4 进程模块划分
-<img src="./images/进程模块划分.png" alt="ChainMaker 进程模块划分" style="zoom:150%;" />
 
 ## 2.5 模块说明
 
@@ -105,12 +103,19 @@ ChainMaker的设计、研发、测试和系统运维人员。
 ### 2.6.2 构建候选区块
 
 - 构建候选区块
+### 2.6.2 构建候选区块
+- 构建候选区块
 
 ![ChainMaker模块流程构建候选区块](./images/构建候选区块.png)
 
 - 构建候选区块中断
 
 ![ChainMaker模块流程构建候选区块中断](./images/构建候选区块中断.png)
+
+#### 打包区块条件判断：
+![ChainMaker模块流程打包区块条件判断](./images/打包区块条件.png)
+
+![ChainMaker模块流程构建候选区块](./images/构建候选区块.png)
 
 ### 2.6.3 验证候选区块
 
