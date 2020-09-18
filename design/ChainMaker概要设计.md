@@ -101,9 +101,6 @@ ChainMaker的设计、研发、测试和系统运维人员。
 ![ChainMaker模块流程交易处理](./images/交易处理.png)
 
 ### 2.6.2 构建候选区块
-
-- 构建候选区块
-### 2.6.2 构建候选区块
 - 构建候选区块
 
 ![ChainMaker模块流程构建候选区块](./images/构建候选区块.png)
@@ -112,10 +109,11 @@ ChainMaker的设计、研发、测试和系统运维人员。
 
 ![ChainMaker模块流程构建候选区块中断](./images/构建候选区块中断.png)
 
-#### 打包区块条件判断：
+- 打包区块条件判断
+
 ![ChainMaker模块流程打包区块条件判断](./images/打包区块条件.png)
 
-![ChainMaker模块流程构建候选区块](./images/构建候选区块.png)
+![ChainMaker进程模块划分](./images/进程模块划分.png)
 
 ### 2.6.3 验证候选区块
 
@@ -745,8 +743,7 @@ message Header {
 }
 message Signature {
   repeated bytes signers = 1;// 签名者
-  int32 signature_algorithm = 2;// 签名算法使用的哈希和非对称签名算法类型的组合，实现过程中，使用常量定义
-  bytes signature = 3;// 签名
+  bytes signature = 2;// 签名
 }
 ```
 
@@ -778,23 +775,10 @@ message Transaction {
   repeated bytes payload = 11;// 交易的扩展数据
 }
 message Contract {
-  enum ContractType {
-    INVALID_CONTRACT = 0;
-    CREATE_CONTRACT = 1;
-    CALL_CONTRACT = 2;
-    CREATE_CONF_CONTRACT = 3;
-    CALL_CONF_CONTRACT = 4;
-    CREATE_CERT_CONTRACT = 5;
-    CALL_CERT_CONTRACT = 6;
-
-    CREATE_ACCOUNT_CONTRACT = 11;
-    TRANSFER_CONTRACT = 12;
-  }
   bytes contract_id = 1;// 合约标识，应用端定义，保证不重复
-  ContractType type = 2;// 合约操作类型
-  bytes version = 3;// 合约版本
-  bytes method = 4;// 调用函数名
-  repeated bytes parameters = 5;// 合约参数
+  bytes version = 2;// 合约版本
+  bytes method = 3;// 调用函数名
+  repeated bytes parameters = 4;// 合约参数
 }
 ```
 
@@ -808,7 +792,7 @@ message DAG {
   message Neighbor {
     repeated int32 neighbors = 1;// 邻居节点，即与该交易有读写冲突的关联交易
   }
-  repeated bytes tx_hashes = 1;// 交易哈希列表
+  repeated bytes tx_ids = 1;// 交易标识列表
   map<int32, Neighbor> vertexes = 2;// <交易拓扑排序的序号，与该交易有关联的交易拓扑排序的序号>
 }
 message TxRead {
