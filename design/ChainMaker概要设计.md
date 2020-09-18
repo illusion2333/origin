@@ -79,8 +79,7 @@ ChainMaker的设计、研发、测试和系统运维人员。
 <img src="./images/system-module-new.png" alt="ChainMaker模块架构图" style="zoom:150%;" />
 
 
-
-## 2.4 模块说明
+## 2.5 模块说明
 
 - 核心引擎——核心引擎是链工厂的主程序，根据模块之间的依赖关系和配置参数调用其他模块， 完成区块链系统的整体功能；
 - P2P——对节点p2p网络进行管理，实现节点发现，邻居管理、节点的状态管理、区块及交易消息同步和广播；
@@ -90,39 +89,53 @@ ChainMaker的设计、研发、测试和系统运维人员。
 - 智能合约——合约引擎模块需在资源受限的安全环境内模拟执行接口，根据给定的用户输入生成读写集合；
 - 交易调度——交易调度模块需实现交易打包与排序接口，将输入的一批交易生成基于DAG的执行计划；
 - 交易验证——对原始交易合法性的校验，如：交易签名合法性、防重、防双花等；
-- TxPool交易池——缓存已验证的待出块合法交易，需支持批量操作，可按照预定规则批量持久化至磁盘；
+- TxPool交易池——包含接收原始交易的队列、交易验证和已验证交易的交易池，需支持批量操作，可按照预定规则批量持久化至磁盘；
 - 账本存储——数据存储模块需实现最基本的CRUD接口，方便对数据库进行增删改查的操作，需支持多类型数据库的账本存储；
 - 多语言SDK——符合系统RPC接入标准的SDK，方便应用系统接入，需支持多语言，如：java、go等。
+- 系统管理，管理新建链、安装合约等。
+  
+## 2.6 整体流程
 
-## 2.5 整体流程
-
-### 2.5.1 交易提交至交易池
+### 2.6.1 交易提交至交易池
 
 ![ChainMaker模块流程交易处理](./images/交易处理.png)
 
-### 2.5.2 构建候选区块
+### 2.6.2 构建候选区块
+
+- 构建候选区块
+### 2.6.2 构建候选区块
+- 构建候选区块
 
 ![ChainMaker模块流程构建候选区块](./images/构建候选区块.png)
 
-### 2.5.3 验证候选区块
+- 构建候选区块中断
+
+![ChainMaker模块流程构建候选区块中断](./images/构建候选区块中断.png)
+
+#### 打包区块条件判断：
+![ChainMaker模块流程打包区块条件判断](./images/打包区块条件.png)
+
+![ChainMaker模块流程构建候选区块](./images/构建候选区块.png)
+
+### 2.6.3 验证候选区块
 
 ![ChainMaker模块流程验证候选区块](./images/验证候选区块.png)
 
-### 2.5.4 共识落块
+### 2.6.4 共识落块
 
 ![ChainMaker模块流程共识落块](./images/共识落块.png)
 
-### 2.5.5 智能合约生命周期管理
+### 2.6.5 智能合约生命周期管理
 
 ![智能合约生命周期](./images/智能合约生命周期.png)
 
 
 
-### 2.5.6 共识节点动态增删
+### 2.6.6 共识节点动态增删
 
 【腾讯】
 
-### 2.5.7 区块同步及验证
+### 2.6.7 区块同步及验证
 
 【腾讯，参考下图】
 
@@ -455,6 +468,8 @@ message ConsensusMsg {
 
 【腾讯】
 
+![BFT共识流程](./images/BFT流程.png)
+
 
 
 
@@ -752,149 +767,115 @@ service BlockEvent {
 
 - block定义
 
-block为区块总结构体，block结构按其三个子部分，即区块头、DAG读写集以及原始交易集，分别独立存储。
-
-```go
-type Block struct {
-	Header  *Header        `protobuf:"bytes,2,opt,name=header,proto3" json:"header,omitempty"`
-	Dag     *DAG           `protobuf:"bytes,3,opt,name=dag,proto3" json:"dag,omitempty"`
-	Txs     []*Transaction `protobuf:"bytes,4,rep,name=txs,proto3" json:"txs,omitempty"`
+```protobuf
+message Block {
+  Header header = 1;// 区块头
+  DAG dag = 2;// 本块交易的DAG
+  repeated Transaction txs = 3;// 本块交易集合
+  AdditionalData additional_data =4;// 块附加数据，不参与哈希计算
+}
+message AdditionalData {
+  QuorumCert quorum_cert = 1;// 流水线BFT共识扩展
+  repeated bytes extra_data = 2;// 扩展字段，此处存放不影响块hash计算的信息
 }
 ```
 
 - header定义
 
-header即区块头，独立存储在KV库的不同Column Family里，CF命名可参考：ChainId（子链标识）+Header+扩展编号（000开始，未来分片扩展）。
-
-key：BlockHeight+BlockHash。
-
-value：按照下述结构图，其余字段，按照XX格式序列化后存储。
-
-```go
-type Header struct {
-	ChainId           []byte      `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`                                  // 子链标识
-	BlockHeight       int64       `protobuf:"varint,2,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`                     // 块高度
-	PreBlockHash      []byte      `protobuf:"bytes,3,opt,name=pre_block_hash,json=preBlockHash,proto3" json:"pre_block_hash,omitempty"`                 // 前块哈希
-	BlockHash         []byte      `protobuf:"bytes,4,opt,name=block_hash,json=blockHash,proto3" json:"block_hash,omitempty"`                            // 本块哈希（块标识）
-	BlockVersion      []byte      `protobuf:"bytes,5,opt,name=block_version,json=blockVersion,proto3" json:"block_version,omitempty"`                   // 版本
-	DagDigest         []byte      `protobuf:"bytes,6,opt,name=dag_digest,json=dagDigest,proto3" json:"dag_digest,omitempty"`                            // 保存DAG特征摘要
-	StateRoot         []byte      `protobuf:"bytes,7,opt,name=state_root,json=stateRoot,proto3" json:"state_root,omitempty"`                            // 本块状态树根 非MPT
-	MerkleRoot        []byte      `protobuf:"bytes,8,opt,name=merkle_root,json=merkleRoot,proto3" json:"merkle_root,omitempty"`                         // 本块merkle根
-	BlockTimestamp    int64       `protobuf:"varint,9,opt,name=block_timestamp,json=blockTimestamp,proto3" json:"block_timestamp,omitempty"`            // 区块时间戳
-	ProposerPublicKey []byte      `protobuf:"bytes,10,opt,name=proposer_public_key,json=proposerPublicKey,proto3" json:"proposer_public_key,omitempty"` // 提案节点标识（公钥）
-	ConsensusArgs     []byte      `protobuf:"bytes,11,opt,name=consensus_args,json=consensusArgs,proto3" json:"consensus_args,omitempty"`               // 共识参数，此处存放影响块hash计算的信息
-	AdditionalData    []byte      `protobuf:"bytes,12,opt,name=additional_data,json=additionalData,proto3" json:"additional_data,omitempty"`            // 扩展字段，此处存放不影响块hash计算的信息
-	TxsCount          int64       `protobuf:"varint,13,opt,name=txs_count,json=txsCount,proto3" json:"txs_count,omitempty"`                             // 本块交易笔数，便于统计
-	Signature         *Signature  `protobuf:"bytes,14,opt,name=signature,proto3" json:"signature,omitempty"`                                            // 提案者对本块签名
-	QuorumCert        *QuorumCert `protobuf:"bytes,15,opt,name=quorum_cert,json=quorumCert,proto3" json:"quorum_cert,omitempty"`                        // 流水线BFT共识扩展，不参与区块哈希计算
+```protobuf
+message Header {
+  bytes chain_id = 1;// 子链标识
+  int64 block_height = 2;// 块高度
+  bytes pre_block_hash = 3;// 前块哈希
+  bytes block_hash = 4;// 本块哈希（块标识），除block_hash和signature以外，其余字段参与block_hash计算
+  bytes block_version = 5;// 版本
+  bytes dag_digest = 6;// 保存DAG特征摘要，对DAG的pb序列化后进行一次哈希计算的摘要，用于对本块的DAG进行校验
+  bytes read_write_set_root = 7;// 本块读写集，使用区块中每笔交易Result中read_write_set_digest生成merkle树得到的根哈希，用于对本块读写集进行校验
+  bytes tx_root = 8;// 交易的merkle树根哈希，用于本块交易存在证明校验
+  int64 block_timestamp = 9;// 区块时间戳
+  bytes proposer = 10;// 提案节点标识
+  bytes consensus_args = 11;// 共识参数，此处存放影响块hash计算的信息
+  int64 tx_count = 12;// 本块交易笔数，便于统计
+  Signature signature = 13;// 使用提案者私钥对block_hash签名计算得出
 }
-
-type Signature struct {
-	PublicKeys [][]byte `protobuf:"bytes,1,rep,name=public_keys,json=publicKeys,proto3" json:"public_keys,omitempty"`
-    Signature  []byte   `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
+message Signature {
+  repeated bytes signers = 1;// 签名者
+  int32 signature_algorithm = 2;// 签名算法使用的哈希和非对称签名算法类型的组合，实现过程中，使用常量定义
+  bytes signature = 3;// 签名
 }
 ```
 
 
 - 交易定义
 
-交易独立存储在KV库的不同Column Family里，CF命名可参考：ChainId（子链标识）+Tx+扩展编号（000开始，未来分片扩展）。
+```protobuf
+message Transaction {
+  message Result {
+    enum Code {
+      INVALID_OPERATION = 0;
+      SUCCESS = 1;
+    }
+    Code code = 1;// 合约执行结果返回码
+    repeated bytes events = 2;// 用于事件机制
+    bytes read_write_set_digest = 3;// 本交易的读写集特征摘要
+  }
 
-key：TxId+BlockHeight+TxHash。
-
-value：按照下述结构图，其余字段，按照XX格式序列化后存储。
-
-```go
-type Transaction struct {
-	Metadata      *Transaction_MetaData `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`                                // 交易元数据
-	Contracts     []*Contract           `protobuf:"bytes,2,rep,name=contracts,proto3" json:"contracts,omitempty"`                              // 合约调用
-	Sender        []byte                `protobuf:"bytes,3,opt,name=sender_address,json=senderAddress,proto3" json:"sender_address,omitempty"` // 交易发送者
-	Results       []*Transaction_Result `protobuf:"bytes,4,rep,name=results,proto3" json:"results,omitempty"`                                  // 合约执行返回
-	TxHash        []byte                `protobuf:"bytes,5,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`                      // 交易哈希 contracts+sender_address
-	Signature     *Signature            `protobuf:"bytes,6,opt,name=signature,proto3" json:"signature,omitempty"`                              // 交易签名 Contract+sender_address
-	Payload       *Transaction_Payload  `protobuf:"bytes,7,opt,name=payload,proto3" json:"payload,omitempty"`                                  // 账户类数据
+  bytes chain_id = 1;// 子链标识
+  int64 height = 2;// 交易所属块高度，提案、共识不需要，落块时需要保存，便于检索
+  bytes tx_id = 3;// 交易标识，便于外围应用系统检索本交易，也用于防重放攻击，建议：时间戳（毫秒数，8字节）+合约标识（6字节，contract_id后6字节）+序列（2字节，自增或随机）
+  int64 tx_timestamp = 4;// 交易时间戳，毫秒数，UTC+8
+  int64 expiration = 5;// 交易过期时间，毫秒数，非必填，UTC+8
+  repeated Contract contracts = 6;// 合约调用
+  bytes sender = 7;// 交易发送者
+  repeated Result results = 8;// 合约执行返回
+  bytes tx_hash = 9;// 交易哈希，除height、results、tx_hash、signature以外字段计算，进行一次哈希计算得出
+  Signature signature = 10;// 交易签名
+  repeated bytes payload = 11;// 交易的扩展数据
 }
+message Contract {
+  enum ContractType {
+    INVALID_CONTRACT = 0;
+    CREATE_CONTRACT = 1;
+    CALL_CONTRACT = 2;
+    CREATE_CONF_CONTRACT = 3;
+    CALL_CONF_CONTRACT = 4;
+    CREATE_CERT_CONTRACT = 5;
+    CALL_CERT_CONTRACT = 6;
 
-type Transaction_MetaData struct {
-	ChainId     []byte `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`              // 子链标识
-	Height      []byte `protobuf:"bytes,2,opt,name=height,proto3" json:"height,omitempty"`                               // 交易所属块高度
-	TxId        []byte `protobuf:"bytes,3,opt,name=tx_id,json=txId,proto3" json:"tx_id,omitempty"`                       // 交易标识，便于外围应用系统检索本交易
-	TxTimestamp int64  `protobuf:"varint,4,opt,name=tx_timestamp,json=txTimestamp,proto3" json:"tx_timestamp,omitempty"` // 交易时间戳
-	Expiration  int64  `protobuf:"varint,5,opt,name=expiration,proto3" json:"expiration,omitempty"`                      // 交易有效期
-}
-
-type Contract struct {// TODO 合约标识、函数名、版本
-	Type       Contract_ContractType `protobuf:"varint,1,opt,name=type,proto3,enum=pb.Contract_ContractType" json:"type,omitempty"`
-	Parameters [][]byte              `protobuf:"bytes,2,rep,name=parameters,proto3" json:"parameters,omitempty"` // 合约参数
-}
-
-type Transaction_Result struct {
-	Code               Transaction_Result_Code `protobuf:"varint,1,opt,name=code,proto3,enum=pb.Transaction_Result_Code" json:"code,omitempty"`
-	Logs               [][]byte                `protobuf:"bytes,2,rep,name=logs,proto3" json:"logs,omitempty"`
-	ReadWriteSetDigest []byte                  `protobuf:"bytes,3,opt,name=read_write_set_digest,json=readWriteSetDigest,proto3" json:"read_write_set_digest,omitempty"` // 读写集特征摘要
-}
-
-// UTXO交易相关
-type Transaction_Payload struct {
-	// Transaction input list
-	TxInputs []*Transaction_TxInput `protobuf:"bytes,1,rep,name=tx_inputs,json=txInputs,proto3" json:"tx_inputs,omitempty"`
-	// Transaction output list
-	TxOutputs []*Transaction_TxOutput `protobuf:"bytes,2,rep,name=tx_outputs,json=txOutputs,proto3" json:"tx_outputs,omitempty"`
-	// Mining rewards
-	Coinbase []byte `protobuf:"bytes,3,opt,name=coinbase,proto3" json:"coinbase,omitempty"`
-	// Random number used to avoid replay attacks
-	Nonce int64 `protobuf:"varint,4,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// 交易发起者, 可以是一个Address或者一个Account
-	Initiator []byte `protobuf:"bytes,5,opt,name=initiator,proto3" json:"initiator,omitempty"`
-	// 交易发起需要被收集签名的AddressURL集合信息，包括用于utxo转账和用于合约调用
-	AuthRequire [][]byte `protobuf:"bytes,6,rep,name=auth_require,json=authRequire,proto3" json:"auth_require,omitempty"`
-	// 交易发起者对交易元数据签名，签名的内容包括auth_require字段
-	InitiatorSigns []*Signature `protobuf:"bytes,7,rep,name=initiator_signs,json=initiatorSigns,proto3" json:"initiator_signs,omitempty"`
-	// 收集到的签名
-	AuthRequireSigns []*Signature `protobuf:"bytes,8,rep,name=auth_require_signs,json=authRequireSigns,proto3" json:"auth_require_signs,omitempty"`
-}
-
-// UTXO交易的输入集
-type Transaction_TxInput struct {
-	// The transaction id referenced to
-	RefTxid []byte `protobuf:"bytes,1,opt,name=ref_txid,json=refTxid,proto3" json:"ref_txid,omitempty"`
-	// The output offset of the transaction referenced to
-	RefOffset int32 `protobuf:"varint,2,opt,name=ref_offset,json=refOffset,proto3" json:"ref_offset,omitempty"`
-	// The address of the launcher
-	FromAddr []byte `protobuf:"bytes,3,opt,name=from_addr,json=fromAddr,proto3" json:"from_addr,omitempty"`
-	// The amount of the transaction
-	Amount int64 `protobuf:"varint,4,opt,name=amount,proto3" json:"amount,omitempty"`
-	// Frozen height
-	FrozenHeight int64 `protobuf:"varint,5,opt,name=frozen_height,json=frozenHeight,proto3" json:"frozen_height,omitempty"`
-}
-
-// UTXO交易的输出集
-type Transaction_TxOutput struct {
-	// The amount of the transaction
-	Amount int64 `protobuf:"varint,1,opt,name=amount,proto3" json:"amount,omitempty"`
-	// The address of the launcher
-	ToAddr []byte `protobuf:"bytes,2,opt,name=to_addr,json=toAddr,proto3" json:"to_addr,omitempty"`
-	// Fronzen height
-	FrozenHeight int64 `protobuf:"varint,3,opt,name=frozen_height,json=frozenHeight,proto3" json:"frozen_height,omitempty"`
+    CREATE_ACCOUNT_CONTRACT = 11;
+    TRANSFER_CONTRACT = 12;
+  }
+  bytes contract_id = 1;// 合约标识，应用端定义，保证不重复
+  ContractType type = 2;// 合约操作类型
+  bytes version = 3;// 合约版本
+  bytes method = 4;// 调用函数名
+  repeated bytes parameters = 5;// 合约参数
 }
 ```
 
 - DAG定义
 
-DAG独立存储在KV库的不同Column Family里，CF命名可参考：ChainId（子链标识）+DAG+扩展编号（000开始，未来分片扩展）。
-
-key：BlockHeight+BlockHash+DagDigest。
-
-value：按照下述结构图，TxHashes和Vertexes，按照XX格式序列化后存储。
-
-```go
-type DAG struct {
-	TxHashes [][]byte                `protobuf:"bytes,1,rep,name=tx_hashes,json=txHashes,proto3" json:"tx_hashes,omitempty"`
-	Vertexes map[int32]*DAG_Neighbor `protobuf:"bytes,2,rep,name=vertexes,proto3" json:"vertexes,omitempty" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+```protobuf
+//使用邻接表存储DAG
+//tx_hashes里面存储了交易的拓扑排序
+//vertexes按照拓扑排序后的顺序号表示交易
+message DAG {
+  message Neighbor {
+    repeated int32 neighbors = 1;// 邻居节点，即与该交易有读写冲突的关联交易
+  }
+  repeated bytes tx_hashes = 1;// 交易哈希列表
+  map<int32, Neighbor> vertexes = 2;// <交易拓扑排序的序号，与该交易有关联的交易拓扑排序的序号>
 }
-
-type DAG_Neighbor struct {
-	Neighbors []int32 `protobuf:"varint,1,rep,packed,name=neighbors,proto3" json:"neighbors,omitempty"`
+message TxRead {
+  bytes key = 1;// 读集对应的key
+  bytes ref_tx_id = 2;// 读集属于哪一个txid
+  int32 ref_offset = 3;// 读集属于哪一个txid的哪一个offset
+  bytes contract_id = 4;// 跨合约调用，对方合约标识
+}
+message TxWrite {
+  bytes key = 1;// 写集对应的key
+  bytes value = 2;// 写集对应的value
+  bytes contract_id = 3;// 跨合约调用，对方合约标识
 }
 ```
 
@@ -912,117 +893,13 @@ type DAG_Neighbor struct {
 
 ## 4.1 协议说明
 
-模块间交互使用protobuf进行消息序列化。
+模块间交互支持两种方式：1）进程内函数调用；2）跨进程RPC调用，RPC服务端接收请求，再内部函数调用。如下图所示：
 
-进程内模块使用管道交互，跨进程的模块基于RPC通信。
-
-## 4.2 主要数据模型
-
-```protobuf
-syntax = "proto3";
-
-package pb;
-enum AccountType {
-  Normal = 0;
-}
-
-message Contract {
-  enum ContractType {
-    CreateAccountContract = 0;
-    TransferContract = 1;
-
-    CreateSmartContract = 11;
-    CallSmartContract = 12;
-  }
-  ContractType type = 1;
-  bytes parameters = 2;// 合约参数
-}
-
-message TxRead {
-  bytes key = 1;// 读集对应的key
-  bytes ref_txid = 2;// 读集属于哪一个txid
-  int32 ref_offset = 3;// 读集属于哪一个txid的哪一个offset
-}
-
-message TxWrite {
-  bytes key = 1;// 写集对应的key
-  bytes value = 2;// 写集对应的value
-}
-
-message Snapshot {
-  bytes database_pointer = 1;
-  repeated TxRead tx_reads = 3;
-  repeated TxWrite tx_writes = 4;
-}
-
-message Transaction {
-  message Result {
-    enum Code {
-      SUCCESS = 0;
-      ILLEGAL_OPERATION = 1;
-    }
-    Code code = 1;
-    repeated bytes logs = 2;
-    bytes read_write_set_digest = 5;// 读写集特征摘要
-  }
-
-  message MetaData {
-    bytes height = 1;// 交易所属块高度
-    bytes tx_id = 2;// 交易标识，便于外围应用系统检索本交易
-    int64 tx_timestamp = 3;// 交易时间戳
-    int64 expiration = 4;// 交易有效期
-    bytes ref_block = 5;// 本交易引用的块高度
-  }
-
-  MetaData metadata = 1;// 交易元数据
-  Contract contract = 2;// 合约调用
-  bytes sender_address = 3;// 交易发送者地址
-  Result result = 4;// 返回
-  bytes tx_hash = 5;// 交易哈希 Contract+sender_address
-  Signature signature = 6;// 交易签名 Contract+sender_address
-}
-
-//使用邻接表存储DAG
-//transaction_hashes里面存储了交易的拓扑排序
-//vertexes按照拓扑排序后的顺序号表示交易
-message DAG {
-  message Neighbor {
-    repeated int32 neighbors = 1;
-  }
-  repeated bytes tx_hashes = 1;
-  map<int32, Neighbor> vertexes = 2;
-}
-
-message Signature {
-  repeated bytes public_keys = 1; // TODO 算法类型
-  bytes signature = 2;
-}
-
-message Block {
-  Header header = 1;
-  DAG dag = 2;
-  repeated Transaction txs = 3;
-}
-
-message Header {
-  int64 block_height = 1;// 块高度
-  bytes pre_block_hash = 2;// 前块哈希
-  bytes block_hash = 3;// 本块哈希（块标识）
-  bytes block_version = 4;// 版本
-  bytes dag_digest = 5;// 保存DAG特征摘要
-  bytes state_root = 6;// 状态树根 非MPT
-  int64 block_timestamp = 7;// 区块时间戳
-  bytes proposer_public_key = 8;// 提案节点标识（公钥）
-  bytes consensus_args = 9;// 共识参数，此处存放影响块hash计算的信息
-  bytes additional_data = 10;// 扩展字段，此处存放不影响块hash计算的信息
-  int64 txs_count = 11;// 本块交易笔数，便于统计
-  Signature signature = 12;// 提案者对本块签名
-}
+![模块间调用方式](./images/模块间调用方式.png)
 
 
-```
 
-### 4.1.1 节点广播
+### 模块数据同步
 
 
 
