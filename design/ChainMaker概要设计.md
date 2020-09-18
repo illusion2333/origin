@@ -103,6 +103,8 @@ ChainMaker的设计、研发、测试和系统运维人员。
 ![ChainMaker模块流程交易处理](./images/交易处理.png)
 
 ### 2.6.2 构建候选区块
+#### 打包区块条件判断：
+![ChainMaker模块流程打包区块条件判断](./images/打包区块条件.png)
 
 ![ChainMaker模块流程构建候选区块](./images/构建候选区块.png)
 
