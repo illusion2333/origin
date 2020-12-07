@@ -10,11 +10,11 @@
 
 ### ChainMaker的构成
 
-<img src="images/ChainMaker.png" style="zoom: 50%;" />
+<img src="images/ChainMaker.png" alt="ChainMaker.png" style="zoom: 50%;" />
 
 ### ChainMaker的执行流程
 
-<img src="images/business stream.png" style="zoom: 40%;" />
+<img src="images/business-stream.png" alt="business-stream.png" style="zoom: 40%;" />
 
 ## ChainMaker链的特性
 
