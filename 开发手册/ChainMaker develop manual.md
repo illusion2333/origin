@@ -36,7 +36,7 @@
 
 ChainMaker使用wasm标准来执行智能合约，对wasm字节码，虚拟机同时支持以解释执行的gwasm和以编译方式执行的wasmer两种执行方式。虚拟机执行智能合约的原理如下：
 
-<img src="images/VM exec.png" style="zoom: 100%;" />
+<img src="images/vm-exec.png" alt="vm-exec.png" style="zoom: 100%;" />
 
 ## 存储机制
 
@@ -78,11 +78,11 @@ chainmaker sdk为开发者提供了友好封装的接口，便于开发者基于
 
 
 
-<img src="images/one time call.png" style="zoom: 50%;" />
+<img src="images/one-time-call.png" alt="one-time-call.png" style="zoom: 50%;" />
 
 查询方式获取结果过程如下：
 
-<img src="images/two time call.png" style="zoom: 50%;" />
+<img src="images/two-time-call.png" alt="two-time-call.png" style="zoom: 50%;" />
 
 
 
@@ -169,7 +169,7 @@ ChainMaker提供了快速生成证书和配置文件工具（一个组织对应�
    ```
 
 3. 查看生成的配置文件
-   <img src="images/config.png"/>
+   <img src="images/config.png" alt="config.png"/>
 
 说明：node1、node2、node3和node4分别是生成的四个节点的配置文件，在启动程序时可以分别放置到四个节点上去。、每个节点的配置文件包含主配置文件chainmaker.yml、日志配置文件log.yml、链配置目录chainconfig和证书目录certs。分别描述如下：
 
@@ -195,7 +195,7 @@ cd chainmaker-go/script
 ```
 
 制作完成后的安装包目录如下：
-<img src="images/install-package.png"/>
+<img src="images/install-package.png" alt="install-package.png"/>
 
 #### 快速部署和启动
 
@@ -208,7 +208,7 @@ cd chainmaker-go/script
 
 手工部署节点过程主要包括编译程序、生成证书、修改配置文件和启动服务等过程。chainmaker部署完成后的目录结构如下：
 
-<img src="images/deploy.png" style="zoom: 60%;"/>
+<img src="images/deploy.png" alt="deploy.png" style="zoom: 60%;"/>
 
 bin: 存放主程序和启动、停止和重启脚本
 
@@ -248,7 +248,7 @@ Use "chainmaker-cryptogen [command] --help" for more information about a command
 
 chainmaker-cryptogen命令默认一次生成四个组织的证书，生成后的结构如下：
 
-<img src="images/cryptogen.png" style="zoom: 60%;"/>
+<img src="images/cryptogen.png" alt="cryptogen.png" style="zoom: 60%;"/>
 
 其中单个组织证书目录描述如下：
 
