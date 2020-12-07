@@ -10,11 +10,11 @@
 
 ### ChainMaker的构成
 
-<img src="images/ChainMaker.png" alt="ChainMaker.png" style="zoom: 50%;" />
+<img src="images/ChainMaker.png" style="zoom: 50%;" />
 
 ### ChainMaker的执行流程
 
-<img src="images/business stream.png" alt="business stream.png" style="zoom: 40%;" />
+<img src="images/business stream.png" style="zoom: 40%;" />
 
 ## ChainMaker链的特性
 
@@ -36,7 +36,7 @@
 
 ChainMaker使用wasm标准来执行智能合约，对wasm字节码，虚拟机同时支持以解释执行的gwasm和以编译方式执行的wasmer两种执行方式。虚拟机执行智能合约的原理如下：
 
-<img src="images/VM exec.png" alt="vm exec.png" style="zoom: 100%;" />
+<img src="images/VM exec.png" style="zoom: 100%;" />
 
 ## 存储机制
 
@@ -78,11 +78,11 @@ chainmaker sdk为开发者提供了友好封装的接口，便于开发者基于
 
 
 
-<img src="images/one time call.png" alt="one time call.png" style="zoom: 50%;" />
+<img src="images/one time call.png" style="zoom: 50%;" />
 
 查询方式获取结果过程如下：
 
-<img src="images/two time call.png" alt="two time call.png" style="zoom: 50%;" />
+<img src="images/two time call.png" style="zoom: 50%;" />
 
 
 
@@ -169,7 +169,7 @@ ChainMaker提供了快速生成证书和配置文件工具（一个组织对应�
    ```
 
 3. 查看生成的配置文件
-   <img src="/Users/tianlehan/project/docs/用户手册/images/config.png"/>
+   <img src="images/config.png"/>
 
 说明：node1、node2、node3和node4分别是生成的四个节点的配置文件，在启动程序时可以分别放置到四个节点上去。、每个节点的配置文件包含主配置文件chainmaker.yml、日志配置文件log.yml、链配置目录chainconfig和证书目录certs。分别描述如下：
 
