@@ -102,7 +102,7 @@ ResponseInfo：对于创建合约、更新合约、调用合约和查询合约�
 
 ChainClient对象给用户使用。数据结构定义如下：
 
-```
+```java
 public class ChainClient {
     // chainId is the identity of the chain
     private final String chainId;
@@ -159,7 +159,7 @@ public class ResponseInfo {
 
 以下描述了所有用户能够对链进行操作的接口，全部来自ChainClient类
 
-```
+```java
     1 用户合约接口
     1.1 生成用于创建合约的待签名payload
     // **参数说明**
@@ -550,7 +550,7 @@ public class ResponseInfo {
 
 1. 初始化，创建ChainClient
 
-   ```
+   ```java
    public void init() {
        try {
            ChainNode chainNode = ChainNode.builder().clientKeyBytes(FileUtils.getResourceFileBytes(GRPC_TLS_KEY_PATH))
@@ -572,7 +572,7 @@ public class ResponseInfo {
 
 2. 创建合约
 
-   ```
+   ```java
    public void testCreateContract() throws IOException, InterruptedException, ExecutionException, TimeoutException {
        byte[] byteCode = FileUtils.getResourceFileBytes(CONTRACT_FILE_PATH);
    
@@ -595,7 +595,7 @@ public class ResponseInfo {
 
 3. 调用合约
 
-   ```
+   ```java
    public void testInvokeContract() throws Exception {
    
        Map<String, String> params = new HashMap<>();
@@ -612,7 +612,7 @@ public class ResponseInfo {
 
 #### 接口定义
 
-```
+```go
 type SDKInterface interface {
    // ## 1 用户合约接口
    // ### 1.1 创建合约待签名payload生成
@@ -992,7 +992,7 @@ ChainMaker节点使用grpc为客户端提供服务接口，协议的传输使用
 
 ### RPC接口列表
 
-```
+```protobuf
 service RpcNode {
    // SendRequest is a gerneral api, we can use it to do all things about transaction. 
    // We can set different transaction type to do different thing. So we can use it to create, upgrade, invoke and query contract.
@@ -1026,7 +1026,7 @@ ChainMaker提供了快速生成证书和配置文件工具（一个组织对应�
 
 1. 下载chainmaker-go和chain maker-cryptogen代码，编译chainmaker-cryptogen
 
-   ```
+   ```sh
    git clone --recurse-submodules git@git.code.tencent.com:ChainMaker/chainmaker-go.git
    cd chainmaker-go/tools
    git clone --recurse-submodules git@git.code.tencent.com:ChainMaker/chainmaker-cryptogen.git
@@ -1036,7 +1036,7 @@ ChainMaker提供了快速生成证书和配置文件工具（一个组织对应�
 
 2. 生成证书和配置文件
 
-   ```
+   ```shell
    cd chainmaker-go/scripts
    ./prepare.sh 4 1 ## 参数4代表节点数量（和组织数量一致），1代表链数量
    ```
@@ -1061,7 +1061,7 @@ ChainMaker提供了快速生成证书和配置文件工具（一个组织对应�
 
 ChainMaker提供了快速制作部署包脚本，执行过程如下
 
-```
+```shell
 # 制作安装包
 cd chainmaker-go/script
 ./build_release
@@ -1099,7 +1099,7 @@ lib：存放依赖库
 4. 生成用户公私钥对。
 5. 使用组织根证书对节点公钥进行签名，生成节点证书。
 
-```
+```shell
 ./chainmaker-cryptogen
 Usage:
   chainmaker-cryptogen [command]
@@ -1145,7 +1145,7 @@ ChainMaker的默认配置文件需要放在config目录下面，说明如下：
 
   chainmaker.yml配置说明：
 
-  ```
+  ```yaml
   #chainmaker 支持的每条链的配置信息
   blockchain:
   	# 链ID
@@ -1208,7 +1208,7 @@ ChainMaker的默认配置文件需要放在config目录下面，说明如下：
 
   log.yml说明如下：
 
-  ```
+  ```yaml
   log:
     system:
       log_level_default: DEBUG      # 所有模块默认的输出级别
@@ -1237,7 +1237,7 @@ ChainMaker的默认配置文件需要放在config目录下面，说明如下：
 
   链配置文件bcx.yml说明
 
-  ```
+  ```yaml
   chain_id: chain1        # 链标识
   version: v1.0.0         # 链版本
   sequence: 1             # 配置版本
@@ -1343,7 +1343,7 @@ ChainMaker的默认配置文件需要放在config目录下面，说明如下：
 
 #### 编译程序
 
-```
+```shell
 git clone --recurse-submodules git@git.code.tencent.com:ChainMaker/chainmaker-go.git
 cd chainmaker-go/main
 go build -o chainmaker
