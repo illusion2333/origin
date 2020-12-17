@@ -48,9 +48,184 @@ ChainMaker使用wasm标准来执行智能合约，对wasm字节码，虚拟机�
 
 ## 系统合约介绍
 
-介绍链的系统合约功能
+ChainMaker提供了一系列的系统合约供开发者调用，包链配置合约、系统查询合约和系统证书存储合约。分别介绍如下：
+
+### 链配置合约
+
+SYSTEM_CONTRACT_CHAIN_CONFIG
+
+#### 查询函数
+
+GET_CHAIN_CONFIG：查询最新的链全量配置信息。
+
+GET_CHAIN_CONFIG_AT：返回指定区块的链配置信息
+
+#### 更新函数
+
+CORE_UPDATE：更新Core模块的参数，该方法需要多签，参数如下：
+
+- tx_scheduler_timeout：uint，交易调度器从交易池拿到交易后, 进行调度的时间，其值范围为[0, 60]
+- tx_scheduler_validate_timeout：uint，交易调度器从区块中拿到交易后, 进行验证的超时时间，其值范围为[0, 60]
+
+BLOCK_UPDATE：更细block和txpool的参数，该方法需要多签，参数如下：
+
+- tx_timestamp_verify：bool，是否需要开启交易时间戳校验
+- tx_timeout：uint，交易时间戳的过期时间(秒)
+- block_tx_capacity：uint，区块中最大交易数
+- block_size：uint，区块最大限制，单位MB
+- block_interval：uint，出块间隔，单位:ms
+
+TRUST_ROOT_ADD：根证书添加。其参数有：
+
+- org_id：string，机构id
+- root：string，机构根证书。证书格式需符合x509
+
+处理规则如下：
+
+- 该方法需要所有机构admin进行多签
+- org_id在原来的trust_roots中不存在
+- root机构根证书需符合x509
+
+TRUST_ROOT_UPDATE：根证书更新。其参数有：
+
+- org_id：string，机构id
+- root：string，机构根证书。证书格式需符合x509
+
+处理规则如下：
+
+- 该方法需要所有机构admin进行多签
+- org_id在原来的trust_roots中存在
+- root机构根证书需符合x509
+
+TRUST_ROOT_DELETE：根证书删除。其参数有：
+
+- org_id：string，机构id
+
+处理规则如下：
+
+- 该方法需要所有机构admin进行多签
+- org_id在原来的trust_roots中存在
+- 当org_id被删除后，其关联的共识节点均被删除
+
+NODE_ORG_ADD：共识节点机构添加。其参数有：
+
+- org_id：string，机构id
+- addresses：string，节点地址列表，地址间通过逗号","隔开
+
+处理规则如下：
+
+- 该方法需要所有机构admin进行多签
+- org_id在原共识节点中不存在
+- 每个节点地址的都不可重复，和原来nodes中的地址不可重复，并且address中IP+端口不可相同，peerID不可相同
+
+NODE_ORG_UPDATE：共识节点机构更新。其参数有：
+
+- org_id：string，机构id
+- addresses：string，节点地址列表，地址间通过逗号","隔开
+
+处理规则如下：
+
+- 该方法需要所有机构admin进行多签
+- org_id在原共识节点中存在
+- 每个节点地址的都不可重复，和原来除去org_idh后的nodes中的地址不可重复，并且address中IP+端口不可相同，peerID不可相同
+
+NODE_ORG_DELETE：共识节点机构删除。其参数有：
+
+- org_id：string，机构id
+
+处理规则如下：
+
+- 该方法需要所有机构admin进行多签
+- org_id在原共识节点中存在
+- 将和org_id关联的所有节点地址都会删除
+
+NODE_ADDR_ADD：共识节点地址添加。其参数有：
+
+- 该方法需要所有机构admin进行多签
+- org_id：string，机构id
+- addresses：string，节点地址列表，地址间通过逗号","隔开。不可为空
+
+处理规则如下：
+
+- org_id必须在原来的共识节点集合中存在
+- 每个节点地址的都不可重复，和原来nodes中的地址不可重复，并且address中IP+端口不可相同，peerID不可相同
+- 节点地址必须符合libp2p地址格式
+
+NODE_ADDR_UPDATE：共识节点地址更新。其参数有：
+
+- org_id：string，机构id
+- address：string，原节点地址
+- new_address：string，新节点地址
+
+处理规则如下：
+
+- 该方法只需被修改机构的admin签名
+- org_id和address 必须在原来的nodes中存在
+- new_address 必须符合libp2p路径格式，并且其IP+端口、peerId不可与其他节点重复
+
+NODE_ADDR_DELETE：共识节点地址删除。其参数有：
+
+- org_id：string，机构id
+- address：string，节点地址
+
+处理规则如下：
+
+- 该方法需要所有机构admin进行多签
+- org_id和address 必须在原来的nodes中存在
+- 若org_id就只有一个address被删除，那么最终会出现，共识节点列表中有机构，但是没有节点地址。
+
+CONSENSUS_EXT_ADD：共识扩展参数添加。
+
+处理规则如下：
+
+- 该方法需要所有机构admin进行多签
+- 参数都是kv行添加
+- 添加的key在原来的参数集合中不存在
+- 添加新的参数时，会先将参数的key进行asc排序。然后逐个添加在原来参数数组的后面
+
+CONSENSUS_EXT_UPDATE：共识扩展参数更新
+
+处理规则如下：
+
+- 该方法需要所有机构admin进行多签
+- 参数都是kv行添加
+- key在原来的参数集合中需存在
+- 此方法只更新key对应的值，不会更改其在数组中的位置
+
+CONSENSUS_EXT_DELETE：共识扩展参数删除。
+
+处理规则如下：
+
+- 该方法需要所有机构admin进行多签
+- 请求时，只需要填写key值。value不关心。
+- 删除的key在原来的参数集合中需存在
+
+PERMISSION_ADD：权限添加
+
+处理规则如下：
+
+- 该方法需要所有机构admin进行多签
+- 权限的resourceName在原权限集合中不存在
+- 如果resourceName是系统方法，此操作会覆盖系统设定的权限。
+
+PERMISSION_UPDATE：权限更新
+
+处理规则如下：
+
+- 该方法需要所有机构admin进行多签
+- 权限的resourceName在原权限集合中存在
+
+PERMISSION_DELETE：权限删除
+
+处理规则如下：
+
+- 该方法需要所有机构admin进行多签
+- 权限的resourceName在原权限集合中不存在
+- 如果resourceName是系统方法，此操作会重新启用系统默认权限。
 
 ## 合约开发
+
+ChainMaker支持用户合约的发布、调用和升级（推荐使用客户端开发中介绍的SDK完成），对组织中的成员这些过程都是免费的，为了避免合约的误操作带来的对链的消耗，ChainMaker使用gas对合约进行限制。当前单个合约最大能消耗的gas是10000000，对一般正常的合约足够使用了。ChainMaker支持的两个虚拟机gasm和wasmer对指令集消耗的gas不太一样，gasm对应消耗的gas参考文档gasm-gas.md，wasmer对应消耗的gas参考文档wasmer-gas.md。
 
 ### 交易数据结构介绍
 
