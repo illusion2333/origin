@@ -223,6 +223,34 @@ PERMISSION_DELETE：权限删除
 - 权限的resourceName在原权限集合中不存在
 - 如果resourceName是系统方法，此操作会重新启用系统默认权限。
 
+### 系统查询合约
+
+SYSTEM_CONTRACT_QUERY
+
+#### 函数
+
+GET_TX_BY_TX_ID：根据交易ID查询交易，参数：交易ID
+
+GET_BLOCK_BY_HEIGHT：根据高度查询区块，参数：区块高度
+
+GET_CHAIN_INFO：查询链信息
+
+GET_LAST_CONFIG_BLOCK：获取最后一个配置块
+
+GET_BLOCK_BY_HASH：根据HASH值查找区块，参数：区块HASH值
+
+GET_NODE_CHAIN_LIST：查询节点加入的链列表
+
+### 系统证书存储合约
+
+#### 函数
+
+CERT_ADD：添加证书
+
+CERTS_DELETE：删除证书，参数：证书哈希列表
+
+CERTS_QUERY：查询证书，参数：证书哈希列表
+
 ## 合约开发
 
 ChainMaker支持用户合约的发布、调用和升级（推荐使用客户端开发中介绍的SDK完成），对组织中的成员这些过程都是免费的，为了避免合约的误操作带来的对链的消耗，ChainMaker使用gas对合约进行限制。当前单个合约最大能消耗的gas是10000000，对一般正常的合约足够使用了。ChainMaker支持的两个虚拟机gasm和wasmer对指令集消耗的gas不太一样，gasm对应消耗的gas参考文档gasm-gas.md，wasmer对应消耗的gas参考文档wasmer-gas.md。
