@@ -67,7 +67,7 @@ SYSTEM_CONTRACT_CHAIN_CONFIG
 
 GET_CHAIN_CONFIG：查询最新的链全量配置信息。
 
-GET_CHAIN_CONFIG_AT：返回指定区块的链配置信息
+GET_CHAIN_CONFIG_AT：根据区块高度查询前一个最近的链配置信息。
 
 #### 更新函数
 
@@ -252,9 +252,11 @@ GET_NODE_CHAIN_LIST：查询节点加入的链列表
 
 ### 系统证书存储合约
 
+SYSTEM_CONTRACT_CERT_MANAGE
+
 #### 函数
 
-CERT_ADD：添加证书
+CERT_ADD：添加证书，参数：
 
 CERTS_DELETE：删除证书，参数：证书哈希列表
 
@@ -268,21 +270,15 @@ ChainMaker支持用户合约的发布、调用和升级（推荐使用客户端�
 
 ChainMaker为了避免合约的误操作，除了对单个合约执行的gas限制外，还有对跨合约调用作了限制，最大允许的跨合约调用深度为5，还有就是对单个块交易的执行总时间限制，最长不能超过10s。
 
-### 交易数据结构介绍
-
-描述交易的结构和构造方式
-
 ### 开发语言
 
-描述支持的开发语言
+ChainMaker智能合约使用wasm规范，当前已支持C、Rust和go语言，并为每种开发语提供了用于开发的sdk，用户将编写的合约统一编译为wasm指令，然后通过客户端SDK创建合约接口（参考客户端开发部分）即可发布合约。合约发布之后即可以通过客户端SDK进行调用、升级等操作。
 
 ### 开发工具
 
-### 开发过程示例（合约开发、部署、调用、查看）
-
 ### 合约SDK
 
-
+参考chainmaker-sdk-for-contract-development.md文档
 
 ## 客户端开发
 
