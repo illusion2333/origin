@@ -30,7 +30,31 @@ ChainMaker有以下特性：
 
 ## 共识
 
-描述ChainMaker支持共识的分类，每类共识的形成机制
+ChainMaker支持mbft和tbft共识。mbft和tbft都分别是pbft的一种共识协议实现，在共识机制上也有一些细微差别。其中mbft支持共识治理，区块网络划分为同步网络、候选网络和共识网络。其中共识网络节点是从候选网络中选出，组成共识委员会，负责达成共识。
+
+### mbft共识机制
+
+#### mbft共识节点治理
+
+<img src="images/mbft-network.png" alt="mbft-network.png" style="zoom: 50%;" />
+
+约瑟夫环、vrf
+
+#### mbft达成共识过程
+
+mbft达成共识的过程和pbft达成共识的三阶段协议类似，基本上也是采用了三阶段协议共识，如下：
+
+- proposal阶段: 新的block作为提案，广播给其它节点。
+- endorse阶段：对合法的区块提案预投票签名广播给其他验证节点，用于证明大多数节点收到提案。
+- commit阶段: 对合法的区块提案预提交签名广播给其他验证节点，用于证明大多数节点同意提交提案。
+
+另外如下图，seal阶段是用来执行block中的交易逻辑，并seal处理结果。处理结果的stateRoot作为下一轮提案的输入参数，其本身并不属于三阶段共识部分。
+
+mbft在三阶段共识的基础上对视频切换过程进行了简化，视图切换发生在三阶段处理过程中，并不需要独立处理视图切换。在视图切换时也不需要附带状态数据。
+
+<img src="images/mbft-consensus.png" alt="mbft-consensus.png" style="zoom: 50%;" />
+
+
 
 ## 虚拟机
 
@@ -45,7 +69,7 @@ ChainMaker的虚拟机模块负责提供执行合约代码的环境，外部经�
 - gasm虚拟机则提供了一个RuntimeInstance的实现类（RuntimeImpl），可以使用RuntimeImpl的invoke方法来执行合约。
 - 虚拟机模块结构如下：
 
-<img src="/Users/tianlehan/Desktop/vm design/images/vm-modules.png" alt="vm modules.png" style="zoom: 50%;" />
+<img src="images/vm-modules.png" alt="vm-modules.png" style="zoom: 60%;" />
 
 ## 存储机制
 
@@ -53,7 +77,184 @@ ChainMaker的虚拟机模块负责提供执行合约代码的环境，外部经�
 
 ## 配置介绍
 
-介绍链的配置信息
+ChainMaker的配置主要包括节点配置（对应默认的chainmaker.yml配置文件）和链配置（对应默认的chainconfig/bcx.yml配置文件）两部分。
+
+### 节点配置
+
+```
+# 配置链Id和对应的链配置文件
+blockchain:
+  - chainId: chain1
+    genesis: chainconfig/bc1.yml
+#  - chainId: chain2
+#    genesis: chainconfig/bc2.yml
+#  - chainId: chain3
+#    genesis: chainconfig/bc3.yml
+#  - chainId: chain4
+#    genesis: chainconfig/bc4.yml
+
+# 配置节点信息
+node:
+  # 节点类型：full、spv
+  type:              full
+  # 组织Id
+  org_id:            wx-org1.chainmaker.org
+  priv_key_file:     ./certs/node/consensus1/consensus1.sign.key
+  cert_file:         ./certs/node/consensus1/consensus1.sign.crt
+  signer_cache_size: 1000
+  cert_cache_size:   1000
+
+# 配置节点网络信息
+net:
+  provider: LibP2P
+  listen_addr: /ip4/0.0.0.0/tcp/11301
+  tls:
+    enabled: true
+    priv_key_file: ./certs/node/consensus1/consensus1.tls.key
+    cert_file:     ./certs/node/consensus1/consensus1.tls.crt
+
+txpool:
+  max_txpool_size: 5120 # 普通交易池上限
+  max_config_txpool_size: 10 # config交易池的上限
+  full_notify_again_time: 30 # 交易池溢出后，再次通知的时间间隔(秒)
+
+rpc:
+  provider: grpc
+  port: 12301
+  tls:
+    # TLS模式:
+    #   disable - 不启用TLS
+    #   oneway  - 单向认证
+    #   twoway  - 双向认证
+    #mode: disable
+    #mode: oneway
+    mode:           twoway
+    priv_key_file:  ./certs/node/consensus1/consensus1.tls.key
+    cert_file:      ./certs/node/consensus1/consensus1.tls.crt
+
+monitor:
+  enabled: false
+  port: 14321
+
+pprof:
+  enabled: false
+  port: 24321
+
+storage:
+  provider: LevelDB
+  store_path: ../data/ledgerData
+
+debug:
+  # 是否开启CLI功能，过度期间使用
+  is_cli_open: true
+  is_http_open: false
+```
+
+### 链配置
+
+```
+chain_id: chain1        # 链标识
+version: v1.0.0         # 链版本
+sequence: 1             # 配置版本
+auth_type: "identity"   # 认证类型
+
+crypto:
+  hash: SHA256
+
+# 交易、区块相关配置
+block:
+  tx_timestamp_verify: true # 是否需要开启交易时间戳校验
+  tx_timeout: 600  # 交易时间戳的过期时间(秒)
+  block_tx_capacity: 100  # 区块中最大交易数
+  block_size: 10  # 区块最大限制，单位MB
+  block_interval: 2000 # 出块间隔，单位:ms
+
+# core模块
+core:
+  tx_scheduler_timeout: 10 #  [0, 60] 交易调度器从交易池拿到交易后, 进行调度的时间
+  tx_scheduler_validate_timeout: 10 # [0, 60] 交易调度器从区块中拿到交易后, 进行验证的超时时间
+
+#共识配置
+consensus:
+  # 共识类型(0-POW,1-PBFT,2-TENDERMINT,3-TBFT,4-HOTSTUFF,5-RAFT,6-SOLO)
+  type: 6
+  # 共识节点列表，组织必须出现在trust_roots的org_id中，每个组织可配置多个共识节点，节点地址采用libp2p格式
+  nodes:
+    - org_id: "wx-org1.chainmaker.org"
+      address:
+        - "/ip4/127.0.0.1/tcp/11301/p2p/QmcQHCuAXaFkbcsPUj7e37hXXfZ9DdN7bozseo5oX4qiC4"
+    - org_id: "wx-org2.chainmaker.org"
+      address:
+        - "/ip4/127.0.0.1/tcp/11302/p2p/QmeyNRs2DwWjcHTpcVHoUSaDAAif4VQZ2wQDQAUNDP33gH"
+    - org_id: "wx-org3.chainmaker.org"
+      address:
+        - "/ip4/127.0.0.1/tcp/11303/p2p/QmXf6mnQDBR9aHauRmViKzSuZgpumkn7x6rNxw1oqqRr45"
+    - org_id: "wx-org4.chainmaker.org"
+      address:
+        - "/ip4/127.0.0.1/tcp/11304/p2p/QmRRWXJpAVdhFsFtd9ah5F4LDQWFFBDVKpECAF8hssqj6H"
+    - org_id: "wx-org5.chainmaker.org"
+      address:
+        - "/ip4/127.0.0.1/tcp/11305/p2p/QmVSCXfPweL1GRSNt8gjcw1YQ2VcCirAtTdLKGkgGKsHqi"
+    - org_id: "wx-org6.chainmaker.org"
+      address:
+        - "/ip4/127.0.0.1/tcp/11306/p2p/QmPpx5dTZ4A1GQ9a4nsSoMJ72AtT3VDgcX2EVKAFxJUHb1"
+    - org_id: "wx-org7.chainmaker.org"
+      address:
+        - "/ip4/127.0.0.1/tcp/11307/p2p/QmVGSXfz6vgXBjWiZh5rV8T5nutevvunHAfEoe6Sh5Xcyx"
+  ext_config: # 扩展字段，记录难度、奖励等其他类共识算法配置
+    - key: aa
+      value: chain01_ext11
+
+# 信任组织和根证书
+trust_roots:
+  - org_id: "wx-org1.chainmaker.org"
+    root: "./certs/ca/wx-org1.chainmaker.org/ca.crt"
+  - org_id: "wx-org2.chainmaker.org"
+    root: "./certs/ca/wx-org2.chainmaker.org/ca.crt"
+  - org_id: "wx-org3.chainmaker.org"
+    root: "./certs/ca/wx-org3.chainmaker.org/ca.crt"
+  - org_id: "wx-org4.chainmaker.org"
+    root: "./certs/ca/wx-org4.chainmaker.org/ca.crt"
+  - org_id: "wx-org5.chainmaker.org"
+    root: "./certs/ca/wx-org5.chainmaker.org/ca.crt"
+  - org_id: "wx-org6.chainmaker.org"
+    root: "./certs/ca/wx-org6.chainmaker.org/ca.crt"
+  - org_id: "wx-org7.chainmaker.org"
+    root: "./certs/ca/wx-org7.chainmaker.org/ca.crt"
+
+# 权限配置（只能整体添加、修改、删除）
+permissions:
+  - resource_name: NODE_ADDR_UPDATE
+    principle:
+      rule: SELF # 规则（ANY，MAJORITY...，全部大写，自动转大写）
+      org_list: # 组织名称（组织名称，区分大小写）
+      role_list: # 角色名称（role，全部小写，自动转小写）
+        - admin
+  - resource_name: TRUST_ROOT_UPDATE
+    principle:
+      rule: SELF # 规则（ANY，MAJORITY...，全部大写）
+      org_list: # 组织名称（组织名称）
+      role_list: # 角色名称（role，全部小写）
+        - admin
+  - resource_name: CONSENSUS_EXT_DELETE
+    principle:
+      rule: MAJORITY
+      org_list:
+      role_list:
+        - admin
+  - resource_name: BLOCK_UPDATE
+    principle:
+      rule: ANY
+      org_list:
+      role_list:
+        - admin
+        - client
+  - resource_name: user_contract_create_method
+    principle:
+      rule: ANY
+      org_list:
+      role_list:
+```
 
 ## 系统合约介绍
 
