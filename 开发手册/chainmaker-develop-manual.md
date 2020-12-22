@@ -10,7 +10,7 @@
 
 ### ChainMaker的构成
 
-<img src="images/ChainMaker.png" alt="ChainMaker.png" style="zoom: 50%;" />
+<img src="images/ChainMaker.png" alt="ChainMaker.png" style="height: 300px;" />
 
 ### ChainMaker的执行流程
 
@@ -56,7 +56,7 @@ mbft达成共识的过程和pbft达成共识的三阶段协议类似，基本上
 
 #### mbft和pbft的差异
 
-- mbft在三阶段共识的基础上对视频切换过程进行了简化，视图切换发生在三阶段处理过程中，并不需要独立处理视图切换。在视图切换时也不需要附带状态数据。
+- mbft在三阶段共识的基础上对视图切换过程进行了简化，视图切换发生在三阶段处理过程中，并不需要独立处理视图切换。在视图切换时也不需要附带状态数据。
 - mbft暂时未使用聚合签名，对于多重签名来说只是将签名附加到了签名列表。
 
 <img src="images/mbft-consensus.png" alt="mbft-consensus.png" style="zoom: 50%;" />
