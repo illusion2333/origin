@@ -65,7 +65,28 @@ mbft达成共识的过程和pbft达成共识的三阶段协议类似，基本上
 
 ### tbft共识机制
 
+tbft共识也是pbft的一种，共识形成也是采用三阶段协议，即prevote、precommit和commit。具体描述如下：
 
+Every height has 0~n rounds and every round has 3 steps: Prevote、Precommit and commit.
+
+**Propose**:
+
+The leader node generates a block of new height. Other nodes will wait for the broadcast of the leader node's block in this step. After receiving the broadcast, other nodes verify the block and vote. The vote will be collect in *Prevote*.
+
+**Prevote**:
+
+All nodes wait and collect the votes of other nodes. When $+2/3$ of the votes are collected, the next step is taken.
+
+**Precommit**:
+
+Second verify the block and vote. When $+2/3$ of the votes are collected, the block will be commited. Otherwise, it will step to next round and restart from *Propose*.
+
+**Commit**:
+
+All nodes commit the block to blockchain and step to next height. There is a time limit in *Prevote* and *Precommit*. If the
+time is exceeded, it will restart in a new round.
+
+tbft和pbft的差异之处在于没有视图切换的过程，如果中间出块节点出现故障，则进入新的轮次重新开始。
 
 ## 虚拟机
 
