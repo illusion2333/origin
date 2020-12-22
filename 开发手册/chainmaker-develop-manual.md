@@ -10,7 +10,7 @@
 
 ### ChainMaker的构成
 
-<img src="images/ChainMaker.png" alt="ChainMaker.png" style="height: 300px;" />
+<img src="images/ChainMaker.png" alt="ChainMaker.png" style="height: 200px;" />
 
 ### ChainMaker的执行流程
 
