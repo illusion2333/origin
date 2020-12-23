@@ -84,18 +84,18 @@ The leader node generates a block of new height. Other nodes will wait for the b
 
 **Prevote**:
 
-All nodes wait and collect the votes of other nodes. When $+2/3$ of the votes are collected, the next step is taken.
+All nodes wait and collect the votes of other nodes. When +2/3 votes are collected, the next step is taken.
 
 **Precommit**:
 
-Second verify the block and vote. When $+2/3$ of the votes are collected, the block will be commited. Otherwise, it will step to next round and restart from *Propose*.
+Second verify the block and vote. When +2/3 of the votes are collected, the block will be commited. Otherwise, it will step to next round and restart from *Propose*.
 
 **Commit**:
 
 All nodes commit the block to blockchain and step to next height. There is a time limit in *Prevote* and *Precommit*. If the
 time is exceeded, it will restart in a new round.
 
-tbft和pbft的差异之处在于没有视图切换的过程，如果中间出块节点出现故障，则进入新的轮次重新开始。
+tbft和pbft的差异之处在于没有视图切换的过程，如果中间出块节点出现故障，则进入新的轮次使用新的出块节点重新开始。
 
 ## 虚拟机
 
@@ -150,7 +150,7 @@ ChainMaker的配置主要包括节点配置（对应默认的chainmaker.yml配�
 
 ### 节点配置
 
-```
+```yaml
 # 配置链Id和对应的链配置文件
 blockchain:
   - chainId: chain1
@@ -221,7 +221,7 @@ debug:
 
 ### 链配置
 
-```
+```yaml
 chain_id: chain1        # 链标识
 version: v1.0.0         # 链版本
 sequence: 1             # 配置版本
