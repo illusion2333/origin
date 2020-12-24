@@ -1,5 +1,7 @@
 # ChainMaker开发手册
 
+读者对象：本文档主要面向chainmaker的合约开发者和希望了解chainmaker的用户。
+
 ## ChainMaker介绍
 
 当前，区块链的发展仍处于“前工业化”时代，手工作业的运作方式是此阶段的典型特征。以比特币、以太坊为代表的公有链，以Hyperledger Fabric、Quorum为代表的联盟链各具特色，各有优劣。然而对特定的商业应用，用户往往面临两难的选择，已有区块链通常难以满足特定落地场景的特殊需求，而深度定制会导致成本高企、周期冗长。例如摩根大通银行为了满足跨银行间信息交换场景中合规及性能的需求，从权限管理、共识机制、隐私保护等多方面对以太坊进行了深度定制，将其命名为Quorum并开源。作为全球资产规模最大的银行之一，摩根大通拥有足够的资源完成这一定制项目，但对一般企业而言，这种手工定制的模式是难以接受的。
@@ -25,7 +27,7 @@ ChainMaker的应用生态中主要包含以下元素：
 
 <img src="images/business-stream.png" alt="business-stream.png" style="zoom: 40%;" />
 
-## ChainMaker的特性
+### ChainMaker的特性
 
 ChainMaker有以下特性：
 
@@ -66,9 +68,9 @@ mbft共识节点分别三种类型，分别为共识节点、候选网络节点�
 
 mbft达成共识的过程和pbft达成共识的三阶段协议类似，基本上也是采用了三阶段协议共识，如下：
 
-- proposal阶段: 新的block作为提案，广播给其它节点。
-- endorse阶段：对合法的区块提案预投票签名广播给其他验证节点，用于证明大多数节点收到提案。
-- commit阶段: 对合法的区块提案预提交签名广播给其他验证节点，用于证明大多数节点同意提交提案。
+1. proposal阶段: 新的block作为提案，广播给其它节点。
+2. endorse阶段：对合法的区块提案预投票签名广播给其他验证节点，用于证明大多数节点收到提案。
+3. commit阶段: 对合法的区块提案预提交签名广播给其他验证节点，用于证明大多数节点同意提交提案。
 
 另外如下图，seal阶段是用来执行block中的交易逻辑，并seal处理结果。处理结果的stateRoot作为下一轮提案的输入参数，其本身并不属于三阶段共识部分。
 
@@ -83,34 +85,30 @@ mbft达成共识的过程和pbft达成共识的三阶段协议类似，基本上
 
 ### tbft共识机制
 
+#### tbft共识形成过程
+
 tbft共识也是pbft的一种，共识形成也是采用三阶段协议，即prevote、precommit和commit。具体描述如下：
 
 Every height has 0~n rounds and every round has 3 steps: Prevote、Precommit and commit.
 
-**Propose**:
+1. Propose: The leader node generates a block of new height. Other nodes will wait for the broadcast of the leader node's block in this step. After receiving the broadcast, other nodes verify the block and vote. The vote will be collect in *Prevote*.
+2. Prevote: All nodes wait and collect the votes of other nodes. When +2/3 votes are collected, the next step is taken.
+3. Precommit: Second verify the block and vote. When +2/3 of the votes are collected, the block will be commited. Otherwise, it will step to next round and restart from *Propose*.
+4. Commit:All nodes commit the block to blockchain and step to next height. There is a time limit in *Prevote* and *Precommit*. If the time is exceeded, it will restart in a new round.
 
-The leader node generates a block of new height. Other nodes will wait for the broadcast of the leader node's block in this step. After receiving the broadcast, other nodes verify the block and vote. The vote will be collect in *Prevote*.
-
-**Prevote**:
-
-All nodes wait and collect the votes of other nodes. When +2/3 votes are collected, the next step is taken.
-
-**Precommit**:
-
-Second verify the block and vote. When +2/3 of the votes are collected, the block will be commited. Otherwise, it will step to next round and restart from *Propose*.
-
-**Commit**:
-
-All nodes commit the block to blockchain and step to next height. There is a time limit in *Prevote* and *Precommit*. If the
-time is exceeded, it will restart in a new round.
+#### tbft和pbft的差异
 
 tbft和pbft的差异之处在于没有视图切换的过程，如果中间出块节点出现故障，则进入新的轮次使用新的出块节点重新开始。
 
 ## 虚拟机
 
+### ChainMaker合约执行原理
+
 ChainMaker的虚拟机模块负责提供执行合约代码的环境，外部经过编译的合约代码在需要时即可通过虚拟机模块提供的接口进行执行。ChainMaker使用wasm标准来执行智能合约，对wasm字节码，虚拟机同时支持以解释执行的gasm和以编译方式执行的wasmer两种执行方式。合约的编译和执行原理如下：
 
 <img src="images/vm-exec.png" alt="vm-exec.png" style="zoom: 100%;" />
+
+### ChainMaker虚拟机模块
 
 虚拟机模块通过统一的VmManager对外提供接口，包括执行系统合约和用户合约。同时支持wasmer和gasm两个虚拟机。
 
@@ -1942,6 +1940,8 @@ go build -o chainmaker
 如果单独部署的节点想要加入某个链，需要将自己组织的证书添加到节点中去
 
 #### 添加节点
+
+
 
 #### ChainMaker的使用场景介绍（存证）
 
