@@ -21,7 +21,7 @@ ChainMaker的应用生态中主要包含以下元素：
 - Tools：ChainMaker提供一系列工具集方便用户命令行方式对链部署和管理操作。比如证书生成、链配置、快速部署等。
 - Consensus Node：共识节点，组织部署的用于参与共识的节点。
 
-<img src="images/ChainMaker.png" alt="ChainMaker.png" style="zoom: 50%;" />
+<img src="images/chainmaker.png" alt="chainmaker.png" style="zoom: 50%;" />
 
 ### ChainMaker的执行流程
 
@@ -543,8 +543,6 @@ CERTS_QUERY：查询证书，参数：证书哈希列表
 
 ChainMaker支持用户合约的发布、调用和升级（推荐使用客户端开发中介绍的SDK完成），对组织中的成员这些过程都是免费的，为了避免合约的误操作带来的对链的消耗，ChainMaker使用gas对合约进行限制。当前单个合约最大能消耗的gas是10000000，对一般正常的合约足够使用了。ChainMaker支持的两个虚拟机gasm和wasmer对指令集消耗的gas不太一样，gasm对应消耗的gas参考文档gasm-gas.md，wasmer对应消耗的gas参考文档wasmer-gas.md。
 
-
-
 ChainMaker为了避免合约的误操作，除了对单个合约执行的gas限制外，还有对跨合约调用作了限制，最大允许的跨合约调用深度为5，还有就是对单个块交易的执行总时间限制，最长不能超过10s。
 
 ### 开发语言
@@ -581,13 +579,17 @@ chainmaker sdk为开发者提供了友好封装的接口，便于开发者基于
 
 Java SDK定义了ChainClient、ChainNode、ChainManager和ResponseInfo几个类，分别介绍如下：
 
-ChainClient：客户端开发最重要也是使用最多的类，代表逻辑上的一条链，所有客户端对链的操作接口都来自ChainClient。
+- ChainClient：客户端开发最重要也是使用最多的类，代表逻辑上的一条链，所有客户端对链的操作接口都来自ChainClient。
 
-ChainNode：表示链的一个节点信息，它定义了节点的各种属性，如节点连接的RPC地址，连接所用的密钥信息等，一个ChainClient对象需要包含一个或多个ChainNode，这样才能对过节点实现各种功能。
 
-ChainManager：负责管理所有创建过的链，是一个使用单例模式的链管理类，避免用户同一条链创建多个ChainClient。用户可以使用ChainManager来检查某条链是否已经创建，或者直接创建某条链，如果这条链已经创建，ChainManager会直接返回之前已经创建过的
+- ChainNode：表示链的一个节点信息，它定义了节点的各种属性，如节点连接的RPC地址，连接所用的密钥信息等，一个ChainClient对象需要包含一个或多个ChainNode，这样才能对过节点实现各种功能。
 
-ResponseInfo：对于创建合约、更新合约、调用合约和查询合约几个接口返回响应内容，其中包括交易ID，用于当用户请求超时后，后续主动查询交易结果。
+
+- ChainManager：负责管理所有创建过的链，是一个使用单例模式的链管理类，避免用户同一条链创建多个ChainClient。用户可以使用ChainManager来检查某条链是否已经创建，或者直接创建某条链，如果这条链已经创建，ChainManager会直接返回之前已经创建过的
+
+
+- ResponseInfo：对于创建合约、更新合约、调用合约和查询合约几个接口返回响应内容，其中包括交易ID，用于当用户请求超时后，后续主动查询交易结果。
+
 
 ChainClient对象给用户使用。数据结构定义如下：
 
