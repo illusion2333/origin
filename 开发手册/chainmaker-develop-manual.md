@@ -10,6 +10,15 @@
 
 ### ChainMaker的构成
 
+ChainMaker的应用生态中主要包含以下元素：
+
+- APP：ChainMaker的客户端应用，用户可以根据区块链具体的应用场景编写相应的APP，在开发时可以借助客户端SDK的能力来进行快速开发。
+- Chain Explorer：区块流览器负责完成区块链信息的检索和链管理功能，比如区块信息查看，链配置等功能，也可以将区块流览器认为是一种特殊通用的APP，同样也可以借助客户端SDK进行快速开发。
+- Light Node：也叫SPV节点，主要为了减少链数据的存储而构建的特殊节点，不参与共识，只同步用户关心的交易和基本的链信息（如block header）。
+- SDK：包括客户端SDK和合约开发SDK，客户端SDK帮助用户通过RPC和链进行沟通，完成合约创建、调用、链管理等功能。合约开发SDK在语言层面提供给用户开发使用的接口，方便用户开发合约使用。
+- Tools：ChainMaker提供一系列工具集方便用户命令行方式对链部署和管理操作。比如证书生成、链配置、快速部署等。
+- Consensus Node：共识节点，组织部署的用于参与共识的节点。
+
 <img src="images/ChainMaker.png" alt="ChainMaker.png" style="zoom: 50%;" />
 
 ### ChainMaker的执行流程
