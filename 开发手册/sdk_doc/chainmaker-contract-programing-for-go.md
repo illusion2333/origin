@@ -1,6 +1,42 @@
-# 智能合约开发 SDK
+## 智能合约编写示例
 
-ChainMaker 的智能合约支持多语言开发，目前已支持 C、Go 和 Rust三种语言。上述三种语言都使用 WASM 规范。Rust 合约的性能较好，但是编写难度较大；C 合约的性能和编写难度比较适中；Go 合约使用起来更方便。ChainMaker分别为三种语言开发提供了SDK，方便开发者使用不同的语言进行合约开发。
+下面的代码示例说明了关键接口的使用方法。
+
+```go
+func init() {     
+    // 使用 PutState() 接口，可以写入合约信息并传到链上。
+	  PutState("fruit", "apple", "1") 	
+    PutState("fruit", "banana", "1")
+    PutState("meat", "pork", "1") 	
+    PutState("meat", "chicken", "1") 
+}  
+
+func query() {     
+   // 使用 Args() 接口可以解析用户的输入参数，并存于一个 map 变量   	
+   // 此处 m 为 map[string]interface{} 类型的变量，开发者可通过其去获取想要的数据 	
+    m := Args() 	
+    category := m["category"].(string)     
+    // 等价于 name := m["name"].(string)，Args() 与 Arg() 的作用几乎一致，不过当需要获取多个参数时，使用 Args() 程序效率更高，只需要解析一次用户输入，就可多次获取数据。而 Arg() 获取一次参数就需要解析一次。
+    name := Arg("name").(string)     
+    // 使用 GetState() 接口，可以从链上读取合约信息。
+	  stateOld := GetState(category, name)     
+    // 把用户操作写入日志 	
+    SuccessResult(name + " query state: " + stateOld) 	         
+    LogMessage("ok: " + name + " query state: " + stateOld) 
+}
+```
+
+#### 
+
+### go合约编译方法
+
+Go 版本的智能合约开发 SDK 使用 TinyGo 编译器，将用 Go 语言编写的智能合约编译为 WASM 字节码。在编译的时候，需要将 SDK 和用户编写的智能合约放入同一个文件夹，并在此文件夹的当前路径执行如下编译命令：
+
+```shell
+tinygo build -no-debug -opt=s -o name.wasm -target wasm
+```
+
+命令中 “name.wasm” 为生成的WASM 字节码的文件名，由用户自行指定。
 
 ## SDK接口说明
 
@@ -306,48 +342,6 @@ func GetTxId() string {}
 | :------: | ------ |
 |  string  | 交易ID |
 
-
-
-### C++ SDK API
-
-```c++
-// 该接口可返回属性名为 “name” 的参数的属性值。
-bool arg(const std::string& name, std::string& value){}
-// 获取key为"key"的值
-bool get_object(const std::string& key, std::string* value){}
-// 存储key为"key"的值
-bool put_object(const std::string& key, const std::string& value){}
-// 删除key为"key"的值
-bool delete_object(const std::string& key) {}
-// 返回成功的结果
-void success(const std::string& body) {}
-// 返回失败结果
-void error(const std::string& body) {}
-// 调用合约
-bool call(const std::string& contract,
-                      const std::string& method,
-                      const std::map<std::string, std::string>& args,
-                      Response* response){}
-// 输出日志事件
-void log(const std::string& body) {}
-```
-
-## 编译方法
-
-### go合约编译方法
-
-Go 版本的智能合约开发 SDK 使用 TinyGo 编译器，将用 Go 语言编写的智能合约编译为 WASM 字节码。在编译的时候，需要将 SDK 和用户编写的智能合约放入同一个文件夹，并在此文件夹的当前路径执行如下编译命令：
-
-```shell
-tinygo build -no-debug -opt=s -o name.wasm -target wasm
-```
-
-命令中 “name.wasm” 为生成的WASM 字节码的文件名，由用户自行指定。
-
-### c++合约编译方法
-
-C++ 版本的智能合约使用emcc 1.38.48版本编译器进行编译，并需要使用emcc 编译 protobuf ，protobuf 使用3.7.1版本，编译之后执行emmake make。
-
 ### 使用 docker 编译得到 WASM 文件
 
 在使用我们所提供的SDK编写好智能合约后，我们提供了一个docker环境，用户只需把其编写的智能合约作为输入，即可得到相应的WASM文件。用户可以自己搭建本地的 docker 环境；也可使用我们提供的 http 接口，通过服务器来编译得到 WASM 文件。
@@ -398,7 +392,7 @@ curl -F "file=@main.c" -X POST 0.0.0.0:8000 --output main.wasm
 
 我们已经在服务器配置了支持 C、Go 和 Rust 语言智能合约翻译为 WASM 字节码的编译环境。使用我们所提供的接口，即可获取智能合约的 SDK，并且可以把编写好的智能合约编译成为 WASM 字节码。
 
-POST 请求：http://192.168.1.120:8000/getsdk
+POST 请求：http://x.x.x.x:8000/getsdk
 
 参数：
 
@@ -430,33 +424,5 @@ curl -F "type=go" -F "file=@go.tar.gz"  -X POST http://192.168.1.120:8000/towasm
 ```
 
 该命令把智能合约的源文件（已提前打包）上传至服务器，返回得到对于的 WASM 文件，"type=go"表示需要编译的 Go 类型的文件，"file=@go.tar.gz"表示把智能合约源文件的压缩包 go.tar.gz 上传至服务器，“go.wasm” 表示服务器返回的 WASM 文件，名字可由用户自己指定。
-
-## 智能合约编写示例
-
-下面的代码示例说明了关键接口的使用方法。
-
-```go
-func init() {     
-    // 使用 PutState() 接口，可以写入合约信息并传到链上。
-	  PutState("fruit", "apple", "1") 	
-    PutState("fruit", "banana", "1")
-    PutState("meat", "pork", "1") 	
-    PutState("meat", "chicken", "1") 
-}  
-
-func query() {     
-   // 使用 Args() 接口可以解析用户的输入参数，并存于一个 map 变量   	
-   // 此处 m 为 map[string]interface{} 类型的变量，开发者可通过其去获取想要的数据 	
-    m := Args() 	
-    category := m["category"].(string)     
-    // 等价于 name := m["name"].(string)，Args() 与 Arg() 的作用几乎一致，不过当需要获取多个参数时，使用 Args() 程序效率更高，只需要解析一次用户输入，就可多次获取数据。而 Arg() 获取一次参数就需要解析一次。
-    name := Arg("name").(string)     
-    // 使用 GetState() 接口，可以从链上读取合约信息。
-	  stateOld := GetState(category, name)     
-    // 把用户操作写入日志 	
-    SuccessResult(name + " query state: " + stateOld) 	         
-    LogMessage("ok: " + name + " query state: " + stateOld) 
-}
-```
 
 #### 
