@@ -600,5 +600,28 @@ public void stop() {}
    }
 ```
 
-## 4 Jar包引用方式
+## 4 SDK Jar包引用方式
+
+### 编译
+
+```
+git clone https://git.code.tencent.com/ChainMaker/chainmaker-sdk-java.git
+// 说明：需要使用openjdk 1.8.x并提前安装gradle，也可以使用intelliJ IDEA打开项目进行编译
+cd chainamker-sdk-java
+./gradle build
+```
+
+### 使用
+
+1. 导入Jar包，这里使用IntelliJ为示例引用Jar包，将编译好的jar包拷贝到需要使用sdk的项目下（一般可以在项目下建一个libs目录），然后打开IntelliJ IDEA->File->Project Structures，如下图点击“+”号，选择JARs or Directories，选中Jar包点击open即可。
+
+<img src="../images/add-sdk-jar.png" alt="image-20201225143334480" style="zoom:50%;" />
+
+2. 引用
+
+   在要使用sdk的源文件里使用import引用sdk包，如下：
+
+   ```
+   import org.chainmaker.sdk.*;
+   ```
 
