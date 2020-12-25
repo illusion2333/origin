@@ -1,6 +1,6 @@
-# ChainMaker开发手册
+# ChainMaker用户手册
 
-读者对象：本文档主要面向chainmaker的合约开发者和希望了解chainmaker的用户。
+读者对象：本文档主要面向chainmaker的开发者、产品人员和希望了解chainmaker运行机制的用户。
 
 ## 1 ChainMaker介绍
 
@@ -87,7 +87,7 @@ mbft达成共识的过程和pbft达成共识的三阶段协议类似，基本上
 - mbft在三阶段共识的基础上对视图切换过程进行了简化，视图切换发生在三阶段处理过程中，并不需要独立处理视图切换。在视图切换时也不需要附带状态数据。
 - mbft暂时未使用聚合签名，对于多重签名来说只是将签名附加到了签名列表。
 
-<img src="images/mbft-consensus.png" alt="mbft-consensus.png" style="zoom: 70%;" />
+<img src="images/mbft-consensus.png" alt="mbft-consensus.png" style="zoom: 80%;" />
 
 
 
@@ -139,16 +139,16 @@ ChainMaker存储模块负责存储区块链上的区块、交易、账本数据�
 
 ### 5.1 区块提交存储流程
 
-1.	首先序列化后的区块数据、读写集列表、以及最新区块高度写入Block Binary Log，用于异常中断后的恢复。同时为了提高性能，加入cache层，新区块提交请求在更新完block binary log之后，再将区块数据（包括区块、交易、状态数据、读写集）写入cache。更新完log和cache后即可返回，由后台线程异步更新Block DB、State DB、History DB。
-2.	在Block DB中记录区块信息与交易信息，其中交易信息以txid作为key存储，区块信息以blockNum作为key存储，区块信息中只记录交易ID列表，同时索引blockHash到blockNum的映射关系，同时Block DB中记录最新的区块高度（LastBlockNum）作为checkpoint，以批量事务的方式提交，保证批处理的原子性。
-3.	在State DB中记录交易修改的state数据，key为合约名与对象主键的组合：<contractName, ObjectKey>，同时记录最新的区块高度（LastBlockNum）作为checkpoint，以批量事务的方式提交，保证批处理的原子性。
-4.	在History DB中记录交易的读写集，同时记录最新的区块高度（LastBlockNum）作为checkpoint，以批量事务的方式提交，保证批处理的原子性。
+1.	首先序列化后的区块数据、读写集列表、以及最新区块高度写入Block binary log，用于异常中断后的恢复。同时为了提高性能，加入cache层，新区块提交请求在更新完Block binary log之后，再将区块数据（包括区块、交易、状态数据、读写集）写入cache。更新完log和cache后即可返回，由后台线程异步更新Block DB、State DB和History DB。
+2.	在Block DB中记录区块信息与交易信息，其中交易信息以TxID作为key存储，区块信息以BlockHeight作为key存储，区块信息中只记录交易ID列表，同时索引BlockHash到BlockHeight的映射关系，同时Block DB中记录最新的区块高度（LastBlockHeight）作为checkpoint，以批量事务的方式提交，保证批处理的原子性。
+3.	在State DB中记录交易修改的state数据，key为合约名与对象主键的组合：<contractName, ObjectKey>，同时记录最新的区块高度（LastBlockHeight）作为checkpoint，以批量事务的方式提交，保证批处理的原子性。
+4.	在History DB中记录交易的读写集，读写集以TxID作为key，同时记录最新的区块高度（LastBlockHeight）作为checkpoint，以批量事务的方式提交，保证批处理的原子性。
 
 ### 5.2 账本恢复流程
 
-如果区块在提交过程中，单个存储组件发生异常，将会导致不同DB之间的数据不一致，所以在发生中途异常进程将会退出，重启后进入恢复流程：
-1.	分别从Block Binary log、Block DB、State DB、History DB中获取最新的区块高度，以Block Binary log中的区块高度作为基准高度，判断其他DB是否落后基准高度。
-2.	如果存在DB落后基准高度，则从Block Bianry log中获取缺失的区块及读写集，依次提交到落后DB中。
+如果在提交区块过程中，单个数据库存储发生异常，将会导致数据库之间的数据不一致，程序遇到这种情况后会主动退出。然后系统在重启时会进入恢复流程：
+1.	分别从Block binary log、Block DB、State DB、History DB中获取最新的区块高度，以Block binary log中的区块高度作为基准高度，判断其他DB是否落后基准高度。
+2.	如果存在DB落后基准高度，则从Block bianry log中获取缺失的区块及读写集，依次提交到落后DB中。
 3.	所有DB同步到基准高度后，存储模块启动完成，BlockChain模块继续调度其他模块完成启动。
 
 ### 5.3 账本查询流程
@@ -323,6 +323,50 @@ ChainMaker提供了一系列的系统合约供开发者调用，包链配置合�
 
 合约名称：SYSTEM_CONTRACT_CHAIN_CONFIG
 
+链配置信息定义：
+
+```protobuf
+message ChainConfig {
+    string                          chain_id         = 1; // 链标识
+    string                          version          = 2; // 链版本
+    string                          auth_type        = 3; // 认证类型
+    uint64                          sequence         = 4; // 序列号
+    CryptoConfig                    crypto           = 5; // 算法配置
+    BlockConfig                     block            = 6; // 区块配置
+    CoreConfig                      core             = 7; // core配置
+    ConsensusConfig                 consensus        = 8; // 共识配置
+    repeated TrustRootConfig        trust_roots      = 9; // 联盟成员，联盟链配置初始成员；公链无需配置。key：节点标识；value：地址，节点公钥/CA证书
+    repeated Permission             permissions      = 10; // 权限配置
+}
+
+// crypto配置
+message CryptoConfig {
+    string hash    = 1; // 是否需要开启交易时间戳校验
+}
+
+// 区块配置
+message BlockConfig {
+    bool   tx_timestamp_verify      = 1; // 是否需要开启交易时间戳校验
+    uint32 tx_timeout               = 2; // 交易时间戳的过期时间(秒)
+    uint32 block_tx_capacity        = 3; // 区块中最大交易数
+    uint32 block_size               = 4; // 区块最大限制，单位MB
+    uint32 block_interval           = 5; // 出块间隔，单位:ms
+}
+
+// core配置
+message CoreConfig {
+    uint64 tx_scheduler_timeout                 = 1; // [0, 60] 交易调度器从交易池拿到交易后, 进行调度的时间
+    uint64 tx_scheduler_validate_timeout        = 2; // [0, 60] 交易调度器从区块中拿到交易后, 进行验证的超时时间
+}
+
+// 共识配置
+message ConsensusConfig {
+    ConsensusType           type            = 1; // 共识类型
+    repeated OrgConfig      nodes           = 2; // 节点机构列表
+    repeated KeyValuePair   ext_config      = 3; // 扩展字段，记录难度、奖励等其他类共识算法配置
+}
+```
+
 #### 7.1.1 查询链配置函数
 
 函数名称：GET_CHAIN_CONFIG，说明：查询最新的链全量配置信息。
@@ -340,7 +384,7 @@ ChainMaker提供了一系列的系统合约供开发者调用，包链配置合�
 - tx_scheduler_timeout：uint，交易调度器从交易池拿到交易后, 进行调度的时间，其值范围为[0, 60]
 - tx_scheduler_validate_timeout：uint，交易调度器从区块中拿到交易后, 进行验证的超时时间，其值范围为[0, 60]
 
-#### 7.1.4 更细block和txpool的参数
+#### 7.1.4 更新block和txpool的参数
 
 函数名称：BLOCK_UPDATE，说明：该方法需要多签
 
@@ -556,31 +600,61 @@ ChainMaker提供了一系列的系统合约供开发者调用，包链配置合�
 
 函数名称：GET_TX_BY_TX_ID
 
-参数：交易ID
+参数说明：
+
+- 交易ID
+
+返回值：
+
+- TransactionInfo，包括交易体和块高度
 
 #### 7.2.2 根据高度查询区块
 
 函数名称：GET_BLOCK_BY_HEIGHT
 
-参数：区块高度
+参数说明：
+
+- 区块高度
+
+返回值：
+
+- BlockInfo，包括块数据和读写集信息
 
 #### 7.2.3 查询链信息
 
 函数名称：GET_CHAIN_INFO
 
+返回值：
+
+- ChainInfo，包括区块高度和节点列表
+
 #### 7.2.4 获取最后一个配置块
 
 函数名称：GET_LAST_CONFIG_BLOCK
+
+返回值：
+
+- BlockInfo，包括块数据和读写集信息
 
 #### 7.2.5 根据HASH值查找区块
 
 函数名称：GET_BLOCK_BY_HASH
 
-参数：区块HASH值
+参数说明：
+
+- 区块HASH值
+
+返回值：
+
+- BlockInfo，包括块数据和读写集信息
 
 #### 7.2.5 查询节点加入的链列表
 
 函数名称：GET_NODE_CHAIN_LIST
+
+返回值：
+
+- Chain Id列表
 
 ### 7.3 系统证书存储合约
 
@@ -602,6 +676,10 @@ ChainMaker提供了一系列的系统合约供开发者调用，包链配置合�
 
 参数：证书哈希列表
 
+返回值：
+
+- CertInfos，证书列表，单个证书信息包括证书的哈希值和证书内容
+
 ## 8 合约开发
 
 用户的合约开发的限制说明：
@@ -618,10 +696,10 @@ ChainMaker提供了一系列的系统合约供开发者调用，包链配置合�
 请参考：[《chain maker-contract-programing-for-c++.md》](./sdk_doc/chainmaker-contract-programing-c++.md)
 
 ### 8.2 Go合约开发流程
-请参考：[《chain maker-contract-programing-go.md》](./sdk_doc/chainmaker-contract-programing-go.md)
+请参考：[《chain maker-contract-programing-for-go.md》](./sdk_doc/chainmaker-contract-programing-go.md)
 
 ### 8.3 Rust合约开发流程
-请参考：[《chain maker-contract-programing-rust.md》](./sdk_doc/chainmaker-contract-sdk-rust.md)
+请参考：[《chain maker-contract-programing-for-rust.md》](./sdk_doc/chainmaker-contract-sdk-rust.md)
 ## 9 客户端开发
 
 chainmaker sdk为开发者提供了友好封装的接口，便于开发者基于chainmaker开发各种功能的应用产品。sdk一方面在用户侧为用户封装功能接口，方便用户创建各类请求和签名，另一方面通过和chainmaker节点建立连接，将用户的请求封装成节点能够识别的请求结构并通过RPC接口将请求转发给节点，并将节点的执行结果返回给调用者。

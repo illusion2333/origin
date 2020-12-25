@@ -84,8 +84,9 @@ public class ResponseInfo {
 **返回值说明**
     返回payload字节数组
 ```java
-    public byte[] createPayloadOfContractCreation(String contractName, String version, Contract.RuntimeType runtimeType, 
-                                                  Map<String, String> params, byte[] byteCodes) {
+    public byte[] createPayloadOfContractCreation(String contractName, String version, 
+                                                  Contract.RuntimeType runtimeType, Map<String, String> params, 
+                                                  byte[] byteCodes) {
     }
 ```
 
@@ -113,8 +114,7 @@ public class ResponseInfo {
 **参数说明**
   - payloadWithEndorsementsBytes: 带签名的合约内容
   - rpcCallTimeout: 调用rcp接口超时时间, 单位：毫秒
-  - syncResultTimeout: 同步获取执行结果超时时间，小于等于0代表不等待执行结果，
-    直接返回（返回信息里包含交易ID），单位：毫秒
+  - syncResultTimeout: 同步获取执行结果超时时间，小于等于0代表不等待执行结果，直接返回（返回信息里包含交易ID），单位：毫秒
 ```java
     public ResponseInfo createContract(byte[] payloadWithEndorsementsBytes, long rpcCallTimeout,
                                        long syncResultTimeout) throws InvalidProtocolBufferException {
@@ -167,7 +167,7 @@ public class ResponseInfo {
   - contractName: 合约名
   - method: 方法名
   - params: 执行参数
-  - timeout: 执行超时时间
+  - timeout: 执行超时时间，单位毫秒
 ```java
     public ResponseInfo queryContract(String contractName, String method,
                                       Map<String, String> params, long timeout) {
@@ -178,6 +178,7 @@ public class ResponseInfo {
 #### 2.2.1 根据交易Id查询交易
 **参数说明**
   - txId: 交易ID
+  - timeout：超时时间，单位毫秒
 ```java
     public ChainmakerTransaction.TransactionInfo getTxByTxId(String txId, long timeout)
             throws InvalidProtocolBufferException {
@@ -188,6 +189,7 @@ public class ResponseInfo {
 **参数说明**
   - blockHeight: 区块高度
   - withRWSet: 是否返回读写集
+  - timeout：超时时间，单位毫秒
 ```java
     public ChainmakerBlock.BlockInfo getBlockByHeight(long blockHeight, boolean withRWSet, long timeout)
             throws InvalidProtocolBufferException {
@@ -198,6 +200,7 @@ public class ResponseInfo {
 **参数说明**
   - blockHash: 区块高度
   - withRWSet: 是否返回读写集
+  - timeout：超时时间，单位毫秒
 ```java
     public ChainmakerBlock.BlockInfo getBlockByHash(String blockHash, boolean withRWSet, long timeout)
             throws InvalidProtocolBufferException  {
@@ -208,6 +211,7 @@ public class ResponseInfo {
 **参数说明**
   - txId: 交易Id
   - withRWSet: 是否返回读写集
+  - timeout：超时时间，单位毫秒
 ```java
     public ChainmakerBlock.BlockInfo getBlockByTxId(String txId, boolean withRWSet, long timeout)
             throws InvalidProtocolBufferException {
@@ -217,6 +221,7 @@ public class ResponseInfo {
 #### 2.2.5 查询上一个配置块
 **参数说明**
   - withRWSet: 是否返回读写集
+  - timeout：超时时间，单位毫秒
 ```java
     public ChainmakerBlock.BlockInfo getLastConfigBlock(boolean withRWSet, long timeout)
             throws InvalidProtocolBufferException {
@@ -224,6 +229,9 @@ public class ResponseInfo {
 ```
 
 #### 2.2.6 查询节点已部署的所有合约信息
+
+返回值说明：
+
    - 包括：合约名、合约版本、运行环境、交易ID
 ```java
     public Contract.ContractInfo getContractInfo(long timeout)
@@ -232,7 +240,15 @@ public class ResponseInfo {
 ```
 
 #### 2.2.7 查询节点加入的链信息
-   - 返回ChainId清单
+
+参数说明：
+
+   - timeout：超时时间，单位毫秒
+
+返回值说明：
+
+-  返回ChainId清单
+
 ```java
     public Discovery.ChainList getNodeChainList(long timeout)
             throws InvalidProtocolBufferException {
@@ -240,6 +256,9 @@ public class ResponseInfo {
 ```
 
 #### 2.2.8 查询链信息
+
+返回值说明：
+
   - 包括：当前链最新高度，链节点信息
 ```java
     public Discovery.ChainInfo getChainInfo(long timeout)
@@ -248,6 +267,52 @@ public class ResponseInfo {
 ```
 
 ### 2.3 链配置接口
+
+链配置信息定义如下：
+
+```protobuf
+message ChainConfig {
+    string                          chain_id         = 1; // 链标识
+    string                          version          = 2; // 链版本
+    string                          auth_type        = 3; // 认证类型
+    uint64                          sequence         = 4; // 序列号
+    CryptoConfig                    crypto           = 5; // 算法配置
+    BlockConfig                     block            = 6; // 区块配置
+    CoreConfig                      core             = 7; // core配置
+    ConsensusConfig                 consensus        = 8; // 共识配置
+    repeated TrustRootConfig        trust_roots      = 9; // 联盟成员，联盟链配置初始成员；公链无需配置。key：节点标识；value：地址，节点公钥/CA证书
+    repeated Permission             permissions      = 10; // 权限配置
+}
+
+// crypto配置
+message CryptoConfig {
+    string hash    = 1; // 是否需要开启交易时间戳校验
+}
+
+// 区块配置
+message BlockConfig {
+    bool   tx_timestamp_verify      = 1; // 是否需要开启交易时间戳校验
+    uint32 tx_timeout               = 2; // 交易时间戳的过期时间(秒)
+    uint32 block_tx_capacity        = 3; // 区块中最大交易数
+    uint32 block_size               = 4; // 区块最大限制，单位MB
+    uint32 block_interval           = 5; // 出块间隔，单位:ms
+}
+
+// core配置
+message CoreConfig {
+    uint64 tx_scheduler_timeout                 = 1; // [0, 60] 交易调度器从交易池拿到交易后, 进行调度的时间
+    uint64 tx_scheduler_validate_timeout        = 2; // [0, 60] 交易调度器从区块中拿到交易后, 进行验证的超时时间
+}
+
+// 共识配置
+message ConsensusConfig {
+    ConsensusType           type            = 1; // 共识类型
+    repeated OrgConfig      nodes           = 2; // 节点机构列表
+    repeated KeyValuePair   ext_config      = 3; // 扩展字段，记录难度、奖励等其他类共识算法配置
+}
+
+```
+
 #### 3.1 查询最新链配置
 ```java
     public ChainmakerConfig.ChainConfig getChainConfig(long timeout)

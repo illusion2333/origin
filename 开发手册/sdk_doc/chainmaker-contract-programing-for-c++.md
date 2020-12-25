@@ -1,6 +1,12 @@
 # ChainMaker Contract Programing for C++
 
-## 合约编写流程
+## 1 合约编写流程
+
+### SDK引入
+
+### 合约代码编写
+
+### 函数导出
 
 ## 合约编写示例
 
