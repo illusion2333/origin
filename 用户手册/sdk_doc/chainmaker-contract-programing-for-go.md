@@ -47,106 +47,54 @@ tinygo build -no-debug -opt=s -o name.wasm -target wasm
 ### GetState
 
 ```  go
-// 获取合约账户信息。该接口可从链上获取类别 “key” 下属性名为 “name” 的状态信息。
+// 获取合约账户信息。该接口可从链上获取类别 “key” 下属性名为 “field” 的状态信息。
+// @param key: 需要查询的key值
+// @param field: 需要查询的key值下属性名为field
+// @return1: 查询到的value值
+// @return2: 0: success, 1: failed
 func GetState(key string, field string) (string, ResultCode) {} 
 ```
-
-输入说明
-
-| 输入参数 | 说明                       |
-| :------: | :------------------------- |
-|   key    | 需要查询的key值            |
-|  field   | key值下属性名为field的属性 |
-
-输出说明
-
-|  输出类型  | 说明                       |
-| :--------: | -------------------------- |
-|   string   | 根据key和name查询到的值    |
-| ResultCode | 0表示操作成，1表示操作失败 |
 
 ### GetStateFromKey
 
 ```go
 // 获取合约账户信息。该接口可以从链上获取类别为key的状态信息
+// @param key: 需要查询的key值
+// @return1: 查询到的值
+// @return: 0: success, 1: failed
 func GetStateFromKey(key string) (string, ResultCode) {}
 ```
-
-输入说明
-
-| 输入参数 | 说明            |
-| :------: | :-------------- |
-|   key    | 需要查询的key值 |
-
-输出说明
-
-| 输出参数 | 说明     |
-| :------: | -------- |
-|    1     | 更新失败 |
-|    0     | 更新成功 |
 
 ### PutState
 
 ```go
-// 写入合约账户信息。该接口可把类别 “key” 下属性名为 “name” 的状态更新到链上。更新成功返回0，失败则返回1。
+// 写入合约账户信息。该接口可把类别 “key” 下属性名为 “filed” 的状态更新到链上。更新成功返回0，失败则返回1。
+// @param key: 需要存储的key值
+// @param field: 需要存储的key值下属性名为field
+// @param value: 需要存储的value值
+// @return: 0: success, 1: failed
 func PutState(key string, field string, value string) ResultCode {}
 ```
-
-输入说明
-
-| 输入参数 | 说明                         |
-| :------: | ---------------------------- |
-|   key    | 需要存入的key值              |
-|  field   | key值对应的field属性         |
-|  value   | key值和name属性对应的value值 |
-
-输出说明
-
-| 输出参数 | 说明     |
-| :------: | -------- |
-|    1     | 更新失败 |
-|    0     | 更新成功 |
 
 ### PutStateFromKey
 
 ```go
 // 写入合约账户信息。
+// @param key: 需要存储的key值
+// @param value: 需要存储的value值
+// @return: 0: success, 1: failed
 func PutStateFromKey(key string, value string) ResultCode
 ```
-
-输入说明
-
-| 输入参数 | 说明              |
-| :------: | :---------------- |
-|   key    | 需要写入值的key值 |
-
-输出说明
-
-| 输出参数 | 说明     |
-| :------: | -------- |
-|    1     | 更新失败 |
-|    0     | 更新成功 |
 
 ### DeleteState
 
 ```go
 // 删除合约账户信息。该接口可把类别 “key” 下属性名为 “name” 的状态从链上删除。
+// @param key: 需要删除的key值
+// @param field: 需要删除的key值下属性名为field
+// @return: 0: success, 1: failed
 func DeleteState(key string, field string) ResultCode {}
 ```
-
-输入说明
-
-| 输入参数 | 说明                       |
-| :------: | -------------------------- |
-|   key    | 需要查询的key值            |
-|  field   | key值下属性名为field的属性 |
-
-输出说明
-
-| 输出参数 | 说明     |
-| :------: | -------- |
-|    1     | 更新失败 |
-|    0     | 更新成功 |
 
 ### getArgsMap()
 
@@ -155,186 +103,108 @@ func DeleteState(key string, field string) ResultCode {}
 func getArgsMap() error {} 
 ```
 
-输出说明
-
-| 输入参数 | 说明         |
-| :------: | ------------ |
-|   nil    | 数据解析失败 |
-
 ### Args
 
 ```go
 // 该接口调用 getArgsMap() 接口，把 json 格式的数据反序列化，并将解析出的数据返还给用户。
+// @return: 参数map
 func Args() map[string]interface{} {}  
 ```
-
-输出说明
-
-|        输出类型        | 说明                    |
-| :--------------------: | ----------------------- |
-| map[string]interface{} | 解析成功的数据用map存储 |
 
 ### Arg
 
 ```go
 // 该接口可返回属性名为 “key” 的参数的属性值。
+// @param key: 获取的参数名
+// @return: 获取的参数值
 func Arg(key string) interface{} {}  
 ```
-
-输入说明
-
-| 输入参数 | 说明            |
-| :------: | --------------- |
-|   key    | 需要查询的key值 |
-
-输出说明
-
-|  输出类型   | 说明              |
-| :---------: | ----------------- |
-| interface{} | 根据key查询到的值 |
 
 ###  SuccessResult
 
 ```go
 // 该接口可记录用户操作成功的信息，并将操作结果记录到链上。
+// @param msg: 成功信息
 func SuccessResult(msg string) {}  
 ```
-
-输入说明
-
-| 输入参数 | 说明               |
-| :------: | ------------------ |
-|   msg    | 成功操作的日志信息 |
 
 ### ErrorResult
 
 ```go
 // 该接口可记录用户操作失败的信息，并将操作结果记录到链上。
+// @param msg: 失败信息
 func ErrorResult(msg string) {}
 ```
-
-输入说明
-
-输出说明
-
-| 输入参数 | 说明               |
-| :------: | ------------------ |
-|   msg    | 失败操作的日志信息 |
 
 ### LogMessage
 
 ```go
 // 该接口可记录事件日志。
+// @param msg: 事件信息
 func LogMessage(msg string) {}
 ```
-
-输入说明
-
-| 输入采纳数 | 说明               |
-| :--------: | ------------------ |
-|    msg     | 当前操作的日志信息 |
 
 ### GetCreatorOrgId
 
 ```go
 // 获取合约创建者所属组织ID
+// @return: 合约创建者的组织ID
 func GetCreatorOrgId() string {}  
 ```
-
-输出说明
-
-| 输出类型 | 说明                 |
-| :------: | -------------------- |
-|  string  | 合约创建者所属组织ID |
 
 ### GetCreatorRole
 
 ```go
 // 获取合约创建者角色
+// @return: 合约创建者的角色
 func GetCreatorRole() string {}  
 ```
-
-输出说明
-
-| 输出类型 | 说明           |
-| :------: | -------------- |
-|  string  | 合约创建者角色 |
 
 ### GetCreatorPk
 
 ```go
 // 获取合约创建者公钥
+// @return: 合约创建者的公钥
 func GetCreatorPk() string {} 
 ```
-
-输出说明
-
-| 输出类型 | 说明           |
-| :------: | -------------- |
-|  string  | 合约创建者公钥 |
 
 ### GetSenderOrgId
 
 ```go
 // 获取交易发起者所属组织ID
+// @return: 交易发起者的组织ID
 func GetSenderOrgId() string {}  
 ```
-
-输出说明
-
-| 输出类型 | 说明                 |
-| :------: | -------------------- |
-|  string  | 交易发起者所属组织ID |
 
 ### GetSenderRole
 
 ```go
-func GetSenderRole() string {} 
 // 获取交易发起者角色
+// @return: 交易发起者角色
+func GetSenderRole() string {} 
 ```
-
-输出说明
-
-| 输出类型 | 说明           |
-| :------: | -------------- |
-|  string  | 交易发起者角色 |
 
 ### GetSenderPk()
 
 ```go
-func GetSenderPk() string {}  
 // 获取交易发起者公钥
+// @return 交易发起者的公钥
+func GetSenderPk() string {}  
 ```
-
-输出说明
-
-| 输出类型 | 说明           |
-| :------: | :------------- |
-|  string  | 交易发起者公钥 |
 
 ### GetBlockHeight
 
 ```go
-func GetBlockHeight() string {} 
 // 获取当前区块高度
+// @return: 当前块高度
+func GetBlockHeight() string {} 
 ```
-
-输出说明
-
-| 输出类型 | 说明         |
-| :------: | ------------ |
-|  string  | 当前区块高度 |
 
 ### GetTxId
 
 ```go
-func GetTxId() string {}
 // 获取交易ID
+// @return 交易ID
+func GetTxId() string {}
+
 ```
-
-输出说明
-
-| 输出类型 | 说明   |
-| :------: | ------ |
-|  string  | 交易ID |
-

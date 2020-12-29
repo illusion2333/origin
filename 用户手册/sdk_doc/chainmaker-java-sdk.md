@@ -76,6 +76,7 @@ public class ResponseInfo {
 ### 2.1 用户合约接口
 #### 2.1.1 生成用于创建合约的待签名payload
 **参数说明**
+
   - contractName: 合约名
   - version: 版本号
   - runtimeType: 合约运行环境
@@ -92,9 +93,13 @@ public class ResponseInfo {
 
 #### 2.1.2 生成用于管理（创建或升级）合约的签名后的payload
 **参数说明**
+
   - payload: 签名前的payload
+
 **返回值说明**
-    返回带签名的payload字节数组
+
+- 返回带签名的payload字节数组
+
 ```java
     public byte[] signPayloadOfContractMgmt(byte[] payload) throws InvalidProtocolBufferException {
     }
@@ -137,6 +142,7 @@ public class ResponseInfo {
 
 #### 2.1.6 升级合约
 **参数说明**
+
   - payloadWithEndorsementsBytes: 带签名的合约内容
   - rpcCallTimeout: 调用rcp接口超时时间, 单位：毫秒
   - syncResultTimeout: 同步获取执行结果超时时间，小于等于0代表不等待执行结果，

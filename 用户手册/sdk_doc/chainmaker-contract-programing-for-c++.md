@@ -42,134 +42,76 @@
 
 ```c++
 // 该接口可返回属性名为 “name” 的参数的属性值。
+// @param name: 要获取值的参数名称
+// @param value: 获取的参数值
+// @return: 是否成功
 bool arg(const std::string& name, std::string& value){}
 ```
-
-输入说明
-
-| 输入参数 | 说明                 |
-| :------: | -------------------- |
-|   name   | 需要查询的参数name值 |
-
-输出说明
-
-| 输出类型 | 说明                   |
-| :------: | ---------------------- |
-|  string  | 根据name查询到的参数值 |
 
 ###  get_object
 
 ```c++
 // 获取key为"key"的值
+// @param key: 获取对象的key
+// @param value: 获取的对象值
+// @return: 是否成功
 bool get_object(const std::string& key, std::string* value){}
 ```
-
-输入说明
-
-| 输入参数 | 说明            |
-| :------: | --------------- |
-|   key    | 需要查询的key值 |
-
-输出说明
-
-| 输出类型 | 说明                  |
-| :------: | --------------------- |
-|  string  | 根据key查询到的结果值 |
 
 ###  put_object
 
 ```c++
 // 存储key为"key"的值
+// @param key: 存储的对象key
+// @param value: 存储的对象值
+// @return: 是否成功
 bool put_object(const std::string& key, const std::string& value){}
 ```
-
-输入说明
-
-| 输入参数 | 说明            |
-| :------: | --------------- |
-|   key    | 需要存储的key值 |
-
-输出说明
-
-| 输出类型 | 说明             |
-| :------: | ---------------- |
-|  string  | 需要存储的对象值 |
 
 ###  delete_object
 
 ```c++
 // 删除key为"key"的值
+// @param key: 删除的对象key
+// @return: 是否成功
 bool delete_object(const std::string& key) {}
 ```
-
-输入说明
-
-| 输入参数 | 说明                |
-| :------: | ------------------- |
-|   key    | 需要删除的对象key值 |
 
 ### success
 
 ```c++
 // 返回成功的结果
+// @param body: 成功信息
 void success(const std::string& body) {}
 ```
-
-输入说明
-
-| 输入参数 | 说明           |
-| :------: | -------------- |
-|   body   | 返回的成功信息 |
 
 ### error
 
 ```c++
 // 返回失败结果
+// @param body: 失败信息
 void error(const std::string& body) {}
 ```
-
-输入说明
-
-| 输入参数 | 说明           |
-| :------: | -------------- |
-|   body   | 返回的失败信息 |
 
 ### call
 
 ```c++
 // 调用合约
+// @param contract: 合约名称
+// @param method: 合约方法
+// @param args: 调用合约的参数
+// @param response: 调用合约的响应
+// @return: 是否成功
 bool call(const std::string& contract,
                       const std::string& method,
                       const std::map<std::string, std::string>& args,
                       Response* response){}
 ```
 
-输入说明
-
-| 输入参数 | 说明           |
-| :------: | -------------- |
-| contract | 调用合约的名称 |
-|  method  | 调用合约的方法 |
-|   args   | 调用合约的参数 |
-| response | 调用合约的响应 |
-
-输出说明
-
-| 输出类型 | 说明         |
-| :------: | ------------ |
-|   bool   | 调用是否成功 |
-
 ### log
 
 ```c++
 // 输出日志事件
+// @param body: 事件信息
 void log(const std::string& body) {}
 ```
-
-输入说明
-
-| 输入参数 | 说明           |
-| :------: | -------------- |
-|   body   | 记录的事件信息 |
-
-### 
