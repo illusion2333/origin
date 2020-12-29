@@ -147,7 +147,7 @@ public class ResponseInfo {
     }
 ```
 
-#### 2.1.7 执行合约接口
+#### 2.1.7 执行合约
 **参数说明**
   - contractName: 合约名
   - method: 方法名
