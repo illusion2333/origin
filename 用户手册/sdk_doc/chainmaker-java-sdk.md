@@ -1,5 +1,7 @@
 # ChainMaker Java SDK README
 
+[TOC]
+
 ## 1 基本概念定义
 
 Java SDK定义了ChainClient、ChainNode、ChainManager和ResponseInfo几个类，分别介绍如下：
@@ -82,6 +84,7 @@ public class ResponseInfo {
   - runtimeType: 合约运行环境
   - params: 合约初始化参数
   - byteCodes: 合约字节数组
+
 **返回值说明**
     返回payload字节数组
 ```java
@@ -108,6 +111,7 @@ public class ResponseInfo {
 #### 2.1.3 将多个带签名后的payload合并成一个带多个签名的payload，所有签名都放在一个payload后面
 **参数说明**
   - payloads: 多个带签名的payload
+
 **返回值说明**
     返回带多个签名的payload字节数组
 ```java
@@ -159,8 +163,7 @@ public class ResponseInfo {
   - method: 方法名
   - params: 执行参数
   - rpcCallTimeout: 调用rcp接口超时时间, 单位：毫秒
-  - syncResultTimeout: 同步获取执行结果超时时间，小于等于0代表不等待执行结果，
-    直接返回（返回信息里包含交易ID），单位：毫秒
+  - syncResultTimeout: 同步获取执行结果超时时间，小于等于0代表不等待执行结果，直接返回（返回信息里包含交易ID），单位：毫秒
 ```java
     public ResponseInfo invokeContract(String contractName, String method,
                                        Map<String, String> params, long rpcCallTimeout,
@@ -236,7 +239,7 @@ public class ResponseInfo {
 
 #### 2.2.6 查询节点已部署的所有合约信息
 
-返回值说明：
+**返回值说明**
 
    - 包括：合约名、合约版本、运行环境、交易ID
 ```java
@@ -247,11 +250,11 @@ public class ResponseInfo {
 
 #### 2.2.7 查询节点加入的链信息
 
-参数说明：
+**参数说明**
 
    - timeout：超时时间，单位毫秒
 
-返回值说明：
+**返回值说明**
 
 -  返回ChainId清单
 
@@ -263,7 +266,7 @@ public class ResponseInfo {
 
 #### 2.2.8 查询链信息
 
-返回值说明：
+**返回值说明**
 
   - 包括：当前链最新高度，链节点信息
 ```java
@@ -564,7 +567,8 @@ message ConsensusConfig {
 #### 2.4.3 用户证书查询
 **参数说明**
   - certHashes: 证书Hash列表
-返回值说明：
+
+**返回值说明**
   - *pb.CertInfos: 包含证书Hash和证书内容的列表
 ```java
     public ChainmakerResult.CertInfos queryCert(String[] certHashes, long timeout)
@@ -673,7 +677,7 @@ public void stop() {}
 
 ## 4 SDK Jar包引用方式
 
-### 编译
+### 4.1 编译
 
 ```
 git clone https://git.code.tencent.com/ChainMaker/chainmaker-sdk-java.git
@@ -682,7 +686,7 @@ cd chainamker-sdk-java
 ./gradle build
 ```
 
-### 使用
+### 4.2 使用
 
 1. 导入Jar包，这里使用IntelliJ为示例引用Jar包，将编译好的jar包拷贝到需要使用sdk的项目下（一般可以在项目下建一个libs目录），然后打开IntelliJ IDEA->File->Project Structures，如下图点击“+”号，选择JARs or Directories，选中Jar包点击open即可。
 
