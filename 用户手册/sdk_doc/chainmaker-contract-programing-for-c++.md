@@ -28,11 +28,11 @@
 
 ## 2 合约发布过程
 
-简单的脚本测试，更详细的应用构建参考客户端SDK
+请参考：[《chainmaker-go-sdk.md》](./chainmaker-go-sdk.md)4.1.5 发送创建合约请求，或者[《chainmaker-java-sdk.md》](./chainmaker-java-sdk.md)2.1.4 创建合约。
 
 ## 3 合约调用过程
 
-简单的脚本测试，更详细的应用构建参考客户端SDK
+请参考：[《chainmaker-go-sdk.md》](./chainmaker-go-sdk.md)4.1.7 合约调用，或者[《chainmaker-java-sdk.md》](./chainmaker-java-sdk.md)2.1.7 执行合约。
 
 
 
@@ -59,22 +59,117 @@ bool arg(const std::string& name, std::string& value){}
 
 ###  get_object
 
-
-
+```c++
 // 获取key为"key"的值
 bool get_object(const std::string& key, std::string* value){}
+```
+
+输入说明
+
+| 输入参数 | 说明            |
+| :------: | --------------- |
+|   key    | 需要查询的key值 |
+
+输出说明
+
+| 输出类型 | 说明                  |
+| :------: | --------------------- |
+|  string  | 根据key查询到的结果值 |
+
+###  put_object
+
+```c++
 // 存储key为"key"的值
 bool put_object(const std::string& key, const std::string& value){}
+```
+
+输入说明
+
+| 输入参数 | 说明            |
+| :------: | --------------- |
+|   key    | 需要存储的key值 |
+
+输出说明
+
+| 输出类型 | 说明             |
+| :------: | ---------------- |
+|  string  | 需要存储的对象值 |
+
+###  delete_object
+
+```c++
 // 删除key为"key"的值
 bool delete_object(const std::string& key) {}
+```
+
+输入说明
+
+| 输入参数 | 说明                |
+| :------: | ------------------- |
+|   key    | 需要删除的对象key值 |
+
+### success
+
+```c++
 // 返回成功的结果
 void success(const std::string& body) {}
+```
+
+输入说明
+
+| 输入参数 | 说明           |
+| :------: | -------------- |
+|   body   | 返回的成功信息 |
+
+### error
+
+```c++
 // 返回失败结果
 void error(const std::string& body) {}
+```
+
+输入说明
+
+| 输入参数 | 说明           |
+| :------: | -------------- |
+|   body   | 返回的失败信息 |
+
+### call
+
+```c++
 // 调用合约
 bool call(const std::string& contract,
                       const std::string& method,
                       const std::map<std::string, std::string>& args,
                       Response* response){}
+```
+
+输入说明
+
+| 输入参数 | 说明           |
+| :------: | -------------- |
+| contract | 调用合约的名称 |
+|  method  | 调用合约的方法 |
+|   args   | 调用合约的参数 |
+| response | 调用合约的响应 |
+
+输出说明
+
+| 输出类型 | 说明         |
+| :------: | ------------ |
+|   bool   | 调用是否成功 |
+
+### log
+
+```c++
 // 输出日志事件
 void log(const std::string& body) {}
+```
+
+输入说明
+
+| 输入参数 | 说明           |
+| :------: | -------------- |
+|   body   | 记录的事件信息 |
+
+### 
