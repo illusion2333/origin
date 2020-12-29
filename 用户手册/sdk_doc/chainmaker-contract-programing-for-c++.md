@@ -14,15 +14,15 @@
 
 使用IDE新建一个C++语言的合约项目之后，IDE会默认将C++ SDK和一些工具代码加到项目中去，如下图：
 
-![image-20201229102614590](/Users/tianlehan/Library/Application Support/typora-user-images/image-20201229102614590.png)
+<img src="../images/cpp-frame.png" alt="cpp-frame.png" style="zoom:50%;" />
 
 对IDE默认附带的框架文件描述如下：
 
+### 1.3 示例代码说明
 
+### 1.4 代码编写规则
 
-
-
-### 1.3 编译说明
+### 1.5 编译说明
 
 在《ChainMaker IDE User Manual》中集成了编译器，可以对合约进行编译，集成的编译器是emcc 1.38.48版本，protobuf 使用3.7.1版本。用户如果手工编译需要先使用emcc 编译 protobuf ，编译之后执行emmake make即可。
 
