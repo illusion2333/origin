@@ -23,22 +23,20 @@
 c++:
 
 - chainmaker
-  - basic_iterator.cc： 
-  - basic_iterator.h：
-  - chainmaker.h： sdk主要接口声明，详情见[SDK API描述](#api)
-  - context_impl.cc：  sdk接口实现
-  - context_impl.h：  sdk接口声明
-  - contract.cc： 
-  - crypto.cc： 
-  - crypto.h： 
+  - basic_iterator.cc：  迭代器实现
+  - basic_iterator.h： 迭代器头文件声明
+  - chainmaker.h： sdk主要接口头文件声明，详情见[SDK API描述](#api)
+  - context_impl.cc：  与链交互接口实现
+  - context_impl.h：  与链交互头文件声明
+  - contract.cc： 合约基础工具类
   - error.h： 
-  - exports.js： 
-  - safemath.h
-  - syscall.cc： 
-  - syscall.h： 
+  - exports.js：  编译合约导出函数
+  - safemath.h 
+  - syscall.cc： 与链交互入口
+  - syscall.h：  与链交互头文件声明
 - pb
-  - contract.pb.cc：
-  - contract.pb.h：
+  - contract.pb.cc：与链交互数据协议
+  - contract.pb.h：与链交互数据协议头文件声明
 - main.cc： 用户写合约入口，[如下](#fact)
 - Makefile： 常用build命令
 
@@ -49,8 +47,6 @@ c++:
 1、存储文件哈希和文件名称和该交易的ID。
 
 2、通过文件哈希查询该条记录
-
-
 
 ```c++
 #include "chainmaker/chainmaker.h"
@@ -160,6 +156,12 @@ WASM_EXPORT void init_contract() {
 WASM_EXPORT void upgrade() {
     
 }
+```
+
+**获取SDK 接口上下文**
+
+```go
+Context* ctx = context();
 ```
 
 
