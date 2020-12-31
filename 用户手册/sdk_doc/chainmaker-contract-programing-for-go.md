@@ -1,5 +1,7 @@
 # ChainMaker Contract Programing for go
 
+[TOC]
+
 读者对象：本文主要描述使用C++进行ChainMaker合约编写的方法，主要面向于使用C++进行ChainMaker的合约开发的开发者。
 
 ## 1 合约编写流程
@@ -16,11 +18,136 @@
 
 对IDE默认附带的框架文件描述如下：
 
-chainmaker.go：主要的Go SDK文件，详细接口说明见第4小节
+go
+
+- chainmaker.go：主要的Go SDK文件，详细接口说明见[Go SDK API描述](#api)
+- cjson.go: json序列化工具类
+- encoder.go: json序列化工具类
+- main_fact.go: 存证合约示例
+- tokenizer.go: json序列化工具类
+
+
 
 ### 1.3 示例代码说明
 
+**存证合约示例：fact.rs <span id="fact"></span>** 实现功能
+
+1、存储文件哈希和文件名称和该交易的ID。
+
+2、通过文件哈希查询该条记录
+
+```go
+package main
+
+// 安装合约时会执行此方法，必须
+//export init_contract
+func init_contract() {
+
+}
+// 升级合约时会执行此方法，必须
+//export upgrade
+func upgrade() {
+
+}
+
+//export save
+func save() {
+	// 获取参数
+	txId, _ := GetTxId()
+	time, _ := Arg("time")
+	fileHash, _ := Arg("file_hash")
+	fileName, _ := Arg("file_name")
+
+	// 组装
+	stone := make(map[string]string,4)
+	stone["txId"]=txId
+	stone["time"]=time
+	stone["fileHash"]=fileHash
+	stone["fileName"]=fileName
+
+	// 序列化为json bytes
+	bytes,err := Marshal(stone)
+	if err!=nil {
+		LogMessage("marshal fail")
+		ErrorResult("save fail. marshal fail")
+		return
+	}
+
+	// 存储数据
+	PutState("fact", fileHash, string(bytes))
+	// 返回结果
+	SuccessResult("ok")
+}
+
+//export find_by_file_hash
+func findByFileHash() {
+	// 获取参数
+	fileHash, _ := Arg("file_hash")
+	// 查询
+	if result, resultCode := GetState("fact", fileHash); resultCode != SUCCESS {
+		// 返回结果
+		ErrorResult("failed to call get_state.")
+	} else {
+		// 记录日志
+		LogMessage("get val:" + result)
+		// 返回结果
+		SuccessResult(result)
+	}
+}
+
+func main() {
+
+}
+
+```
+
+
+
 ### 1.4 代码编写规则
+
+**代码入口**
+
+```go
+func main() { // sdk代码中，有且仅有一个main()方法
+	// 空，不做任何事。仅用于对tinygo编译支持
+}
+
+```
+
+
+
+**对链暴露方法写法为：**
+
+- //export upgrade
+- func  method_name(): 不可带参数，无返回值
+
+```rust
+//export init_contract 表明对外暴露方法名称
+func init_contract() {
+
+}
+```
+
+**其中init_contract、upgrade方法必须有且对外暴露**
+
+- init_contract：创建合约会执行该方法
+- upgrade： 升级合约会执行该方法
+
+```rust
+// 安装合约时会执行此方法，必须。ChainMaker不允许用户直接调用该方法。
+//export init_contract
+func init_contract() {
+
+}
+// 升级合约时会执行此方法，必须。ChainMaker不允许用户直接调用该方法。
+//export upgrade
+func upgrade() {
+
+}
+```
+
+
+
 
 ### 1.5 编译说明
 
@@ -42,9 +169,26 @@ tinygo build -no-debug -opt=s -o name.wasm -target wasm
 
 
 
-## 4 Go SDK API描述
+## 4 Go SDK API描述 <span id="api"></span>
 
-### GetState
+### 内置链交互接口
+
+用于链与SDK数据交互，用户无需关心。
+
+```go
+// 申请size大小内存，返回该内存的首地址
+func __allocate(size int32) uintptr {}
+// 释放该地址内存
+func __deallocate(size int32) {}
+// 获取SDK运行时环境
+func __runtimeType() int32 {}
+```
+
+
+
+### 用户与链交互接口
+
+#### GetState
 
 ```  go
 // 获取合约账户信息。该接口可从链上获取类别 “key” 下属性名为 “field” 的状态信息。
@@ -55,7 +199,7 @@ tinygo build -no-debug -opt=s -o name.wasm -target wasm
 func GetState(key string, field string) (string, ResultCode) {} 
 ```
 
-### GetStateFromKey
+#### GetStateFromKey
 
 ```go
 // 获取合约账户信息。该接口可以从链上获取类别为key的状态信息
@@ -65,7 +209,7 @@ func GetState(key string, field string) (string, ResultCode) {}
 func GetStateFromKey(key string) (string, ResultCode) {}
 ```
 
-### PutState
+#### PutState
 
 ```go
 // 写入合约账户信息。该接口可把类别 “key” 下属性名为 “filed” 的状态更新到链上。更新成功返回0，失败则返回1。
@@ -76,7 +220,7 @@ func GetStateFromKey(key string) (string, ResultCode) {}
 func PutState(key string, field string, value string) ResultCode {}
 ```
 
-### PutStateFromKey
+#### PutStateFromKey
 
 ```go
 // 写入合约账户信息。
@@ -86,7 +230,7 @@ func PutState(key string, field string, value string) ResultCode {}
 func PutStateFromKey(key string, value string) ResultCode
 ```
 
-### DeleteState
+#### DeleteState
 
 ```go
 // 删除合约账户信息。该接口可把类别 “key” 下属性名为 “name” 的状态从链上删除。
@@ -96,14 +240,7 @@ func PutStateFromKey(key string, value string) ResultCode
 func DeleteState(key string, field string) ResultCode {}
 ```
 
-### getArgsMap()
-
-```go
-// 该接口可把 json 格式的数据反序列化，并将解析出的数据存于一个 map[string]interface{} 类型的全局变量。
-func getArgsMap() error {} 
-```
-
-### Args
+#### Args
 
 ```go
 // 该接口调用 getArgsMap() 接口，把 json 格式的数据反序列化，并将解析出的数据返还给用户。
@@ -111,7 +248,7 @@ func getArgsMap() error {}
 func Args() map[string]interface{} {}  
 ```
 
-### Arg
+#### Arg
 
 ```go
 // 该接口可返回属性名为 “key” 的参数的属性值。
@@ -120,7 +257,7 @@ func Args() map[string]interface{} {}
 func Arg(key string) interface{} {}  
 ```
 
-###  SuccessResult
+####  SuccessResult
 
 ```go
 // 该接口可记录用户操作成功的信息，并将操作结果记录到链上。
@@ -128,7 +265,7 @@ func Arg(key string) interface{} {}
 func SuccessResult(msg string) {}  
 ```
 
-### ErrorResult
+#### ErrorResult
 
 ```go
 // 该接口可记录用户操作失败的信息，并将操作结果记录到链上。
@@ -136,7 +273,7 @@ func SuccessResult(msg string) {}
 func ErrorResult(msg string) {}
 ```
 
-### LogMessage
+#### LogMessage
 
 ```go
 // 该接口可记录事件日志。
@@ -144,7 +281,7 @@ func ErrorResult(msg string) {}
 func LogMessage(msg string) {}
 ```
 
-### GetCreatorOrgId
+#### GetCreatorOrgId
 
 ```go
 // 获取合约创建者所属组织ID
@@ -152,7 +289,7 @@ func LogMessage(msg string) {}
 func GetCreatorOrgId() string {}  
 ```
 
-### GetCreatorRole
+#### GetCreatorRole
 
 ```go
 // 获取合约创建者角色
@@ -160,7 +297,7 @@ func GetCreatorOrgId() string {}
 func GetCreatorRole() string {}  
 ```
 
-### GetCreatorPk
+#### GetCreatorPk
 
 ```go
 // 获取合约创建者公钥
@@ -168,7 +305,7 @@ func GetCreatorRole() string {}
 func GetCreatorPk() string {} 
 ```
 
-### GetSenderOrgId
+#### GetSenderOrgId
 
 ```go
 // 获取交易发起者所属组织ID
@@ -176,7 +313,7 @@ func GetCreatorPk() string {}
 func GetSenderOrgId() string {}  
 ```
 
-### GetSenderRole
+#### GetSenderRole
 
 ```go
 // 获取交易发起者角色
@@ -184,7 +321,7 @@ func GetSenderOrgId() string {}
 func GetSenderRole() string {} 
 ```
 
-### GetSenderPk()
+#### GetSenderPk()
 
 ```go
 // 获取交易发起者公钥
@@ -192,7 +329,7 @@ func GetSenderRole() string {}
 func GetSenderPk() string {}  
 ```
 
-### GetBlockHeight
+#### GetBlockHeight
 
 ```go
 // 获取当前区块高度
@@ -200,7 +337,7 @@ func GetSenderPk() string {}
 func GetBlockHeight() string {} 
 ```
 
-### GetTxId
+#### GetTxId
 
 ```go
 // 获取交易ID

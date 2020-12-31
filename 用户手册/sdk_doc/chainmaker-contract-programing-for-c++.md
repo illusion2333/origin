@@ -2,6 +2,8 @@
 
 # ChainMaker Contract Programing for C++
 
+[TOC]
+
 读者对象：本文主要描述使用C++进行ChainMaker合约编写的方法，主要面向于使用C++进行ChainMaker的合约开发的开发者。
 
 ## 1 合约编写流程
@@ -18,9 +20,148 @@
 
 对IDE默认附带的框架文件描述如下：
 
+c++:
+
+- chainmaker
+  - basic_iterator.cc： 
+  - basic_iterator.h：
+  - chainmaker.h： sdk主要接口声明，详情见[SDK API描述](#api)
+  - context_impl.cc：  sdk接口实现
+  - context_impl.h：  sdk接口声明
+  - contract.cc： 
+  - crypto.cc： 
+  - crypto.h： 
+  - error.h： 
+  - exports.js： 
+  - safemath.h
+  - syscall.cc： 
+  - syscall.h： 
+- pb
+  - contract.pb.cc：
+  - contract.pb.h：
+- main.cc： 用户写合约入口，[如下](#fact)
+- Makefile： 常用build命令
+
 ### 1.3 示例代码说明
 
+**存证合约示例：fact.rs <span id="fact"></span>** 实现功能
+
+1、存储文件哈希和文件名称和该交易的ID。
+
+2、通过文件哈希查询该条记录
+
+
+
+```c++
+#include "chainmaker/chainmaker.h"
+
+using namespace chainmaker;
+
+class Counter : public Contract {
+public:
+    void init_contract() {}
+    void upgrade() {}
+    // 保存
+    void save() {
+        // 获取SDK 接口上下文
+        Context* ctx = context();
+        // 定义变量
+        std::string time;
+        std::string file_hash;
+        std::string file_name;
+        std::string tx_id;
+		// 获取参数
+        ctx->arg("time", time);
+        ctx->arg("file_hash", file_hash);
+        ctx->arg("file_name", file_name);
+        ctx->arg("tx_id", tx_id);
+		// 存储数据
+        ctx->put_object("fact"+ file_hash,  tx_id+" "+time+" "+file_hash+" "+file_name);
+        // 记录日志
+        ctx->log("call save() result:" + tx_id+" "+time+" "+file_hash+" "+file_name);
+        // 返回结果
+        ctx->success(tx_id+" "+time+" "+file_hash+" "+file_name);
+    }
+
+    // 查询
+    void find_by_file_hash() {
+        // 获取SDK 接口上下文
+    	Context* ctx = context();
+
+		// 获取参数
+        std::string file_hash;
+        ctx->arg("file_hash", file_hash);
+		
+        // 查询数据
+    	std::string value;
+        ctx->get_object("fact"+ file_hash, &value);
+        // 记录日志
+        ctx->log("call find_by_file_hash()-" + file_hash + ",result:" + value);
+        // 返回结果
+        ctx->success(value);
+    }
+
+};
+
+// 在创建本合约时, 调用一次init方法. ChainMaker不允许用户直接调用该方法.
+WASM_EXPORT void init_contract() {
+    Counter counter;
+    counter.init_contract();
+}
+
+// 在升级本合约时, 对于每一个升级的版本调用一次upgrade方法. ChainMaker不允许用户直接调用该方法.
+WASM_EXPORT void upgrade() {
+    Counter counter;
+    counter.init();
+}
+
+WASM_EXPORT void save() {
+    Counter counter;
+    counter.save();
+}
+
+WASM_EXPORT void find_by_file_hash() {
+    Counter counter;
+    counter.find_by_file_hash();
+}
+```
+
+
+
 ### 1.4 代码编写规则
+
+
+**对链暴露方法写法为：**
+
+- WASM_EXPORT： 必须，暴露声明
+- void： 必须，无返回值
+- method_name()： 必须，暴露方法名称
+
+```c++
+// 示例
+WASM_EXPORT void init_contract() {
+    
+}
+```
+
+**其中init_contract、upgrade方法必须有且对外暴露**
+
+- init_contract：创建合约会执行该方法
+- upgrade： 升级合约会执行该方法
+
+```rust
+
+// 在创建本合约时, 调用一次init方法. ChainMaker不允许用户直接调用该方法.
+WASM_EXPORT void init_contract() {
+    
+}
+
+// 在升级本合约时, 对于每一个升级的版本调用一次upgrade方法. ChainMaker不允许用户直接调用该方法.
+WASM_EXPORT void upgrade() {
+    
+}
+```
+
 
 ### 1.5 编译说明
 
@@ -36,7 +177,7 @@
 
 
 
-## 4 C++ SDK API描述
+## 4 C++ SDK API描述 <span id="api"></span>
 
 ### Arg
 
