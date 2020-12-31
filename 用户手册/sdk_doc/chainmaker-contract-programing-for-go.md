@@ -30,7 +30,7 @@ go
 
 ### 1.3 示例代码说明
 
-**存证合约示例：fact.rs <span id="fact"></span>** 实现功能
+**存证合约示例：main_fact.go <span id="fact"></span>** 实现功能
 
 1、存储文件哈希和文件名称和该交易的ID。
 
@@ -42,11 +42,13 @@ package main
 // 安装合约时会执行此方法，必须
 //export init_contract
 func init_contract() {
+    // 安装时的业务逻辑，可为空
 
 }
 // 升级合约时会执行此方法，必须
 //export upgrade
 func upgrade() {
+    // 升级时的业务逻辑，可为空
 
 }
 

@@ -42,7 +42,7 @@ c++:
 
 ### 1.3 示例代码说明
 
-**存证合约示例：fact.rs <span id="fact"></span>** 实现功能
+**存证合约示例：main.cc<span id="fact"></span>** 实现功能
 
 1、存储文件哈希和文件名称和该交易的ID。
 
@@ -149,11 +149,13 @@ WASM_EXPORT void init_contract() {
 
 // 在创建本合约时, 调用一次init方法. ChainMaker不允许用户直接调用该方法.
 WASM_EXPORT void init_contract() {
+    // 安装时的业务逻辑，可为空
     
 }
 
 // 在升级本合约时, 对于每一个升级的版本调用一次upgrade方法. ChainMaker不允许用户直接调用该方法.
 WASM_EXPORT void upgrade() {
+    // 升级时的业务逻辑，可为空
     
 }
 ```

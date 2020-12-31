@@ -40,12 +40,14 @@ use crate::sim_context;
 #[no_mangle]
 pub extern "C" fn init_contract() {
     sim_context::log("init_contract");
+    // 安装时的业务逻辑，可为空
 }
 
 // 升级合约时会执行此方法，必须
 #[no_mangle]
 pub extern "C" fn upgrade() {
     sim_context::log("upgrade");
+    // 升级时的业务逻辑，可为空
 }
 
 // 保存
