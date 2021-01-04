@@ -66,12 +66,12 @@ public:
         std::string file_hash;
         std::string file_name;
         std::string tx_id;
-		// 获取参数
+		    // 获取参数
         ctx->arg("time", time);
         ctx->arg("file_hash", file_hash);
         ctx->arg("file_name", file_name);
         ctx->arg("tx_id", tx_id);
-		// 存储数据
+		    // 存储数据
         ctx->put_object("fact"+ file_hash,  tx_id+" "+time+" "+file_hash+" "+file_name);
         // 记录日志
         ctx->log("call save() result:" + tx_id+" "+time+" "+file_hash+" "+file_name);
@@ -82,14 +82,14 @@ public:
     // 查询
     void find_by_file_hash() {
         // 获取SDK 接口上下文
-    	Context* ctx = context();
+    	  Context* ctx = context();
 
-		// 获取参数
+		    // 获取参数
         std::string file_hash;
         ctx->arg("file_hash", file_hash);
 		
         // 查询数据
-    	std::string value;
+    	  std::string value;
         ctx->get_object("fact"+ file_hash, &value);
         // 记录日志
         ctx->log("call find_by_file_hash()-" + file_hash + ",result:" + value);
@@ -169,7 +169,7 @@ Context* ctx = context();
 
 ### 1.5 编译说明
 
-在《ChainMaker IDE User Manual》中集成了编译器，可以对合约进行编译，集成的编译器是emcc 1.38.48版本，protobuf 使用3.7.1版本。用户如果手工编译需要先使用emcc 编译 protobuf ，编译之后执行emmake make即可。
+在ChainMaker IDE中集成了编译器，可以对合约进行编译，集成的编译器是emcc 1.38.48版本，protobuf 使用3.7.1版本。用户如果手工编译需要先使用emcc 编译 protobuf ，编译之后执行emmake make即可。
 
 ## 2 合约发布过程
 

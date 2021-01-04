@@ -1,3 +1,5 @@
+[TOC]
+
 # ChainMaker用户手册
 
 读者对象：本文档主要面向chainmaker的开发者、产品人员和希望了解chainmaker运行机制的用户。

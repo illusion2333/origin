@@ -1,3 +1,5 @@
+[TOC]
+
 # ChainMaker Deploy Manual
 
 ChainMaker支持多种共识协议，在部署时可以根据配置进行选择。为了方便部署和测试，ChainMaker支持solo模式。solo模式可以理解为一种单节点的共识协议，仅使用自己节点达成共识，不需要通过网络通信。ChainMaker另外还支持MBFT和TBFT等多种共识协议。

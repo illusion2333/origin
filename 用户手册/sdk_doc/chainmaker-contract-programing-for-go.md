@@ -153,7 +153,7 @@ func upgrade() {
 
 ### 1.5 编译说明
 
-在《ChainMaker IDE User Manual》中集成了编译器，可以对合约进行编译。集成的编译器是 TinyGo。用户如果手工编译，需要将 SDK 和用户编写的智能合约放入同一个文件夹，并在此文件夹的当前路径执行如下编译命令：
+在ChainMaker IDE中集成了编译器，可以对合约进行编译。集成的编译器是 TinyGo。用户如果手工编译，需要将 SDK 和用户编写的智能合约放入同一个文件夹，并在此文件夹的当前路径执行如下编译命令：
 
 ```shell
 tinygo build -no-debug -opt=s -o name.wasm -target wasm

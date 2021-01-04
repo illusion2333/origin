@@ -174,7 +174,7 @@ fn method_name() {
 
 ### 1.5 编译说明
 
-在《ChainMaker IDE User Manual》中集成了编译器，可以对合约进行编译，集成的rust编译器是`rustc: 1.48.0`，wasm编译器是`wasm-pack: 0.9.1`， 采用默认cargo管理包，版本为`cargo: 1.49.0`， 默认提供[json: 0.12.4](https://crates.io/crates/json)库，合约支持在线其他轻量级序列化方式。用户如果手工编译需在项目根目录执行命令： `wasm-pack build --release`，会在target中生成wasm文件。
+在ChainMaker IDE中集成了编译器，可以对合约进行编译，集成的rust编译器是`rustc: 1.48.0`，wasm编译器是`wasm-pack: 0.9.1`， 采用默认cargo管理包，版本为`cargo: 1.49.0`， 默认提供[json: 0.12.4](https://crates.io/crates/json)库，合约支持在线其他轻量级序列化方式。用户如果手工编译需在项目根目录执行命令： `wasm-pack build --release`，会在target中生成wasm文件。
 
 ## 2 合约发布过程
 

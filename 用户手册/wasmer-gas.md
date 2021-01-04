@@ -1,3 +1,9 @@
+[TOC]
+
+# Wasmer 虚拟机指令Gas消耗参考表
+
+说明：指令对应消耗的gas在chainmaker里可以人为调整。
+
 | 操作码 | GAS |
 |----|------|
 |Operator::Unreachable { .. }|{ 1 } |
