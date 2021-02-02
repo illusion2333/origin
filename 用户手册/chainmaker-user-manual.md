@@ -97,7 +97,7 @@ mbft达成共识的过程和pbft达成共识的三阶段协议类似，基本上
 
 #### 3.2.1 tbft共识形成过程
 
-tbft共识也是pbft的一种，共识形成也是采用三阶段协议，即prevote、precommit和commit。具体描述如下：
+tbft共识也是pbft的一种，共识形成也是采用三阶段协议，即propose、prevote、precommit。具体描述如下：
 
 Every height has 0~n rounds and every round has 3 steps: Prevote、Precommit and commit.
 

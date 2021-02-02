@@ -4,8 +4,9 @@
 
 ## 1 基本概念定义
 
-Java SDK定义了ChainClient、ChainNode、ChainManager和ResponseInfo几个类，分别介绍如下：
+Java SDK定义了User、Node、ChainClient、ChainManager和ResponseInfo几个类，分别介绍如下：
 
+- User: 表示链的一个用户信息，主要包括证书和private key，用来给要发送的交易payload签名或者给多签的payload签名。
 - Node：表示链的一个节点信息，它定义了节点的各种属性，如节点连接的RPC地址，连接所用的密钥信息等，一个ChainClient对象需要包含一个或多个Node，这样才能对过节点实现各种功能。
 - ChainClient：客户端开发最重要也是使用最多的类，代表逻辑上的一条链，所有客户端对链的操作接口都来自ChainClient。
 
@@ -19,13 +20,7 @@ Java SDK定义了ChainClient、ChainNode、ChainManager和ResponseInfo几个类�
 ChainClient对象给用户使用。数据结构定义如下：
 
 ```java
-public class ChainClient {
-    // chainId is the identity of the chain
-    private final String chainId;
-    // the nodes of the chain
-    private final List<ChainNode> chainNodes;
-    // rpc client used to send rpc command
-    private RpcServiceClient rpcServiceClient;
+public class User {
 
     // the organization id of the user
     private final String orgId;
@@ -35,6 +30,11 @@ public class ChainClient {
     private final Certificate certificate;
     // the bytes of user's certificate
     private final byte[] certBytes;
+    // the hash of the cert
+    @Getter
+    private byte[] certHash;
+
+    private final CryptoSuite cryptoSuite;
 }
 
 public class Node {
@@ -54,6 +54,24 @@ public class Node {
     private String sslProvider;
 }
 
+public class ChainClient {
+    // chainId is the identity of the chain
+    private final String chainId;
+    // the nodes of the chain
+    private final List<Node> Nodes;
+    // rpc clients used to send rpc command
+    private Map<Node, RpcServiceClient> rpcServiceClients;
+
+    // the organization id of the user
+    private final String orgId;
+    // user's private key used to sign transaction
+    private final PrivateKey privateKey;
+    // user's certificate
+    private final Certificate certificate;
+    // the bytes of user's certificate
+    private final byte[] certBytes;
+}
+
 public class ChainManager {
     // chains' map
     private final Map<String, ChainClient> chains = new HashMap<>();
@@ -71,9 +89,9 @@ public class ResponseInfo {
 }
 ```
 
-## 2 接口定义
+## 2 ChainClient类接口定义
 
-以下描述了所有用户能够对链进行操作的接口，全部来自ChainClient类
+ChainClient类描述了所有用户能够对链进行操作的接口
 
 ### 2.1 用户合约接口
 #### 2.1.1 生成用于创建合约的待签名payload
@@ -87,6 +105,7 @@ public class ResponseInfo {
 
 **返回值说明**
     返回payload字节数组
+
 ```java
     public byte[] createPayloadOfContractCreation(String contractName, String version, 
                                                   Contract.RuntimeType runtimeType, Map<String, String> params, 
@@ -94,21 +113,53 @@ public class ResponseInfo {
     }
 ```
 
-#### 2.1.2 生成用于管理（创建或升级）合约的签名后的payload
-**参数说明**
+#### 2.1.2 生成用于升级合约的待签名payload
+ **参数说明**
 
-  - payload: 签名前的payload
+  - contractName: 合约名
+  - version: 版本号
+  - runtimeType: 合约运行环境
+  - params: 合约初始化参数
+  - byteCodes: 合约字节数组
 
 **返回值说明**
-
-- 返回带签名的payload字节数组
+    返回payload字节数组
 
 ```java
-    public byte[] signPayloadOfContractMgmt(byte[] payload) throws InvalidProtocolBufferException {
-    }
+public byte[] createPayloadOfContractUpgrade(String contractName, String version,
+                                             Contract.RuntimeType runtimeType, Map<String, String> params,
+                                             byte[] byteCodes) {
+```
+#### 2.1.3 生成用于升级合约的待签名payload
+ **参数说明**
+
+  - contractName: 合约名
+**返回值说明**
+    返回payload字节数组
+```java
+public byte[] createPayloadOfContractFreeze(String contractName) {}
+```
+#### 2.1.4 生成用于冻结合约的待签名payload
+ **参数说明**
+
+  - contractName: 合约名
+**返回值说明**
+    返回payload字节数组
+```java
+public byte[] createPayloadOfContractUnfreeze(String contractName) {}
+```
+#### 2.1.5 生成用于冻结合约的待签名payload
+ **参数说明**
+
+  - contractName: 合约名
+**返回值说明**
+    返回payload字节数组
+```java
+public byte[] createPayloadOfContractRevoke(String contractName) {}
 ```
 
-#### 2.1.3 将多个带签名后的payload合并成一个带多个签名的payload，所有签名都放在一个payload后面
+#### 2.1.6 将多个带签名后的payload合并成一个带多个签名的payload，所有签名都放在一个payload后面
+
 **参数说明**
   - payloads: 多个带签名的payload
 
@@ -119,7 +170,7 @@ public class ResponseInfo {
     }
 ```
 
-#### 2.1.4 创建合约
+#### 2.1.7 创建合约
 **参数说明**
   - payloadWithEndorsementsBytes: 带签名的合约内容
   - rpcCallTimeout: 调用rcp接口超时时间, 单位：毫秒
@@ -130,21 +181,7 @@ public class ResponseInfo {
     }
 ```
 
-#### 2.1.5 创建升级合约待签名的payload
-**参数说明**
-  - contractName: 合约名
-  - version: 版本号
-  - runtimeType: 合约运行环境
-  - params: 合约初始化参数
-  - byteCodes: 合约字节数组
-```java
-    public byte[] createPayloadOfContractUpgrade(String contractName, String version,
-                                                 Contract.RuntimeType runtimeType, Map<String, String> params,
-                                                 byte[] byteCodes) {
-    }
-```
-
-#### 2.1.6 升级合约
+#### 2.1.8 升级合约
 **参数说明**
 
   - payloadWithEndorsementsBytes: 带签名的合约内容
@@ -156,8 +193,42 @@ public class ResponseInfo {
                                         long syncResultTimeout) throws InvalidProtocolBufferException {
     }
 ```
+#### 2.1.9 冻结合约
+**参数说明**
 
-#### 2.1.7 执行合约
+  - payloadWithEndorsementsBytes: 带签名的合约内容
+  - rpcCallTimeout: 调用rcp接口超时时间, 单位：毫秒
+  - syncResultTimeout: 同步获取执行结果超时时间，小于等于0代表不等待执行结果，
+    直接返回（返回信息里包含交易ID），单位：毫秒
+```java
+    public ResponseInfo freezeContract(byte[] payloadWithEndorsementsBytes, long rpcCallTimeout,
+                                        long syncResultTimeout) throws InvalidProtocolBufferException {}
+```
+#### 2.1.10 解冻合约
+**参数说明**
+
+  - payloadWithEndorsementsBytes: 带签名的合约内容
+  - rpcCallTimeout: 调用rcp接口超时时间, 单位：毫秒
+  - syncResultTimeout: 同步获取执行结果超时时间，小于等于0代表不等待执行结果，
+    直接返回（返回信息里包含交易ID），单位：毫秒
+```java
+    public ResponseInfo unfreezeContract(byte[] payloadWithEndorsementsBytes, long rpcCallTimeout,
+                                       long syncResultTimeout) throws InvalidProtocolBufferException {}
+```
+#### 2.1.11 吊销合约
+**参数说明**
+
+  - payloadWithEndorsementsBytes: 带签名的合约内容
+  - rpcCallTimeout: 调用rcp接口超时时间, 单位：毫秒
+  - syncResultTimeout: 同步获取执行结果超时时间，小于等于0代表不等待执行结果，
+    直接返回（返回信息里包含交易ID），单位：毫秒
+```java
+    public ResponseInfo revokeContract(byte[] payloadWithEndorsementsBytes, long rpcCallTimeout,
+                                       long syncResultTimeout) throws InvalidProtocolBufferException {
+```
+
+#### 2.1.12 执行合约
+
 **参数说明**
   - contractName: 合约名
   - method: 方法名
@@ -171,7 +242,7 @@ public class ResponseInfo {
     }
 ```
 
-#### 2.1.8 查询合约接口
+#### 2.1.13 查询合约接口
 **参数说明**
   - contractName: 合约名
   - method: 方法名
@@ -528,21 +599,15 @@ message ConsensusConfig {
     }
 ```
 
-#### 2.3.21 链配置更新获取Payload签名
-```java
-    public byte[] signPayloadOfChainConfig(byte[] payloadBytes) throws InvalidProtocolBufferException {
-    }
-```
-
-#### 2.3.22 链配置更新Payload签名收集&合并
+#### 2.3.21 链配置更新Payload签名收集&合并
 ```java
     public byte[] mergeSignedPayloadsOfChainConfig(byte[][] payloads) throws InvalidProtocolBufferException {
     }
 ```
 
-#### 2.3.23 发送链配置更新请求
+#### 2.3.22 发送链配置更新请求
 ```java
-    public ResponseInfo updateChainConfig(byte[] payloadWithEndorsementsBytes, long timeout) {
+    public ResponseInfo updateChainConfig(byte[] payloadWithEndorsementsBytes, long rpcCallTimeout) {
     }
 ```
 
@@ -550,9 +615,11 @@ message ConsensusConfig {
 ### 2.4 证书管理接口
 #### 2.4.1 用户证书添加
 **参数说明**
-  - 在pb.TxResponse.ContractResult.Result字段中返回成功添加的certHash
+  - rpcCallTimeout: 发送rpc请求的超时时间
+  - syncResultTimeout: 同步交易结果的超时时间
 ```java
-    public ResponseInfo addCert(long timeout) {
+    public ResponseInfo addCert(long rpcCallTimeout, long syncResultTimeout) 
+      throws InvalidProtocolBufferException {
     }
 ```
 
@@ -560,11 +627,57 @@ message ConsensusConfig {
 **参数说明**
   - certHashes: 证书Hash列表
 ```java
-    public ResponseInfo deleteCert(String[] certHashes, long timeout) {
+    public ResponseInfo deleteCert(String[] certHashes, long rpcCallTimeout, long syncResultTimeout) 
+      throws InvalidProtocolBufferException {
     }
 ```
 
-#### 2.4.3 用户证书查询
+#### 2.4.3 生成用户证书冻结的待签名payload
+**参数说明**
+  - certHashes: 冻结的证书内容列表
+```java
+   public byte[] createPayloadOfFreezeCerts(String[] certs) {}
+```
+#### 2.4.4 生成用户证书解冻的待签名payload
+**参数说明**
+  - certHashes: 解冻的证书内容列表
+```java
+   public byte[] createPayloadOfFreezeCerts(String[] certs) {}
+```
+#### 2.4.5 生成用户证书吊销的待签名payload
+**参数说明**
+  - certCrl: 吊销证书列表
+```java
+public byte[] createPayloadOfRevokeCerts(String certCrl) {}
+```
+#### 2.4.6 冻结证书
+**参数说明**
+  - payload: 冻结证书交易的payload
+  - rpcCallTimeout: 发送rpc请求的超时时间
+  - syncResultTimeout: 同步交易结果的超时时间
+```java
+    public ResponseInfo freezeCerts(byte[] payload, long rpcCallTimeout, long syncResultTimeout) 
+      throws InvalidProtocolBufferException {}
+```
+#### 2.4.7 解冻证书
+**参数说明**
+  - payload: 解冻证书交易的payload
+  - rpcCallTimeout: 发送rpc请求的超时时间
+  - syncResultTimeout: 同步交易结果的超时时间
+```java
+    public ResponseInfo unfreezeCerts(byte[] payload, long rpcCallTimeout, long syncResultTimeout) 
+            throws InvalidProtocolBufferException {}
+```
+#### 2.4.8 吊销证书
+**参数说明**
+  - payload: 解冻证书交易的payload
+  - rpcCallTimeout: 发送rpc请求的超时时间
+  - syncResultTimeout: 同步交易结果的超时时间
+```java
+    public ResponseInfo revokeCerts(byte[] payload, long rpcCallTimeout, long syncResultTimeout) 
+            throws InvalidProtocolBufferException {}
+```
+#### 2.4.9 用户证书查询
 **参数说明**
   - certHashes: 证书Hash列表
 
@@ -575,9 +688,39 @@ message ConsensusConfig {
             throws InvalidProtocolBufferException {
     }
 ```
+### 2.5 多签接口
+#### 2.5.1 发送多签交易请求
+**参数说明**
+  - txType: 交易类型
+  - payload: 多签交易（未签名）的payload
+  - endorsement: 签名
+  - deadlineBlock: 交易有效截止的block高度
+  - rpcCallTimeout: 发送rpc请求的超时时间
+  - syncResultTimeout: 同步交易结果的超时时间
+```java
+public ResponseInfo sendMultiSignRequest(Request.TxType txType, byte[] payload, 
+                                         Request.EndorsementEntry endorsement,                                      
+                                         long deadlineBlock, long rpcCallTimeout, 
+                                         long syncResultTimeout) throws InvalidProtocolBufferException {}
+```
+#### 2.5.1 发送多签交易投票
+**参数说明**
+  - voteStatus: 投票状态
+  - multiSignReqTxId: 投票交易的交易Id
+  - payloadHash: 要投票交易的payloadHash
+  - endorsement: 签名
+  - deadlineBlock: 交易有效截止的block高度
+  - rpcCallTimeout: 发送rpc请求的超时时间
+  - syncResultTimeout: 同步交易结果的超时时间
+```java
+public ResponseInfo sendMultiSignVote(MultSign.VoteStatus voteStatus, String multiSignReqTxId, 
+                                      String payloadHash,
+                                      Request.EndorsementEntry endorsement, long rpcCallTimeout,
+                                      long syncResultTimeout) throws InvalidProtocolBufferException {}
+```
 
-### 2.5 消息订阅接口
-#### 2.5.1 区块订阅
+### 2.6 消息订阅接口
+#### 2.6.1 区块订阅
 **参数说明**
   - startBlock: 订阅起始区块高度，若为-1，表示订阅实时最新区块
   - endBlock: 订阅结束区块高度，若为-1，表示订阅实时最新区块
@@ -588,7 +731,7 @@ message ConsensusConfig {
     }
 ```
 
-#### 2.5.2 交易订阅
+#### 2.6.2 交易订阅
 **参数说明**
   - startBlock: 订阅起始区块高度，若为-1，表示订阅实时最新区块
   - endBlock: 订阅结束区块高度，若为-1，表示订阅实时最新区块
@@ -600,22 +743,63 @@ message ConsensusConfig {
     }
 ```
 
-### 2.6 管理类接口
-#### 2.6.1 SDK停止接口：关闭连接池连接，释放资源
+### 2.7 管理类接口
+#### 2.7.1 SDK停止接口：关闭连接池连接，释放资源
 ```java
 public void stop() {}
 ```
 
-## 3 使用过程
+## 3 User类接口
+
+### 3.1 生成用于管理合约交易的签名后的payload
+
+**参数说明**
+  - payload: 签名前的payload
+
+**返回值说明**
+  - 返回带签名的payload字节数组
+
+```java
+    public byte[] signPayloadOfContractMgmt(byte[] payload, boolean isEnabledCertHash) 
+            throws InvalidProtocolBufferException {
+    }
+```
+
+### 3.2 生成用于系统合约调用的签名后的payload
+
+**参数说明**
+  - payload: 签名前的payload
+
+**返回值说明**
+  - 返回带签名的payload字节数组
+
+```java
+    public byte[] signPayloadOfSystemContract(byte[] payloadBytes, boolean isEnabledCertHash) 
+            throws InvalidProtocolBufferException {
+    }
+```
+### 3.3 生成用于多签交易的payload
+
+**参数说明**
+  - payload: 签名前的payload
+
+**返回值说明**
+  - 返回包含签名的EndorsementEntry
+
+```java
+public Request.EndorsementEntry signPayloadOfMultiSign(byte[] payload, boolean isEnabledCertHash) {}
+```
+## 4 使用过程
 
 客户端使用SDK的过程如下：
 
-1. 创建ChainNode对象
+1. 创建User对象
+2. 创建Node对象
 2. 获取ChainManager单例对象
 3. 使用ChainManager获取或创建链对象，创建ChainClient时需要将ChainNode对象作为参数传入
 4. 调用ChainClient对象的接口进行操作
 
-## 3.3 使用示例
+## 5 使用示例
 
 1. 初始化，创建ChainClient
 
@@ -675,9 +859,9 @@ public void stop() {}
    }
 ```
 
-## 4 SDK Jar包引用方式
+## 6 SDK Jar包引用方式
 
-### 4.1 编译
+### 6.1 编译
 
 ```
 git clone https://git.code.tencent.com/ChainMaker/chainmaker-sdk-java.git
@@ -686,7 +870,7 @@ cd chainamker-sdk-java
 ./gradle build
 ```
 
-### 4.2 使用
+### 6.2 使用
 
 1. 导入Jar包，这里使用IntelliJ为示例引用Jar包，将编译好的jar包拷贝到需要使用sdk的项目下（一般可以在项目下建一个libs目录），然后打开IntelliJ IDEA->File->Project Structures，如下图点击“+”号，选择JARs or Directories，选中Jar包点击open即可。
 
