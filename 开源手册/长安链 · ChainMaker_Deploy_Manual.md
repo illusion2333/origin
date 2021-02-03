@@ -2,11 +2,11 @@
 
 @永芯
 
-## 依赖环境
+## 1 依赖环境
 
 
 
-## 部署方式
+## 2 部署方式
 
 ### 本地部署
 
@@ -22,57 +22,79 @@
 
 
 
-## 快速部署SOLO
+## 3 快速部署（SOLO模式）
 
-### 物料下载
+### 3.1 物料下载
 
-【本地、docker】
+```sh
+git clone --recurse-submodules git@git.code.tencent.com:ChainMaker/chainmaker-go.git
+```
 
-### 编译
+### 3.2 编译
 
-【本地】
+```sh
+cd chainmaker-go
+make pb-dep
+make
+```
 
-### 证书生成
+### 3.3 配置设置
 
+```sh
+cd build/release
 
+tar zvxf chainmaker-V1.0.0-wx-org1.chainmaker.org-20201201204232-x86_64.tar.gz
 
-### 配置设置
+修改链配置文件（路径为chainmaker-V1.0.0-wx-org1.chainmaker.org/config/wx-org1.chainmaker.org/chainconfig/bc1.yml）配置项consensus: type值为6（solo模式）
+```
 
+### 3.4 启动
 
+```sh
+cd chainmaker-V1.0.0-wx-org1.chainmaker.org/bin
+./start.sh
+```
 
-### 启动
+### 3.5 交易验证
 
-【本地、docker】
+```sh
+./cmc client contract user create --admin-key-file-paths=../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.key --admin-crt-file-paths=../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.crt  --org-id=wx-org1.chainmaker.org --chain-id=chain1 --client-crt-file-paths=../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt --client-key-file-paths=../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key --byte-code-path=../../test/wasm/asset-rust-0.7.2.wasm --contract-name=asset_new24 --runtime-type=WASMER --sdk-conf-path=../sdk/testdata/sdk_config.yml --version=1.0 --sync-result=true --params="{\"issue_limit\":\"500000000\",\"total_supply\":\"1000000000\"}"
+```
 
-### 交易验证
+## 4 快速部署（4节点TBFT共识）
 
+### 4.1 物料下载
 
+#### 4.1.1 下载源码
 
-## 4节点部署（TBFT）
+git clone --recurse-submodules git@git.code.tencent.com:ChainMaker/chainmaker-go.git
 
-### 物料下载
+#### 4.1.2 安装tmux
 
-【本地、docker】
+Mac: brew install tmux
 
-### 编译
+Centos: yum install tmux
 
-【本地】
+### 4.2 编译
 
-### 证书生成
+```sh
+cd chainmaker-go
+make pb-dep
+make
+```
 
+### 4.3 启动
 
+```sh
+cd scripts
+./cluster_quick_start.sh
+```
 
-### 配置设置
+### 4.4 交易验证
 
-
-
-### 启动
-
-【本地、docker】
-
-### 交易验证
-
-
+```sh
+./cmc client contract user create --admin-key-file-paths=../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.key --admin-crt-file-paths=../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.crt  --org-id=wx-org1.chainmaker.org --chain-id=chain1 --client-crt-file-paths=../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt --client-key-file-paths=../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key --byte-code-path=../../test/wasm/asset-rust-0.7.2.wasm --contract-name=asset_new24 --runtime-type=WASMER --sdk-conf-path=../sdk/testdata/sdk_config.yml --version=1.0 --sync-result=true --params="{\"issue_limit\":\"500000000\",\"total_supply\":\"1000000000\"}"
+```
 
 
 
