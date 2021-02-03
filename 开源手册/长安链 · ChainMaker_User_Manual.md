@@ -555,7 +555,145 @@ permissions:
 
 ### 同步模块@永芯
 
-【重构后的实现】
+同步模块负责提供节点之间快速进行区块同步的服务，当新节点/远离链最新状体的节点，加入网络时，节点会通过模块与其他节点进行状态交互，迅速同步区块数据至链的最新状态.
+
+#### 组件描述
+
+组件描述分为两部分：其它模块组件的交互、本模块组件的构成.
+
+##### 交互的其它模块组件
+
+使用其它模块的组件，进行网络消息通信、区块验证、新区块上链等服务.
+
+* **protocol.NetService**：发送或接收网络请求，提供与其它节点进行网络信息交互的服务.
+* **msgbus.MessageBus**：发送或接收消息给内部的其他模块，提供节点内部数据交互的服务.
+* **protocol.BlockchainStore**：提供DB查询服务，获取链上信息，如获取指定高度的区块数据.
+* **protocol.LedgerCache**：获取当前节点的缓存的最新链上状态
+* **protocol.BlockVerifier**：对获取到的区块提供验证服务
+* **protocol.BlockCommitter**：通过验证的区块会被添加至链上
+
+##### 本模块组件构成
+
+* **BlockSyncServer**：sync模块对外提供服务的整体结构，依赖了外部模块组件和内部组件
+* **Routine**：工具类，提供内部服务的托管功能，使用单独的goroutine运行注册的服务；本身含有一个优先级任务队列，调用者可以向该队列中添加任务，使用托管的服务依次执行优先级队列中的任务，并将执行结果返回给上层调用方
+* **scheduler**：请求区块服务，内部维护本节点链接的所有节点状态（对等节点的最新高度），当前已知高度区块的状态，以及正在请求的区块状态等；上层调用方收到节点状态时，更新内部维护的区块状态；同时，上层调用方定时触发区块请求任务，服务接收到请求后，依据内部维护的状态，选择一个待同步的区块和请求节点，向请求节点发送区块请求消息；并将收到的区块信息发送给**processor**服务
+* **processor**：处理区块服务，内部维护接收到的区块信息，下一个待上链的区块高度；上层调用方定时触发区块处理任务，服务依据自身内部状态，处理待上链的区块，如果该区块不存在，则跳过此次任务处理，直到接收到该区块；并将区块的处理结果返回给**scheduler**服务
+
+#### 网络消息
+
+节点之间的网络消息分为两组：节点状态的请求与应答，区块信息的请求与应答 
+
+```go
+type SyncBlockMsg_MsgType int32
+
+const (
+   SyncBlockMsg_NODE_STATUS_REQ  SyncBlockMsg_MsgType = 0
+   SyncBlockMsg_NODE_STATUS_RESP SyncBlockMsg_MsgType = 1
+   SyncBlockMsg_BLOCK_SYNC_REQ   SyncBlockMsg_MsgType = 2
+   SyncBlockMsg_BLOCK_SYNC_RESP  SyncBlockMsg_MsgType = 3
+)
+```
+
+**protobuf的数据结构**
+
+同步模块的网络消息，最外层结构如下，`Type`为上述四种消息类型，`Payload`为消息的载荷数据。
+
+```go
+type SyncBlockMsg struct {
+	Type    SyncBlockMsg_MsgType 
+	Payload []byte               
+}
+```
+
+
+
+* 节点状态的请求消息，它的载和数据为空
+
+* 节点状态的应答消息，它的载荷数据为下列结构用protobuf序列化后的字节码
+
+  ```go
+  type BlockHeightBCM struct {
+  	BlockHeight int64 
+  }
+  ```
+
+* 区块请求消息，它的载荷数据为下列结构用protobuf序列化后的字节码
+
+  ```go
+  type BlockSyncReq struct {
+  	BlockHeight int64 
+  	BatchSize   int64 
+  	ReturnRwset bool  
+  }
+  ```
+
+  * **BlockHeight**：区块请求的起始高度
+  * **BatchSize**：依次请求几个区块；如起始高度为10，`BatchSize`为2，则表示请求 10，11两个区块
+  * **ReturnRwset**：是否返回区块的读写集数据；True，返回区块的读写集数据
+  
+* 区块应答消息，它的载荷数据为下列结构用protobuf序列化后的字节码
+
+  ```go
+  type BlockBatch struct {
+  	Batchs []*Block 
+  }
+  
+  type BlockInfoBatch struct {
+  	Batchs []*BlockInfo 
+  }
+  type BlockInfo struct {
+  	Block *Block 
+  	RwsetList []*TxRWSet 
+  }
+  ```
+
+  * **BlockBatch**：当仅请求区块数据时，返回的应答为该结构
+  * **BlockInfoBatch**：当请求区块以及它的读写集数据时，返回的应答为该结构
+
+#### 配置
+
+同步模块有如下几个配置：
+
+```go
+type syncConfig struct {
+	BroadcastTime             uint32  `mapstructure:"broadcast_time"`
+	BlockPoolSize             uint32  `mapstructure:"block_pool_size"`
+	WaitTimeOfBlockRequestMsg uint32  `mapstructure:"wait_time_requested"`
+	BatchSizeFromOneNode      uint32  `mapstructure:"batch_Size_from_one_node"`
+	ProcessBlockTick          float64 `mapstructure:"process_block_tick"`
+	NodeStatusTick            float64 `mapstructure:"node_status_tick"`
+	LivenessTick              float64 `mapstructure:"liveness_tick"`
+	SchedulerTick             float64 `mapstructure:"scheduler_tick"`
+}
+```
+
+
+
+* **BlockPoolSize**：scheduler服务内部任务队列的大小
+* **WaitTimeOfBlockRequestMsg**：区块请求的超时时间，当请求超时后，该请求的任务会被放回队列，待下一次重新执行
+* **BatchSizeFromOneNode**：单次发送区块数据请求时，从一个节点连续获取的区块个数，即上述protobuf中描述的`BatchSize`
+* **ProcessBlockTick**：处理接收的区块数据的定时器间隔时长，单位：秒
+* **NodeStatusTick**：获取所有链接节点的状态信息定时器间隔时长，单位：秒
+* **LivenessTick**：检测区块请求应答是否超时的定时器时长，单位：秒
+* **SchedulerTick**：发送区块请求的定时器时长，单位：秒
+
+
+
+#### 同步流程及状态流转
+
+同步模块内部对特定数据有如下的状态跟踪.
+
+* scheduler服务内部对节点的状态跟踪：`map[string]int64`
+  * key为节点的nodeId，value为节点的最新区块高度
+* scheduler服务内部对区块的状态跟踪: `map[int64]blockState`
+  * Key 为区块高度，value为区块状态，分别为：`newBlock`, `pendingBlock`, `receivedBlock`
+    * `newBlock`: 初次从一个节点状态中了解到某个高度的区块存在
+    * `pendingBlock`：向某个节点请求该区块的数据
+    * `receivedBlock`：从某个节点接收到该区块的数据
+
+
+
+ <img src="images/chainmaker-sync-flow.png" width = "700" height = "700" alt="图片名称"/>
 
 ### ~~SPV模块~~
 
@@ -563,7 +701,7 @@ permissions:
 
 ### 交易池@永芯
 
-【单笔模式和批量模式】
+【单笔模式】
 
 【接口说明】
 
