@@ -1,3 +1,7 @@
+---
+typora-root-url: ../开源手册
+---
+
 # 长安链 · ChainMaker User Manual
 
 
@@ -330,13 +334,471 @@ chainmaker节点地址遵循libp2p网络地址格式协定，例如：
 
 【RPC服务、<u>配置说明（TLS、流量控制等）</u>、数据结构内容需要修改】
 
-### 存储模块@长辉
+### 存储模块
 
-【账本存储的<u>处理流程</u>、存储支持的数据库类型、模块接口说明、配置说明】
+存储模块负责存储区块链上的区块、交易、账本数据和历史读写集数据，在提交区块时，这些数据就会被存储模块进行存储。存储模块的整体架构如下图：
 
-【RocksDB的编译部署方式】
+![存储架构图](./ChainMaker_User_Manual_Images/store_structure.png)
 
-【mysql的账本结构、分布式存储的支持】本次是否开源？
+#### 账本存储的处理流程
+
+##### 区块提交存储流程
+
+1.	首先序列化后的区块数据、读写集列表、以及最新区块高度写入Block binary log(wal)，用于异常中断后的恢复。同时为了提高性能，加入cache层，新区块提交请求在更新完Block binary log之后，再将区块数据（包括区块、交易、状态数据、读写集）写入cache。更新完log和cache后即可返回，由后台线程异步更新Block DB、State DB和History DB。
+2.	在Block DB中记录区块信息与交易信息，其中交易信息以TxID作为key存储，区块信息以BlockHeight作为key存储，区块信息中只记录交易ID列表，同时索引BlockHash到BlockHeight的映射关系，同时Block DB中记录最新的区块高度（LastBlockHeight）作为checkpoint，以批量事务的方式提交，保证批处理的原子性。
+3.	在State DB中记录交易修改的state数据，key为合约名与对象主键的组合：<contractName, ObjectKey>，同时记录最新的区块高度（LastBlockHeight）作为checkpoint，以批量事务的方式提交，保证批处理的原子性。
+4.	在History DB中记录交易的读写集，读写集以TxID作为key，同时记录最新的区块高度（LastBlockHeight）作为checkpoint，以批量事务的方式提交，保证批处理的原子性。
+
+##### 账本恢复流程
+
+如果在提交区块过程中，单个数据库存储发生异常，将会导致数据库之间的数据不一致，程序遇到这种情况后会主动退出。然后系统在重启时会进入恢复流程：
+
+1.	分别从Block binary log、Block DB、State DB、History DB中获取最新的区块高度，以Block binary log中的区块高度作为基准高度，判断其他DB是否落后基准高度。
+2.	如果存在DB落后基准高度，则从Block bianry log中获取缺失的区块及读写集，依次提交到落后DB中。
+3.	所有DB同步到基准高度后，存储模块启动完成，BlockChain模块继续调度其他模块完成启动。
+
+##### 账本查询流程
+
+查询请求首先查询cache中的kv数据，如果cache命中则返回，cache不存在再从DB中查询。对于删除操作，cache中提供标记删除，以表明最新的key已经被删除。对于范围查询，多条数据可能同时存在cache和db中，需要进行数据合并。
+
+#### 账本数据库类型
+
+账本数据库支持多个不同的数据库，以匹配不同的业务需求
+
+- LevelDB
+- RocksDB
+- MySQL/分布式MySQL
+
+#### 存储模块接口
+
+```go
+// BlockchainStore provides handle to store instances
+type BlockchainStore interface {
+
+	// PutBlock commits the block and the corresponding rwsets in an atomic operation
+	PutBlock(block *pb.Block, txRWSets []*pb.TxRWSet) error
+
+	// GetBlock returns a block given it's hash, or returns nil if none exists.
+	GetBlock(blockHash []byte) (*pb.Block, error)
+
+	// HasBlock returns true if the black hash exist, or returns false if none exists.
+	HasBlock(blockHash []byte) (bool, error)
+
+	// GetBlockAt returns a block given it's block height, or returns nil if none exists.
+	GetBlockAt(height int64) (*pb.Block, error)
+
+	// GetLastConfigBlock returns the last config block.
+	GetLastConfigBlock() (*pb.Block, error)
+
+	// GetBlockByTx returns a block which contains a tx.
+	GetBlockByTx(txId string) (*pb.Block, error)
+
+	// GetBlockWithTxRWSets returns a block and the corresponding rwsets given
+	// it's block height, or returns nil if none exists.
+	GetBlockWithTxRWSets(height int64) (*pb.BlockWithRWSet, error)
+
+	// GetTx retrieves a transaction by txid, or returns nil if none exists.
+	GetTx(txId string) (*pb.Transaction, error)
+
+	// HasTx returns true if the tx exist, or returns false if none exists.
+	HasTx(txId string) (bool, error)
+
+	// GetLastBlock returns the last block.
+	GetLastBlock() (*pb.Block, error)
+
+	// ReadObject returns the state value for given contract name and key, or returns nil if none exists.
+	ReadObject(contractName string, key []byte) ([]byte, error)
+
+	// SelectObject returns an iterator that contains all the key-values between given key ranges.
+	// startKey is included in the results and limit is excluded.
+	SelectObject(contractName string, startKey []byte, limit []byte) Iterator
+
+	// GetTxRWSet returns an txRWSet for given txId, or returns nil if none exists.
+	GetTxRWSet(txId string) (*pb.TxRWSet, error)
+
+	// GetTxRWSetsByHeight returns all the rwsets corresponding to the block,
+	// or returns nil if zhe block does not exist
+	GetTxRWSetsByHeight(height int64) ([]*pb.TxRWSet, error)
+
+	// GetDBHandle returns the database handle for  given dbName(chainId)
+	GetDBHandle(dbName string) DBHandle
+
+	// Close is used to close database
+	Close() error
+}
+```
+
+#### 配置说明
+
+节点本地配置关于存储部分的配置说明：
+
+```yaml
+storage:
+	provider: LevelDB	#数据库类型，支持LevelDB，RocksDB，MySQL/分布式MySQL
+	store_path: ../data/ledgerData  #账本的存储路径， 包括LevelDB、RocksDB的数据目录，Block binary log的数据目录
+	write_buffer_size: 4	#LevelDB、RocksDB的write_buffer_size， 单位为MB，默认为4M
+	bloom_filter_bits: 10	#LevelDB、RocksDB的布隆过滤器参数，为每个key分配的额外bit空间，默认为10，如果少于或等于0，则不开启布隆过滤。
+	disable_historydb: false	#是否禁用历史读写集的存储功能， 默认为false，也就是保存历史读写集。
+	mysql:	#MySQL相关配置，只有provider选择MySQL时才需要配置
+		dsn: user:password?@tcp(ip:port)/	#mysql的连接信息，包括用户名、密码、ip、port等，示例：root:admin?@tcp(127.0.0.1:3306)
+		max_idle_conns: 10	#连接池中维持的最大的空闲连接数，默认为10
+		max_open_conns: 10	#最大的可用连接数，默认为10
+		conn_max_lifetime: 60	#连接维持的最长时间，单位秒，默认为60
+```
+
+#### RocksDB部署
+
+#### 1. Rocksdb使用
+
+因为rocksdb本身是使用C++写的，而目前使用gorocksdb需要依赖rocksdb的库文件，因此直接编译会报错，针对该问题，目前采用了条件编译的方式。
+
+##### 1.1 未安装Rocksdb的环境下编译启动
+
+针对未安装Rocksdb的环境，可直接通过go build正常编译，但是要求必须使用levelDB，若配置为rocksDB会出现空指针错误。
+
+##### 1.2 使用RocksDB编译启动
+
+若要使用RocksDB则必须先本地安装RocksDB环境，安装方式包括两部分：
+ + 1.RocksDB安装：https://github.com/facebook/rocksdb/blob/master/INSTALL.md
+ + 2.gorocksdb安装：https://github.com/tecbot/gorocksdb
+
+使用rocksdb需要通过-tag方式启动，build方式：
+
+```shell script
+go build -tags=rocksdb 
+```
+
+若通过go run直接启动则使用下面的方式：
+
+```shell script
+go run -tags=rocksdb main.go {params}
+```
+
+#### 2. Linux下Rocksdb环境安装
+
+##### 2.1 安装依赖
+
+安装gcc、zlib、snappy、lz4等依赖工具
+
+```shell
+yum -y install lrzsz git gcc gcc-c++ lz4-devel
+```
+
+```shell
+yum -y install snappy snappy-devel zlib zlib-devel bzip2 bzip2-devel lz4 lz4-devel zstd
+```
+
+##### 2.2 安装cmake
+
+gflags-2.2.2对cmake版本有要求，所以需要指定版本的cmake
+
+```shell
+curl -O   https://cmake.org/files/v3.6/cmake-3.6.0-Linux-x86_64.tar.gz
+mv cmake-3.6.0-Linux-x86_64.tar.gz /opt/
+cd /opt/
+tar -xvzf cmake-3.6.0-Linux-x86_64.tar.gz
+yum remove cmake
+
+cat >>/etc/profile <<EOF
+
+export PATH=\$PATH:/opt/cmake-3.6.0-Linux-x86_64/bin
+
+EOF
+source /etc/profile
+```
+
+##### 2.3 安装gflags
+
+```shell
+wget -O gflags-2.2.2.tar.gz https://github.com/gflags/gflags/archive/v2.2.2.tar.gz
+tar -xvzf gflags-2.2.2.tar.gz
+cd gflags-2.2.2/
+mkdir build
+cd build/
+cmake -DBUILD_SHARED_LIBS=ON -DBUILD_STATIC_LIBS=ON -DINSTALL_HEADERS=ON -DINSTALL_SHARED_LIBS=ON -DINSTALL_STATIC_LIBS=ON ..
+make
+make install
+
+cat >>/etc/profile <<EOF
+
+export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/usr/local/lib
+EOF
+source /etc/profile
+```
+
+##### 2.4 下载并安装rocksdb
+
+```shell
+wget -O rocksdb-5.18.3.tar.gz https://github.com/facebook/rocksdb/archive/v5.18.3.tar.gz
+tar -xzvf rocksdb-5.18.3.tar.gz
+
+cd rocksdb-5.18.3
+mkdir build
+cd build
+
+cmake -DCMAKE_INSTALL_PREFIX=/usr/local/rocksdb ..
+
+make
+make install
+
+cat >>/etc/profile <<EOF
+
+export CPLUS_INCLUDE_PATH=\$CPLUS_INCLUDE_PATH:/usr/local/rocksdb/include/
+export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/usr/local/rocksdb/lib64/
+export LIBRARY_PATH=\$LIBRARY_PATH:/usr/local/rocksdb/lib64/
+
+EOF
+
+source /etc/profile
+
+```
+
+##### 2.5 使用测试
+
+``` shell
+[root@VM-219-157-centos /opt/rocksdb-5.18.3/build]# cd tools/
+[root@VM-219-157-centos /opt/rocksdb-5.18.3/build/tools]# ll
+total 2608
+drwxr-xr-x 12 root root    4096 Dec 25 10:38 CMakeFiles
+-rw-r--r--  1 root root     269 Dec 25 10:38 CTestTestfile.cmake
+-rw-r--r--  1 root root   18973 Dec 25 10:38 Makefile
+-rw-r--r--  1 root root     988 Dec 25 10:38 cmake_install.cmake
+-rwxr-xr-x  1 root root  232649 Dec 25 10:55 db_repl_stress
+-rwxr-xr-x  1 root root  233443 Dec 25 10:55 db_sanity_test
+-rwxr-xr-x  1 root root 1338230 Dec 25 10:55 db_stress
+-rwxr-xr-x  1 root root   48060 Dec 25 10:55 ldb
+-rwxr-xr-x  1 root root  207347 Dec 25 10:55 rocksdb_dump
+-rwxr-xr-x  1 root root  207358 Dec 25 10:55 rocksdb_undump
+-rwxr-xr-x  1 root root    8571 Dec 25 10:55 sst_dump
+-rwxr-xr-x  1 root root  350147 Dec 25 10:55 write_stress
+[root@VM-219-157-centos /opt/rocksdb-5.18.3/build/tools]#
+[root@VM-219-157-centos /opt/rocksdb-5.18.3/build/tools]#
+[root@VM-219-157-centos /opt/rocksdb-5.18.3/build/tools]#
+[root@VM-219-157-centos /opt/rocksdb-5.18.3/build/tools]# ./ldb -help
+ldb - RocksDB Tool
+
+commands MUST specify --db=<full_path_to_db_directory> when necessary
+
+The following optional parameters control if keys/values are input/output as hex or as plain strings:
+  --key_hex : Keys are input/output as hex
+  --value_hex : Values are input/output as hex
+  --hex : Both keys and values are input/output as hex
+
+The following optional parameters control the database internals:
+  --column_family=<string> : name of the column family to operate on. default: default column family
+  --ttl with 'put','get','scan','dump','query','batchput' : DB supports ttl and value is internally timestamp-suffixed
+  --try_load_options : Try to load option file from DB.
+  --ignore_unknown_options : Ignore unknown options when loading option file.
+  --bloom_bits=<int,e.g.:14>
+  --fix_prefix_len=<int,e.g.:14>
+  --compression_type=<no|snappy|zlib|bzip2|lz4|lz4hc|xpress|zstd>
+  --compression_max_dict_bytes=<int,e.g.:16384>
+  --block_size=<block_size_in_bytes>
+  --auto_compaction=<true|false>
+  --db_write_buffer_size=<int,e.g.:16777216>
+  --write_buffer_size=<int,e.g.:4194304>
+  --file_size=<int,e.g.:2097152>
+
+
+Data Access Commands:
+  put <key> <value>  [--ttl]
+  get <key> [--ttl]
+  batchput <key> <value> [<key> <value>] [..] [--ttl]
+  scan [--from] [--to]  [--ttl] [--timestamp] [--max_keys=<N>q]  [--start_time=<N>:- is inclusive] [--end_time=<N>:- is exclusive] [--no_value]
+  delete <key>
+  deleterange <begin key> <end key>
+  query [--ttl]
+    Starts a REPL shell.  Type help for list of available commands.
+  approxsize [--from] [--to]
+  checkconsistency
+
+
+Admin Commands:
+  dump_wal --walfile=<write_ahead_log_file_path> [--header]  [--print_value]  [--write_committed=true|false]
+  compact [--from] [--to]
+  reduce_levels --new_levels=<New number of levels> [--print_old_levels]
+  change_compaction_style --old_compaction_style=<Old compaction style: 0 for level compaction, 1 for universal compaction> --new_compaction_style=<New compaction style: 0 for level compaction, 1 for universal compaction>
+  dump [--from] [--to]  [--ttl] [--max_keys=<N>] [--timestamp] [--count_only] [--count_delim=<char>] [--stats] [--bucket=<N>] [--start_time=<N>:- is inclusive] [--end_time=<N>:- is exclusive] [--path=<path_to_a_file>]
+  load [--create_if_missing] [--disable_wal] [--bulk_load] [--compact]
+  manifest_dump [--verbose] [--json] [--path=<path_to_manifest_file>]
+  list_column_families full_path_to_db_directory
+  dump_live_files
+  idump [--from] [--to]  [--input_key_hex] [--max_keys=<N>] [--count_only] [--count_delim=<char>] [--stats]
+  repair
+  backup [--backup_env_uri]  [--backup_dir]  [--num_threads]  [--stderr_log_level=<int (InfoLogLevel)>]
+  restore [--backup_env_uri]  [--backup_dir]  [--num_threads]  [--stderr_log_level=<int (InfoLogLevel)>]
+  checkpoint [--checkpoint_dir]
+  write_extern_sst <output_sst_path>
+  ingest_extern_sst <input_sst_path> [--move_files]  [--snapshot_consistency]  [--allow_global_seqno]  [--allow_blocking_flush]  [--ingest_behind]  [--write_global_seqno]
+
+[root@VM-219-157-centos /opt/rocksdb-5.18.3/build/tools]#
+[root@VM-219-157-centos /opt/rocksdb-5.18.3/build/tools]#
+[root@VM-219-157-centos /opt/rocksdb-5.18.3/build/tools]#
+[root@VM-219-157-centos /opt/rocksdb-5.18.3/build/tools]#
+[root@VM-219-157-centos /opt/rocksdb-5.18.3/build/tools]#
+[root@VM-219-157-centos /opt/rocksdb-5.18.3/build/tools]#
+[root@VM-219-157-centos /opt/rocksdb-5.18.3/build/tools]# pwd
+/opt/rocksdb-5.18.3/build/tools
+[root@VM-219-157-centos /opt/rocksdb-5.18.3/build/tools]# ll /tmp/
+total 32
+srwxrwxrwx 1 root root    0 Dec 18 23:04 agent_cmd.sock
+drwxr-xr-x 2 root root 4096 Dec 25 10:14 commandnotfound
+-rw-r--r-- 1 root root   53 Dec 17 10:44 cpuidle_support.log
+-rw-r--r-- 1 root root 2513 Dec 17 10:43 cvm_init.log
+-rw-r--r-- 1 root root  297 Dec 17 10:44 net_affinity.log
+-rw-r--r-- 1 root root   26 Dec 17 10:44 nv_gpu_conf.log
+-rw-r--r-- 1 root root  155 Dec 17 10:44 setRps.log
+drwx------ 3 root root 4096 Dec 17 10:44 systemd-private-e9868203df724169bf07a791d55819cd-ntpd.service-mA2nuw
+-rw-r--r-- 1 root root 2017 Dec 17 10:44 virtio_blk_affinity.log
+[root@VM-219-157-centos /opt/rocksdb-5.18.3/build/tools]# ./ldb --db=/tmp/test_db --create_if_missing put a1 b1
+OK
+
+[root@VM-219-157-centos /opt/rocksdb-5.18.3/build/tools]# ./ldb --db=/tmp/test_db scan
+a1 : b1
+
+[root@VM-219-157-centos /opt/rocksdb-5.18.3/build/tools]# ./ldb --db=/tmp/test_db get a1
+b1
+
+[root@VM-219-157-centos /opt/rocksdb-5.18.3/build/tools]# ./ldb --db=/tmp/test_db get a2
+Failed: NotFound:
+[root@VM-219-157-centos /opt/rocksdb-5.18.3/build/tools]# cd /tmp/test_db/
+[root@VM-219-157-centos /tmp/test_db]# ll
+total 920
+-rw-r--r-- 1 root root    26 Dec 25 11:13 000003.log
+-rw-r--r-- 1 root root    16 Dec 25 11:13 CURRENT
+-rw-r--r-- 1 root root    37 Dec 25 11:13 IDENTITY
+-rw-r--r-- 1 root root     0 Dec 25 11:13 LOCK
+-rw-r--r-- 1 root root 16246 Dec 25 11:14 LOG
+-rw-r--r-- 1 root root 19272 Dec 25 11:13 LOG.old.1608866049557780
+-rw-r--r-- 1 root root 15784 Dec 25 11:14 LOG.old.1608866049562808
+-rw-r--r-- 1 root root 16246 Dec 25 11:14 LOG.old.1608866058035881
+-rw-r--r-- 1 root root 15788 Dec 25 11:14 LOG.old.1608866058041253
+-rw-r--r-- 1 root root 16250 Dec 25 11:14 LOG.old.1608866062086538
+-rw-r--r-- 1 root root 15784 Dec 25 11:14 LOG.old.1608866062091559
+-rw-r--r-- 1 root root    13 Dec 25 11:13 MANIFEST-000001
+-rw-r--r-- 1 root root  4744 Dec 25 11:13 OPTIONS-000005
+[root@VM-219-157-centos /tmp/test_db]# cat 000003.log
+����a1b1[root@VM-219-157-centos /tmp/test_db]#
+
+```
+
+
+##### 2.6 安装zstd
+
+zstd是facebook为适配rocksdb开发的zstandard数据压缩工具，如果不安装该软件，会导致gorocksdb安装失败。
+
+安装步骤如下：
+
+```shell
+cd /usr/local
+git clone https://github.com/facebook/zstd.git
+cd zstd
+make
+make install
+```
+
+##### 2.7 安装gorocksdb
+
+通过4.1-4.6安装步骤后，rocksdb会被安装在 usr/local/rocksdb 这个目录下，我们使用go版本的rocksdb需要依赖于该路径。
+
+目前使用的gorocksdb为：github.com/tecbot/gorocksdb
+
+安装上述的安装路径，使用下面的命令即可：
+
+```shell
+CGO_CFLAGS="-I/usr/local/rocksdb/include" \
+CGO_LDFLAGS="-L/usr/local/rocksdb -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd" \
+  go get github.com/tecbot/gorocksdb
+
+```
+
+如果安装目录有变化，则修改对应的/usr/local/rocksdb对应的路径
+
+#### MySQL存储
+
+长安链支持MySQL作为账本存储引擎，同时也支持分布式的MySQL集群，如果使用MySQL作为存储引擎，长安链启动会自动创建数据库和表，使用chainId作为数据库名，同时创建相应的表：
+
+1. 区块元信息表
+
+   ```sql
+   CREATE TABLE `block_infos` (
+     `chain_id` varchar(128) COLLATE utf8mb4_general_ci DEFAULT NULL,
+     `block_height` bigint(20) NOT NULL,
+     `pre_block_hash` varbinary(128) DEFAULT NULL,
+     `block_hash` varbinary(128) DEFAULT NULL,
+     `pre_conf_height` bigint(20) DEFAULT '0',
+     `block_version` varbinary(128) DEFAULT NULL,
+     `dag_hash` varbinary(128) DEFAULT NULL,
+     `rw_set_root` varbinary(128) DEFAULT NULL,
+     `tx_root` varbinary(128) DEFAULT NULL,
+     `block_timestamp` bigint(20) DEFAULT '0',
+     `proposer` blob,
+     `consensus_args` blob,
+     `tx_count` bigint(20) DEFAULT '0',
+     `signature` blob,
+     `dag` blob,
+     `tx_ids` longtext COLLATE utf8mb4_general_ci,
+     `additional_data` longblob,
+     PRIMARY KEY (`block_height`),
+     KEY `idx_hash` (`block_hash`)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+   ```
+
+   
+
+2. 交易表
+
+   ```sql
+   CREATE TABLE `tx_infos` (
+     `chain_id` varchar(128) COLLATE utf8mb4_general_ci DEFAULT NULL,
+     `sender` blob,
+     `tx_id` varchar(128) COLLATE utf8mb4_general_ci NOT NULL,
+     `tx_type` int(11) DEFAULT NULL,
+     `block_height` bigint(20) DEFAULT NULL,
+     `offset` int(11) DEFAULT NULL,
+     `timestamp` bigint(20) DEFAULT '0',
+     `expiration_time` bigint(20) DEFAULT '0',
+     `request_payload` longblob,
+     `request_signature` blob,
+     `code` int(11) DEFAULT NULL,
+     `contract_result` longblob,
+     `rw_set_hash` varbinary(128) DEFAULT NULL,
+     PRIMARY KEY (`tx_id`),
+     KEY `idx_height_offset` (`block_height`,`offset`)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+   ```
+
+   
+
+3. 世界状态表
+
+   ```sql
+   CREATE TABLE `state_infos` (
+     `contract_name` varchar(128) COLLATE utf8mb4_general_ci NOT NULL,
+     `object_key` varbinary(128) NOT NULL DEFAULT '',
+     `object_value` longblob,
+     `block_height` bigint(20) DEFAULT NULL,
+     `updated_at` datetime(3) DEFAULT NULL,
+     PRIMARY KEY (`contract_name`,`object_key`),
+     KEY `idx_height` (`block_height`)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+   ```
+
+   
+
+4. 历史读写集表
+
+   ```sql
+   CREATE TABLE `history_infos` (
+     `tx_id` varchar(128) COLLATE utf8mb4_general_ci NOT NULL,
+     `rw_sets` longblob,
+     `block_height` bigint(20) DEFAULT NULL,
+     PRIMARY KEY (`tx_id`),
+     KEY `idx_height` (`block_height`)
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+   ```
+
+   
 
 ### 身份管理@张韬
 
@@ -715,7 +1177,60 @@ type syncConfig struct {
 
 ### 日志@瑞波
 
-【使用（全局或局部变量）、如何配置（全局、模块）】
+#### **如何使用**
+- 若无需区分链标识，可使用全局变量定义logger
+```go
+var log = logger.GetLogger(logger.MODULE_NET)
+logger.Info("log message")
+...
+```
+- 若需要区分链标识，则不可使用全局变量定义logger，建议放入结构体中
+```go
+type Foo struct {
+    log *logger.CMLogger
+    ...
+}
+
+foo := &Foo{
+    log: logger.GetLoggerByChain(logger.MODULE_NET, chainId)
+}
+
+func (f *Foo) a() {
+    f.log.Info("log message")
+}
+...
+```
+
+#### **logger配置**
+logger.yml
+```yaml
+log:
+  system:
+    log_level_default: INFO       # 默认日志级别
+    log_levels:                   # 模块日志级别自定义
+      core: INFO                  #   模块标识: 级别
+      net: INFO
+    file_path: ../log/system.log  # 日志文件指定
+    max_age: 365                  # 日志最长保存时间，单位：天
+    rotation_time: 1              # 日志滚动时间，单位：小时
+    log_in_console: true          # 是否展示日志到终端，仅限于调试使用
+    show_color: true              # 是否打印颜色日志
+  brief:
+    log_level_default: INFO
+    file_path: ../log/brief.log
+    max_age: 365                  # 日志最长保存时间，单位：天
+    rotation_time: 1              # 日志滚动时间，单位：小时
+    log_in_console: false         # 是否展示日志到终端，仅限于调试使用
+    show_color: true              # 是否打印颜色日志
+  event:
+    log_level_default: INFO
+    file_path: ../log/event.log
+    max_age: 365                  # 日志最长保存时间，单位：天
+    rotation_time: 1              # 日志滚动间隔，单位：小时
+    log_in_console: false         # 是否展示日志到终端，仅限于调试使用
+    show_color: true              # 是否打印颜色日志
+
+```
 
 ## 数据模型@永芯
 
