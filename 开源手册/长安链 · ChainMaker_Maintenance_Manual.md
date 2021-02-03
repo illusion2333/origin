@@ -1,9 +1,5 @@
 # 长安链 · ChainMaker Maintenance Manual
 
-## 从无到有部署新链
-
-
-
 ## 链上配置变更
 
 
