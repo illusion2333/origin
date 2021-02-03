@@ -1,5 +1,5 @@
 ---
-typora-root-url: ./ChainMaker_User_Manual_Images
+typora-root-url: ../开源手册
 ---
 
 # 长安链 · ChainMaker User Manual
@@ -338,7 +338,7 @@ chainmaker节点地址遵循libp2p网络地址格式协定，例如：
 
 存储模块负责存储区块链上的区块、交易、账本数据和历史读写集数据，在提交区块时，这些数据就会被存储模块进行存储。存储模块的整体架构如下图：
 
-![存储架构图](/store_structure.png)
+![存储架构图](/ChainMaker_User_Manual_Images/store_structure.png)
 
 #### 账本存储的处理流程
 
