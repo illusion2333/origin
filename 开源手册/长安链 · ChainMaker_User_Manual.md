@@ -1039,7 +1039,60 @@ permissions:
 
 ### 日志@瑞波
 
-【使用（全局或局部变量）、如何配置（全局、模块）】
+#### **如何使用**
+- 若无需区分链标识，可使用全局变量定义logger
+```go
+var log = logger.GetLogger(logger.MODULE_NET)
+logger.Info("log message")
+...
+```
+- 若需要区分链标识，则不可使用全局变量定义logger，建议放入结构体中
+```go
+type Foo struct {
+    log *logger.CMLogger
+    ...
+}
+
+foo := &Foo{
+    log: logger.GetLoggerByChain(logger.MODULE_NET, chainId)
+}
+
+func (f *Foo) a() {
+    f.log.Info("log message")
+}
+...
+```
+
+#### **logger配置**
+logger.yml
+```yaml
+log:
+  system:
+    log_level_default: INFO       # 默认日志级别
+    log_levels:                   # 模块日志级别自定义
+      core: INFO                  #   模块标识: 级别
+      net: INFO
+    file_path: ../log/system.log  # 日志文件指定
+    max_age: 365                  # 日志最长保存时间，单位：天
+    rotation_time: 1              # 日志滚动时间，单位：小时
+    log_in_console: true          # 是否展示日志到终端，仅限于调试使用
+    show_color: true              # 是否打印颜色日志
+  brief:
+    log_level_default: INFO
+    file_path: ../log/brief.log
+    max_age: 365                  # 日志最长保存时间，单位：天
+    rotation_time: 1              # 日志滚动时间，单位：小时
+    log_in_console: false         # 是否展示日志到终端，仅限于调试使用
+    show_color: true              # 是否打印颜色日志
+  event:
+    log_level_default: INFO
+    file_path: ../log/event.log
+    max_age: 365                  # 日志最长保存时间，单位：天
+    rotation_time: 1              # 日志滚动间隔，单位：小时
+    log_in_console: false         # 是否展示日志到终端，仅限于调试使用
+    show_color: true              # 是否打印颜色日志
+
+```
 
 ## 数据模型@永芯
 
