@@ -112,8 +112,6 @@
 
 ### P2P网络@瑞波
 
-【网络组网方式、<u>节点身份管理方式、libp2p的改进项（stream pool）</u>、模块接口说明、配置说明】
-
 #### **组网方式**
 - chainmaker的P2P网络是基于libp2p实现并改进的，节点的网络地址遵循libp2p地址格式协议。
 - 通过种子节点设置可实现节点自动发现、自动连接功能，在线的每个节点默认都可作为其他节点的种子节点提供网络发现服务，从而实现了chainmaker的自动组网机制。
@@ -356,7 +354,204 @@ Serialize() ([]byte, error)，返回[]byte的结构说明
 
 ### 配置模块@瑞波
 
-【<u>本地配置、链上配置、链上配置生效过程</u>、配置变更操作（参见运维手册）】
+#### **本地配置**
+本地配置项都包含在chainmaker.yml中，具体配置如下：
+
+```yaml
+# 链配置
+blockchain:
+  - chainId: chain1 # 链ID
+    genesis: chainconfig/bc1.yml # 链配置文件
+#  - chainId: chain2
+#    genesis: chainconfig/bc2.yml
+#  - chainId: chain3
+#    genesis: chainconfig/bc3.yml
+#  - chainId: chain4
+#    genesis: chainconfig/bc4.yml
+
+# 节点配置
+node:
+  type:              full # 节点类型：full、spv
+  org_id:            wx-org1.chainmaker.org # 所属组织ID
+  priv_key_file:     ./certs/node/consensus1/consensus1.sign.key # 签名私钥
+  cert_file:         ./certs/node/consensus1/consensus1.sign.crt # 签名证书
+  signer_cache_size: 1000
+  cert_cache_size:   1000
+
+# 网络配置
+net:
+  provider: LibP2P # 网络类型，目前只支持libp2p
+  listen_addr: /ip4/0.0.0.0/tcp/11301 # 网络本地监听地址，包含IP和端口号，IP若为0.0.0.0则本地所有IP都会绑定监听
+  peer_stream_pool_size: 100  # 每个节点连接stream池大小上限，不配默认为100
+  max_peer_count_allow: 10 # 允许与本节点建立链接的节点总数量，不配默认为20
+  peer_elimination_strategy: 3 # 节点链接淘汰策略，1 Random, 2 FIFO, 3 LIFO。不配默认为3
+  seeds:  # 种子节点地址列表，用于节点发现，可选项。链配置中所有共识节点地址都会作为种子节点。
+    - "/ip4/127.0.0.1/tcp/6666/p2p/QmQZn3pZCcuEf34FSvucqkvVJEvfzpNjQTk17HS6CYMR35"
+  tls: # TLS认证配置
+    enabled: true # TLS认证开关，现阶段必须设置为true
+    priv_key_file: ./certs/node/consensus1/consensus1.tls.key # TLS私钥
+    cert_file:     ./certs/node/consensus1/consensus1.tls.crt # TLS证书
+
+# 交易池配置
+txpool:
+  max_txpool_size: 5120 # 普通交易池上限
+  max_config_txpool_size: 10 # config交易池的上限
+  full_notify_again_time: 30 # 交易池溢出后，再次通知打包的时间间隔(秒)
+
+# RPC服务配置
+rpc:
+  provider: grpc # 服务类型，目前只支持gRPC
+  port: 12301 # 服务监听端口
+  tls:
+    # TLS模式:
+    #   disable - 不启用TLS
+    #   oneway  - 单向认证
+    #   twoway  - 双向认证
+    #mode: disable
+    #mode: oneway
+    mode:           twoway 
+    priv_key_file:  ./certs/node/consensus1/consensus1.tls.key # TLS私钥
+    cert_file:      ./certs/node/consensus1/consensus1.tls.crt # TLS证书
+
+# 检测相关配置
+monitor:
+  enabled: false # 检测开关
+  port: 14321 # 检测服务监听端口
+
+# pprof功能配置
+pprof:
+  enabled: false # 开关
+  port: 24321 # 性能分析监听端口
+
+# 存储配置
+storage:
+  provider: leveldb # 数据库类型
+  store_path: ../data/ledgerData # 数据库所在路径
+
+# debug 相关配置
+debug:
+  is_cli_open: true # 是否开启CLI功能
+  is_http_open: false # 是否开启http
+  ...
+```
+
+#### **链配置**
+链配置是作为链启动时创建创世区块的依据，所以要求每条链每个节点的链配置文件都必须保持一致。
+具体链配置项如下：
+```yaml
+chain_id: chain1        # 链标识，链ID
+version: v1.0.0         # 链版本
+sequence: 1             # 配置版本
+auth_type: "identity"   # 认证类型，供身份管理模块验证使用
+
+crypto:
+  hash: SHA256 # 加密算法
+
+# 交易、区块相关配置
+block:
+  tx_timestamp_verify: true # 是否需要开启交易时间戳校验
+  tx_timeout: 600  # 交易时间戳的过期时间(秒)
+  block_tx_capacity: 100  # 区块中最大交易数
+  block_size: 10  # 区块最大限制，单位MB
+  block_interval: 2000 # 出块间隔，单位:ms
+
+# core模块
+core:
+  tx_scheduler_timeout: 10 #  [0, 60] 交易调度器从交易池拿到交易后, 进行调度的时间
+  tx_scheduler_validate_timeout: 10 # [0, 60] 交易调度器从区块中拿到交易后, 进行验证的超时时间
+
+#共识配置
+consensus:
+  # 共识类型(0-POW,1-PBFT,2-TENDERMINT,3-TBFT,4-HOTSTUFF,5-RAFT,6-SOLO,7-MBFT)
+  type: 3
+  # 共识节点列表，组织必须出现在trust_roots的org_id中，每个组织可配置多个共识节点，节点地址采用libp2p格式
+  nodes:
+    - org_id: "wx-org1.chainmaker.org" # 组织ID，该值与下方trust_roots对应，需要保证在trust_roots中配有该组织的根证书
+      address: # 该组织认证下的共识节点地址
+        - "/ip4/127.0.0.1/tcp/11301/p2p/QmcQHCuAXaFkbcsPUj7e37hXXfZ9DdN7bozseo5oX4qiC4"
+    - org_id: "wx-org2.chainmaker.org"
+      address:
+        - "/ip4/127.0.0.1/tcp/11302/p2p/QmeyNRs2DwWjcHTpcVHoUSaDAAif4VQZ2wQDQAUNDP33gH"
+    - org_id: "wx-org3.chainmaker.org"
+      address:
+        - "/ip4/127.0.0.1/tcp/11303/p2p/QmXf6mnQDBR9aHauRmViKzSuZgpumkn7x6rNxw1oqqRr45"
+    - org_id: "wx-org4.chainmaker.org"
+      address:
+        - "/ip4/127.0.0.1/tcp/11304/p2p/QmRRWXJpAVdhFsFtd9ah5F4LDQWFFBDVKpECAF8hssqj6H"
+  ext_config: # 扩展字段，记录难度、奖励等其他类共识算法配置
+    - key: ""
+      value: ""
+
+# 信任组织和根证书
+trust_roots:
+  - org_id: "wx-org1.chainmaker.org" # 信任组织ID
+    root: "./certs/ca/wx-org1.chainmaker.org/ca.crt" # 信任组织根证书
+  - org_id: "wx-org2.chainmaker.org"
+    root: "./certs/ca/wx-org2.chainmaker.org/ca.crt"
+  - org_id: "wx-org3.chainmaker.org"
+    root: "./certs/ca/wx-org3.chainmaker.org/ca.crt"
+  - org_id: "wx-org4.chainmaker.org"
+    root: "./certs/ca/wx-org4.chainmaker.org/ca.crt"
+
+# 权限配置
+permissions:
+  - resource_name: NODE_ADDR_UPDATE
+    principle:
+      rule: SELF # 规则（ANY，MAJORITY...，全部大写，自动转大写）
+      org_list: # 组织名称（组织名称，区分大小写）
+      role_list: # 角色名称（role，全部小写，自动转小写）
+        - admin
+  - resource_name: TRUST_ROOT_UPDATE
+    principle:
+      rule: SELF # 规则（ANY，MAJORITY...，全部大写）
+      org_list: # 组织名称（组织名称）
+      role_list: # 角色名称（role，全部小写）
+        - admin
+  - resource_name: CONSENSUS_EXT_DELETE
+    principle:
+      rule: MAJORITY
+      org_list:
+      role_list:
+        - admin
+  - resource_name: BLOCK_UPDATE
+    principle:
+      rule: ANY
+      org_list:
+      role_list:
+        - admin
+        - client
+  - resource_name: INIT_CONTRACT
+    principle:
+      rule: ANY
+      org_list:
+      role_list:
+  - resource_name: UPGRADE_CONTRACT
+    principle:
+      rule: ANY
+      org_list:
+      role_list:
+  - resource_name: FREEZE_CONTRACT
+    principle:
+      rule: ANY
+      org_list:
+      role_list:
+  - resource_name: UNFREEZE_CONTRACT
+    principle:
+      rule: ANY
+      org_list:
+      role_list:
+  - resource_name: REVOKE_CONTRACT
+    principle:
+      rule: ANY
+      org_list:
+      role_list:
+```
+
+当节点上的某个链是第一次启动时，会读取链配置文件中相关项和值，并创建一个新的GenesisBlock作为创世块写入节点链数据库。所以需要保证链上的所有节点的创世块相同，才能保证共识生效，这就要求当前链的所有节点上配置的链配置文件内容是相同一致的，即使链配置已在中途被调用链配置相关合约改动过，新节点启动时链配置文件也必须使用最早的版本。
+#### **配置变更**
+
+链配置变更需要通过系统配置合约来完成，具体请参考《运维手册》。
+
 
 ### 同步模块@永芯
 
