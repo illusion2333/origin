@@ -375,23 +375,23 @@ chainmaker节点地址遵循libp2p网络地址格式协定，例如：
 // 
 type BlockchainStore interface {
 
-	//存储区块，批量提交区块数据到账本，保存区块信息、交易信息、读写集、索引，更新状态数据
-	//保证多项数据修改的原子性
+	//提交区块，批量提交区块数据到账本，保存区块信息、交易信息、读写集、索引，更新状态数据等信息
+	//并对外保证多项数据修改的原子性
 	PutBlock(block *pb.Block, txRWSets []*pb.TxRWSet) error
 
 	//按区块hash查询区块，
 	//如果数据库内部错误，error返回错误信息；
-	//区块不存在，Block返回nil，error返回nil
+	//如果区块不存在，Block返回nil，error返回nil
 	GetBlockByHash(blockHash []byte) (*pb.Block, error)
 
 	//判断区块是否存在
 	//如果数据库内部错误，error返回错误信息；
-	//区块不存在，返回false
+	//如果区块不存在，返回false
 	BlockExist(blockHash []byte) (bool, error)
 
     //按区块高度查询区块
 	//如果数据库内部错误，error返回错误信息；
-	//区块不存在，Block返回nil，error返回nil
+	//如果区块不存在，Block返回nil，error返回nil
 	GetBlock(height int64) (*pb.Block, error)
 
 	//获取最新的配置区块
@@ -402,27 +402,27 @@ type BlockchainStore interface {
 
 	//查询带读写集的区块，
 	//如果数据库内部错误，error返回错误信息；
-	//区块不存在，返回nil，error返回nil
+	//如果区块不存在，返回nil，error返回nil
 	GetBlockWithRWSets(height int64) (*pb.BlockWithRWSet, error)
 
 	//按交易id查询交易
 	//如果数据库内部错误，error返回错误信息；
-	//交易不存在，Transaction返回nil，error返回nil
+	//如果交易不存在，Transaction返回nil，error返回nil
 	GetTx(txId string) (*pb.Transaction, error)
 
 	//判断交易是否存在，按交易id
 	//如果数据库内部错误，error返回错误信息；
-	//交易不存在，返回false
+	//如果交易不存在，返回false
 	TxExists(txId string) (bool, error)
 
 	//查询最新的区块
 	//如果数据库内部错误，error返回错误信息；
-	//区块不存在，Block返回nil，error返回nil
+	//如果区块不存在，Block返回nil，error返回nil
 	GetLastBlock() (*pb.Block, error)
 
 	//查询状态数据库，按合约名与key
 	//如果数据库内部错误，error返回错误信息；
-	//数据不存在，Object返回nil，error返回nil
+	//如果数据不存在，Object返回nil，error返回nil
 	ReadObject(contractName string, key []byte) ([]byte, error)
 
     //获取状态数据库的迭代器，按合约名与key区间查询，包括startKey, 不包括limit
@@ -434,7 +434,7 @@ type BlockchainStore interface {
 	//按区块高度查询区块的读写集列表
 	GetTxRWSetsByHeight(height int64) ([]*pb.TxRWSet, error)
 
-	//获取DB的操作句柄，为其他模块提供存储服务
+	//获取DB的操作句柄，为其他模块提供DB操作接口
 	GetDBHandle(dbName string) DBHandle
 
 	//关闭存储相关的数据库，释放数据资源
