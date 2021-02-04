@@ -1,16 +1,20 @@
 # 长安链 · ChainMaker Deploy Manual
 
-@永芯
-
 ## 1 依赖环境
 
+本节描述部署时，需要的主机环境、依赖库、工具等，当前支持在MacOS、Linux本地部署。
+
+|       | 依赖库、工具                                  | 安装方式                                                     |
+| ----- | --------------------------------------------- | ------------------------------------------------------------ |
+| MacOS | golang                                        | [安装方式](https://golang.org/doc/install#install)           |
+| Linux | golang                                        | [安装方式](https://golang.org/doc/install#download)          |
+| MacOS | wasmer运行时库 **libwasmer.dylib**            | 库在`chainmaker-go/main`目录下，将该库路径添加至系统PATH环境变量下 |
+| Linux | wasmer运行时库 **libwasmer_runtime_c_api.so** | 库在`chainmaker-go/main`目录下，将该库路径添加至系统PATH环境变量下 |
 
 
 ## 2 部署方式
 
-
-
-
+下面将描述本地部署单节点、四节点方式，其中单节点启用**SOLO**共识机制，四节点使用**TBFT**共识机制；项目`scripts`目录下提供了一键配置部署环境的脚本，支持在MacOS、Linux平台上，快速搭建不同的节点环境。
 
 ## 3 快速部署（SOLO模式）
 
