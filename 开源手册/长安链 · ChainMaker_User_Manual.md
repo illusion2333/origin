@@ -372,58 +372,72 @@ chainmaker节点地址遵循libp2p网络地址格式协定，例如：
 #### 存储模块接口
 
 ```go
-// BlockchainStore provides handle to store instances
+// 
 type BlockchainStore interface {
 
-	// PutBlock commits the block and the corresponding rwsets in an atomic operation
+	//存储区块，批量提交区块数据到账本，保存区块信息、交易信息、读写集、索引，更新状态数据
+	//保证多项数据修改的原子性
 	PutBlock(block *pb.Block, txRWSets []*pb.TxRWSet) error
 
-	// GetBlock returns a block given it's hash, or returns nil if none exists.
-	GetBlock(blockHash []byte) (*pb.Block, error)
+	//按区块hash查询区块，
+	//如果数据库内部错误，error返回错误信息；
+	//区块不存在，Block返回nil，error返回nil
+	GetBlockByHash(blockHash []byte) (*pb.Block, error)
 
-	// HasBlock returns true if the black hash exist, or returns false if none exists.
-	HasBlock(blockHash []byte) (bool, error)
+	//判断区块是否存在
+	//如果数据库内部错误，error返回错误信息；
+	//区块不存在，返回false
+	BlockExist(blockHash []byte) (bool, error)
 
-	// GetBlockAt returns a block given it's block height, or returns nil if none exists.
-	GetBlockAt(height int64) (*pb.Block, error)
+    //按区块高度查询区块
+	//如果数据库内部错误，error返回错误信息；
+	//区块不存在，Block返回nil，error返回nil
+	GetBlock(height int64) (*pb.Block, error)
 
-	// GetLastConfigBlock returns the last config block.
+	//获取最新的配置区块
 	GetLastConfigBlock() (*pb.Block, error)
 
-	// GetBlockByTx returns a block which contains a tx.
+	//更据txid查询区块
 	GetBlockByTx(txId string) (*pb.Block, error)
 
-	// GetBlockWithTxRWSets returns a block and the corresponding rwsets given
-	// it's block height, or returns nil if none exists.
-	GetBlockWithTxRWSets(height int64) (*pb.BlockWithRWSet, error)
+	//查询带读写集的区块，
+	//如果数据库内部错误，error返回错误信息；
+	//区块不存在，返回nil，error返回nil
+	GetBlockWithRWSets(height int64) (*pb.BlockWithRWSet, error)
 
-	// GetTx retrieves a transaction by txid, or returns nil if none exists.
+	//按交易id查询交易
+	//如果数据库内部错误，error返回错误信息；
+	//交易不存在，Transaction返回nil，error返回nil
 	GetTx(txId string) (*pb.Transaction, error)
 
-	// HasTx returns true if the tx exist, or returns false if none exists.
-	HasTx(txId string) (bool, error)
+	//判断交易是否存在，按交易id
+	//如果数据库内部错误，error返回错误信息；
+	//交易不存在，返回false
+	TxExists(txId string) (bool, error)
 
-	// GetLastBlock returns the last block.
+	//查询最新的区块
+	//如果数据库内部错误，error返回错误信息；
+	//区块不存在，Block返回nil，error返回nil
 	GetLastBlock() (*pb.Block, error)
 
-	// ReadObject returns the state value for given contract name and key, or returns nil if none exists.
+	//查询状态数据库，按合约名与key
+	//如果数据库内部错误，error返回错误信息；
+	//数据不存在，Object返回nil，error返回nil
 	ReadObject(contractName string, key []byte) ([]byte, error)
 
-	// SelectObject returns an iterator that contains all the key-values between given key ranges.
-	// startKey is included in the results and limit is excluded.
+    //获取状态数据库的迭代器，按合约名与key区间查询，包括startKey, 不包括limit
 	SelectObject(contractName string, startKey []byte, limit []byte) Iterator
 
-	// GetTxRWSet returns an txRWSet for given txId, or returns nil if none exists.
+	//查询交易读写集
 	GetTxRWSet(txId string) (*pb.TxRWSet, error)
 
-	// GetTxRWSetsByHeight returns all the rwsets corresponding to the block,
-	// or returns nil if zhe block does not exist
+	//按区块高度查询区块的读写集列表
 	GetTxRWSetsByHeight(height int64) ([]*pb.TxRWSet, error)
 
-	// GetDBHandle returns the database handle for  given dbName(chainId)
+	//获取DB的操作句柄，为其他模块提供存储服务
 	GetDBHandle(dbName string) DBHandle
 
-	// Close is used to close database
+	//关闭存储相关的数据库，释放数据资源
 	Close() error
 }
 ```
