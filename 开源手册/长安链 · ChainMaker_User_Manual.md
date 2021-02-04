@@ -372,58 +372,72 @@ chainmaker节点地址遵循libp2p网络地址格式协定，例如：
 #### 存储模块接口
 
 ```go
-// BlockchainStore provides handle to store instances
+// 
 type BlockchainStore interface {
 
-	// PutBlock commits the block and the corresponding rwsets in an atomic operation
+	//提交区块，批量提交区块数据到账本，保存区块信息、交易信息、读写集、索引，更新状态数据等信息
+	//并对外保证多项数据修改的原子性
 	PutBlock(block *pb.Block, txRWSets []*pb.TxRWSet) error
 
-	// GetBlock returns a block given it's hash, or returns nil if none exists.
-	GetBlock(blockHash []byte) (*pb.Block, error)
+	//按区块hash查询区块，
+	//如果数据库内部错误，error返回错误信息；
+	//如果区块不存在，Block返回nil，error返回nil
+	GetBlockByHash(blockHash []byte) (*pb.Block, error)
 
-	// HasBlock returns true if the black hash exist, or returns false if none exists.
-	HasBlock(blockHash []byte) (bool, error)
+	//判断区块是否存在
+	//如果数据库内部错误，error返回错误信息；
+	//如果区块不存在，返回false
+	BlockExist(blockHash []byte) (bool, error)
 
-	// GetBlockAt returns a block given it's block height, or returns nil if none exists.
-	GetBlockAt(height int64) (*pb.Block, error)
+  //按区块高度查询区块
+	//如果数据库内部错误，error返回错误信息；
+	//如果区块不存在，Block返回nil，error返回nil
+	GetBlock(height int64) (*pb.Block, error)
 
-	// GetLastConfigBlock returns the last config block.
+	//获取最新的配置区块
 	GetLastConfigBlock() (*pb.Block, error)
 
-	// GetBlockByTx returns a block which contains a tx.
+	//更据txid查询区块
 	GetBlockByTx(txId string) (*pb.Block, error)
 
-	// GetBlockWithTxRWSets returns a block and the corresponding rwsets given
-	// it's block height, or returns nil if none exists.
-	GetBlockWithTxRWSets(height int64) (*pb.BlockWithRWSet, error)
+	//查询带读写集的区块，
+	//如果数据库内部错误，error返回错误信息；
+	//如果区块不存在，返回nil，error返回nil
+	GetBlockWithRWSets(height int64) (*pb.BlockWithRWSet, error)
 
-	// GetTx retrieves a transaction by txid, or returns nil if none exists.
+	//按交易id查询交易
+	//如果数据库内部错误，error返回错误信息；
+	//如果交易不存在，Transaction返回nil，error返回nil
 	GetTx(txId string) (*pb.Transaction, error)
 
-	// HasTx returns true if the tx exist, or returns false if none exists.
-	HasTx(txId string) (bool, error)
+	//判断交易是否存在，按交易id
+	//如果数据库内部错误，error返回错误信息；
+	//如果交易不存在，返回false
+	TxExists(txId string) (bool, error)
 
-	// GetLastBlock returns the last block.
+	//查询最新的区块
+	//如果数据库内部错误，error返回错误信息；
+	//如果区块不存在，Block返回nil，error返回nil
 	GetLastBlock() (*pb.Block, error)
 
-	// ReadObject returns the state value for given contract name and key, or returns nil if none exists.
+	//查询状态数据库，按合约名与key
+	//如果数据库内部错误，error返回错误信息；
+	//如果数据不存在，Object返回nil，error返回nil
 	ReadObject(contractName string, key []byte) ([]byte, error)
 
-	// SelectObject returns an iterator that contains all the key-values between given key ranges.
-	// startKey is included in the results and limit is excluded.
+  //获取状态数据库的迭代器，按合约名与key区间查询，包括startKey, 不包括limit
 	SelectObject(contractName string, startKey []byte, limit []byte) Iterator
 
-	// GetTxRWSet returns an txRWSet for given txId, or returns nil if none exists.
+	//查询交易读写集
 	GetTxRWSet(txId string) (*pb.TxRWSet, error)
 
-	// GetTxRWSetsByHeight returns all the rwsets corresponding to the block,
-	// or returns nil if zhe block does not exist
+	//按区块高度查询区块的读写集列表
 	GetTxRWSetsByHeight(height int64) ([]*pb.TxRWSet, error)
 
-	// GetDBHandle returns the database handle for  given dbName(chainId)
+	//获取DB的操作句柄，为其他模块提供DB操作接口
 	GetDBHandle(dbName string) DBHandle
 
-	// Close is used to close database
+	//关闭存储相关的数据库，释放数据资源
 	Close() error
 }
 ```
@@ -1021,20 +1035,20 @@ permissions:
 
 #### 组件描述
 
-组件描述分为两部分：其它模块组件的交互、本模块组件的构成.
+组件描述分为两部分：交互模块的组件、本模块的组件.
 
-##### 交互的其它模块组件
+##### 交互模块的组件
 
 使用其它模块的组件，进行网络消息通信、区块验证、新区块上链等服务.
 
 * **protocol.NetService**：发送或接收网络请求，提供与其它节点进行网络信息交互的服务.
-* **msgbus.MessageBus**：发送或接收消息给内部的其他模块，提供节点内部数据交互的服务.
+* **msgbus.MessageBus**：发送或接收消息给内部的其他模块，提供节点内部模块数据交互的服务.
 * **protocol.BlockchainStore**：提供DB查询服务，获取链上信息，如获取指定高度的区块数据.
 * **protocol.LedgerCache**：获取当前节点的缓存的最新链上状态
 * **protocol.BlockVerifier**：对获取到的区块提供验证服务
 * **protocol.BlockCommitter**：通过验证的区块会被添加至链上
 
-##### 本模块组件构成
+##### 本模块的组件
 
 * **BlockSyncServer**：sync模块对外提供服务的整体结构，依赖了外部模块组件和内部组件
 * **Routine**：工具类，提供内部服务的托管功能，使用单独的goroutine运行注册的服务；本身含有一个优先级任务队列，调用者可以向该队列中添加任务，使用托管的服务依次执行优先级队列中的任务，并将执行结果返回给上层调用方
@@ -1163,9 +1177,106 @@ type syncConfig struct {
 
 ### 交易池@永芯
 
-【单笔模式】
+交易池模块用来存储节点从网络中接收到交易，来自网络的交易从接收方式上分为两种：用户/上层APP通过RPC，向节点添加交易；接收其他节点通过P2P广播自身已收到的交易。当交易池内存储的交易达到容量限制时，会通知core模块，尝试生成新的出块，如果节点为出块节点，且满足出块时机，此时会生成新的区块。
 
-【接口说明】
+#### 交易的种类
+
+交易池中存储的交易分为两种类型：配置类型的交易，普通类型的交易
+
+* 配置类型的交易：修改链配置；如果区块内含有链配置交易，则该区块被限制为总共有且仅有一笔交易
+* 普通类型的交易：如创建合约、调用合约等
+
+#### 接口描述
+
+```go
+type TxPool interface {
+	Start() error
+	Stop() error
+	AddTx(tx *pb.Transaction, source TxSource) error
+	AddTrustedTx(txs []*pb.Transaction) error
+	GetTxByTxId(txId string) (*pb.Transaction, error)
+	TxExists(tx *pb.Transaction) bool
+	RetryAndRemove(retryTxs, removeTxs []*pb.Transaction)
+	FetchTxBatch() []*pb.Transaction
+	AddTxsToPendingCache(txs []*pb.Transaction)
+}
+```
+
+
+
+* **Start**：启动交易池服务
+
+* **Stop**：关闭交易池服务
+
+* **AddTx**：添加交易至交易池，source为交易的来源，有三种类型：RPC、P2P、INTERNAL，不同来源的交易，对应不同的检查
+
+  * RPC：来自RPC的交易不验证基础的交易信息（如交易ID、时间戳是否符合规范）、不验证交易者的证书；因为RPC模块已做此类校验；成功添加至交易池的交易会广播给其它连接的节点
+  * P2P：进行所有的校验
+  * INTERNAL：如果节点在同一高度接收到多个验证有效的区块，当其中某个区块上链后，其余的相同高度区块内的交易会被重新添加进交易池。此时会使用DB对添加进交易池的交易做存在性检查，将未上链的交易添加进交易池
+  
+* **AddTrustedTx**：添加可信任的交易至交易池；交易来源设置为 INTERNAL
+
+* **GetTxByTxId**：查询交易池内的交易
+*	如果交易在普通队列中，返回交易数据，且error为nil
+  *	如果交易在pending队列中，表示该交易已经入块，返回error为`Err.ErrTxHadOnTheChain`
+  *	如果交易不在交易池，则error为nil，交易数据为nil
+  
+* **TxExists**：判断交易是否存在与交易池，存在返回true，反之为false
+
+* **RetryAndRemove**：将参数一的交易重新添加入交易池，将参数二的交易从交易池中删除；该接口主要由`core`模块进行调用，当节点在同一高度接收到多个不同区块时，将待上链区块的交易，从交易池中删除；将其它不上链区块的交易，重新添加进交易池；
+
+  * 注意：该接口的内部实现为：先添加参数一的交易，后删除参数二的交易；以便即使参数一与参数二有部分重合交易时，最后也会从交易池中删除。
+
+*	**FetchTxBatch**：从交易池获取一批交易，获取数量最大为配置的单个区块可容纳的交易数，由core模块调用，使用获取的交易打包生成新的区块
+
+* **AddTxsToPendingCache**：将交易添加进交易池的pending队列中；当节点收到一个新区块时，验证通过后，将该区块内的交易添加进交易池的pending队列
+
+#### 组件描述
+
+组件描述分为两部分：交互模块的组件、本模块的组件.
+
+##### 交互模块的组件
+
+* **msgbus.MessageBus**：发送或接收消息给内部的其他模块，提供节点内部模块数据交互的服务.
+* **protocol.NetService**：发送或接收网络请求，提供与其它节点进行网络信息交互的服务.
+* **protocol.BlockchainStore**：提供DB查询服务，获取链上信息，如查询指定交易
+* **protocol.Organization**：验证交易内的证书信息是否有效
+* **protocol.AccessControl**：验证交易内的证书是否有访问特定资源的权限
+
+##### 本模块的组件
+
+* **txList**：用该结构缓存交易池内的交易；由于交易有两种类型，所以，交易池内存在两个`txList`，缓存不同类型的交易
+
+  * **LinkedHashMap.LinkedHashMap**：`txList`内包含三个`LinkedHashMap`，分别存储不同优先级、不同状态的交易
+    * **queue**：存储普通优先级的交易
+    * **priorityQueue**：存储高优先级的交易
+    * **pendingCache**：存储已打包进区块，但未上链的交易；当节点通过core模块调用交易池的`FetchTxBatch`接口获取待打包交易时，交易池内部会先从优先级高的队列中获取交易，再从优先级低的队列中获取交易，然后将这些从优先级队列中删除，添加到`pendingCache`队列中
+
+#### 配置
+
+```go
+type txPoolConfig struct {
+	MaxTxPoolSize       uint32 `mapstructure:"max_txpool_size"`
+	MaxConfigTxPoolSize uint32 `mapstructure:"max_config_txpool_size"`
+	FullNotifyAgainTime uint32 `mapstructure:"full_notify_again_time"`
+	IsMetrics           bool   `mapstructure:"is_metrics"`
+}
+```
+
+
+
+* **MaxTxPoolSize**：交易池可以缓存的普通交易的数量
+* **MaxConfigTxPoolSize**：交易池可以缓存配置交易的数量
+* **FullNotifyAgainTime**：当交易池容量满时，通知上层模块打包区块的时间间隔 
+* **IsMetrics**：是否开启交易池数据监测功能
+
+#### 流程图
+
+<img src="images/chainmaker-txpool-flow.png" width = "700" height = "500" alt="chainmaker-txpool-flow"/>
+
+
+
+
 
 ### 加密算法@张韬
 
@@ -1234,21 +1345,171 @@ log:
 
 ## 数据模型@永芯
 
-### 区块结构
+### 区块
+
+#### 整体结构
+
+```go
+type Block struct {
+	Header         *BlockHeader    
+	Dag            *DAG            
+	Txs            []*Transaction  
+	AdditionalData *AdditionalData 
+}
+
+type AdditionalData struct {
+	ExtraData map[string][]byte 
+}
+
+type DAG struct {
+	Vertexes []*DAG_Neighbor
+}
+type DAG_Neighbor struct {
+	Neighbors []int32 
+}
+```
+
+* Header：区块头
+* Dag：块内交易的执行顺序，由Proposer生成
+* Txs：块内交易
+* AdditionalData：存储当前区块的投票信息，不参与区块的散列值计算
+
+#### 区块头
+
+```go
+type BlockHeader struct {
+	ChainId        string 
+	BlockHeight    int64  
+	PreBlockHash   []byte 
+	BlockHash      []byte 
+	PreConfHeight  int64 
+  BlockVersion   []byte 
+	DagHash        []byte 
+	RwSetRoot      []byte 
+	TxRoot         []byte 
+	BlockTimestamp int64 
+	Proposer       []byte
+	ConsensusArgs  []byte
+	TxCount        int64 
+	Signature      []byte
+}
+```
+
+* ChainId：链标识
+* BlockHeight：区块高度
+* PreBlockHash：上个区块的散列值
+* PreConfHeight：上一次修改链配置的区块高度
+* BlockVersion：区块版本
+* DagHash：当前区块Dag的散列值
+* RwSetRoot：区块读写集的Merkle Root
+* TxRoot：区块交易的Merkle Root
+* BlockTimestamp：区块的时间戳
+* Proposer：区块的生成者标识
+* ConsensusArgs：共识参数
+* TxCount：交易数量
+* Signature：区块生成者的签名
 
 
 
 ### 交易结构
 
+```go
+type Transaction struct {
+	Header *TxHeader 
+	RequestPayload []byte 
+	RequestSignature []byte 
+	Result *Result 
+}
+```
 
+* Header：交易头
+* RequestPayload：交易的载荷数据
+* RequestSignature：交易发送者的签名
+* Result：交易结果，由Proposer生成区块时进行计算、赋值
+
+#### 交易头
+
+```go
+type TxHeader struct {
+	ChainId string 
+	Sender *SerializedMember 
+	TxType TxType 
+	TxId string 
+	Timestamp int64 
+	ExpirationTime int64 
+}
+
+type SerializedMember struct {
+	OrgId      string 
+	MemberInfo []byte 
+	IsFullCert bool   
+}
+```
+
+* ChainId：链标识
+* Sender：交易发送者信息
+* TxType：交易类型，有8种
+* TxId：交易ID，用做该交易的唯一性标识
+* Timestamp：生成交易的unix时间戳，当proposer从交易池获取交易时，用来检测该交易是否超时未上链；如果超时，该交易将从交易池删除
+* ExpirationTime：交易的到期的unix时间，单位秒，不为0时，交易必须在该时间戳之前被打包上链
+
+
+
+#### 交易结果
+
+```go
+type Result struct {
+   Code TxStatusCode
+   ContractResult *ContractResult 
+   RwSetHash []byte 
+}
+
+type ContractResult struct {
+	Code ContractResultCode 
+	Result []byte 
+	Message string
+	GasUsed int64 
+}
+
+type TxStatusCode int32
+type ContractResultCode int32
+```
+
+* Code：交易执行结果的状态
+* ContractResult：合约执行结果
+  * Code：合约执行结果的状态
+  * Result：合约执行结果
+  * Message：合约执行后的消息
+  * GasUsed：合约执行消耗的Gas数量
+* RwSetHash：交易执行结果的读写集哈希
 
 ### 交易请求结构
 
+```go
+type TxRequest struct {
+   Header *TxHeader 
+   Payload []byte 
+   Signature []byte
+}
+```
 
+* Header：交易头，详解见上述描述
+* Payload：交易载荷数据
+* Signature：用户签名
 
 ### 交易响应结构
 
+```go
+type TxResponse struct {
+   Code TxStatusCode 
+   Message string 
+   ContractResult *ContractResult 
+}
+```
 
+* Code：交易执行结果的状态
+* Message：交易执行后，合约输出的消息
+* ContractResult：合约执行结果
 
 
 
@@ -1275,6 +1536,8 @@ log:
 
 
 ### ~~链调试环境~~
+
+
 
 
 
