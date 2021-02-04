@@ -1331,21 +1331,171 @@ log:
 
 ## 数据模型@永芯
 
-### 区块结构
+### 区块
+
+#### 整体结构
+
+```go
+type Block struct {
+	Header         *BlockHeader    
+	Dag            *DAG            
+	Txs            []*Transaction  
+	AdditionalData *AdditionalData 
+}
+
+type AdditionalData struct {
+	ExtraData map[string][]byte 
+}
+
+type DAG struct {
+	Vertexes []*DAG_Neighbor
+}
+type DAG_Neighbor struct {
+	Neighbors []int32 
+}
+```
+
+* Header：区块头
+* Dag：块内交易的执行顺序，由Proposer生成
+* Txs：块内交易
+* AdditionalData：存储当前区块的投票信息，不参与区块的散列值计算
+
+#### 区块头
+
+```go
+type BlockHeader struct {
+	ChainId        string 
+	BlockHeight    int64  
+	PreBlockHash   []byte 
+	BlockHash      []byte 
+	PreConfHeight  int64 
+  BlockVersion   []byte 
+	DagHash        []byte 
+	RwSetRoot      []byte 
+	TxRoot         []byte 
+	BlockTimestamp int64 
+	Proposer       []byte
+	ConsensusArgs  []byte
+	TxCount        int64 
+	Signature      []byte
+}
+```
+
+* ChainId：链标识
+* BlockHeight：区块高度
+* PreBlockHash：上个区块的散列值
+* PreConfHeight：上一次修改链配置的区块高度
+* BlockVersion：区块版本
+* DagHash：当前区块Dag的散列值
+* RwSetRoot：区块读写集的Merkle Root
+* TxRoot：区块交易的Merkle Root
+* BlockTimestamp：区块的时间戳
+* Proposer：区块的生成者标识
+* ConsensusArgs：共识参数
+* TxCount：交易数量
+* Signature：区块生成者的签名
 
 
 
 ### 交易结构
 
+```go
+type Transaction struct {
+	Header *TxHeader 
+	RequestPayload []byte 
+	RequestSignature []byte 
+	Result *Result 
+}
+```
 
+* Header：交易头
+* RequestPayload：交易的载荷数据
+* RequestSignature：交易发送者的签名
+* Result：交易结果，由Proposer生成区块时进行计算、赋值
+
+#### 交易头
+
+```go
+type TxHeader struct {
+	ChainId string 
+	Sender *SerializedMember 
+	TxType TxType 
+	TxId string 
+	Timestamp int64 
+	ExpirationTime int64 
+}
+
+type SerializedMember struct {
+	OrgId      string 
+	MemberInfo []byte 
+	IsFullCert bool   
+}
+```
+
+* ChainId：链标识
+* Sender：交易发送者信息
+* TxType：交易类型，有8种
+* TxId：交易ID，用做该交易的唯一性标识
+* Timestamp：生成交易的unix时间戳，当proposer从交易池获取交易时，用来检测该交易是否超时未上链；如果超时，该交易将从交易池删除
+* ExpirationTime：交易的到期的unix时间，单位秒，不为0时，交易必须在该时间戳之前被打包上链
+
+
+
+#### 交易结果
+
+```go
+type Result struct {
+   Code TxStatusCode
+   ContractResult *ContractResult 
+   RwSetHash []byte 
+}
+
+type ContractResult struct {
+	Code ContractResultCode 
+	Result []byte 
+	Message string
+	GasUsed int64 
+}
+
+type TxStatusCode int32
+type ContractResultCode int32
+```
+
+* Code：交易执行结果的状态
+* ContractResult：合约执行结果
+  * Code：合约执行结果的状态
+  * Result：合约执行结果
+  * Message：合约执行后的消息
+  * GasUsed：合约执行消耗的Gas数量
+* RwSetHash：交易执行结果的读写集哈希
 
 ### 交易请求结构
 
+```go
+type TxRequest struct {
+   Header *TxHeader 
+   Payload []byte 
+   Signature []byte
+}
+```
 
+* Header：交易头，详解见上述描述
+* Payload：交易载荷数据
+* Signature：用户签名
 
 ### 交易响应结构
 
+```go
+type TxResponse struct {
+   Code TxStatusCode 
+   Message string 
+   ContractResult *ContractResult 
+}
+```
 
+* Code：交易执行结果的状态
+* Message：交易执行后，合约输出的消息
+* ContractResult：合约执行结果
 
 
 
@@ -1372,6 +1522,8 @@ log:
 
 
 ### ~~链调试环境~~
+
+
 
 
 
