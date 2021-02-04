@@ -1021,20 +1021,20 @@ permissions:
 
 #### 组件描述
 
-组件描述分为两部分：其它模块组件的交互、本模块组件的构成.
+组件描述分为两部分：交互模块的组件、本模块的组件.
 
-##### 交互的其它模块组件
+##### 交互模块的组件
 
 使用其它模块的组件，进行网络消息通信、区块验证、新区块上链等服务.
 
 * **protocol.NetService**：发送或接收网络请求，提供与其它节点进行网络信息交互的服务.
-* **msgbus.MessageBus**：发送或接收消息给内部的其他模块，提供节点内部数据交互的服务.
+* **msgbus.MessageBus**：发送或接收消息给内部的其他模块，提供节点内部模块数据交互的服务.
 * **protocol.BlockchainStore**：提供DB查询服务，获取链上信息，如获取指定高度的区块数据.
 * **protocol.LedgerCache**：获取当前节点的缓存的最新链上状态
 * **protocol.BlockVerifier**：对获取到的区块提供验证服务
 * **protocol.BlockCommitter**：通过验证的区块会被添加至链上
 
-##### 本模块组件构成
+##### 本模块的组件
 
 * **BlockSyncServer**：sync模块对外提供服务的整体结构，依赖了外部模块组件和内部组件
 * **Routine**：工具类，提供内部服务的托管功能，使用单独的goroutine运行注册的服务；本身含有一个优先级任务队列，调用者可以向该队列中添加任务，使用托管的服务依次执行优先级队列中的任务，并将执行结果返回给上层调用方
@@ -1163,9 +1163,106 @@ type syncConfig struct {
 
 ### 交易池@永芯
 
-【单笔模式】
+交易池模块用来存储节点从网络中接收到交易，来自网络的交易从接收方式上分为两种：用户/上层APP通过RPC，向节点添加交易；接收其他节点通过P2P广播自身已收到的交易。当交易池内存储的交易达到容量限制时，会通知core模块，尝试生成新的出块，如果节点为出块节点，且满足出块时机，此时会生成新的区块。
 
-【接口说明】
+#### 交易的种类
+
+交易池中存储的交易分为两种类型：配置类型的交易，普通类型的交易
+
+* 配置类型的交易：修改链配置；如果区块内含有链配置交易，则该区块被限制为总共有且仅有一笔交易
+* 普通类型的交易：如创建合约、调用合约等
+
+#### 接口描述
+
+```go
+type TxPool interface {
+	Start() error
+	Stop() error
+	AddTx(tx *pb.Transaction, source TxSource) error
+	AddTrustedTx(txs []*pb.Transaction) error
+	GetTxByTxId(txId string) (*pb.Transaction, error)
+	TxExists(tx *pb.Transaction) bool
+	RetryAndRemove(retryTxs, removeTxs []*pb.Transaction)
+	FetchTxBatch() []*pb.Transaction
+	AddTxsToPendingCache(txs []*pb.Transaction)
+}
+```
+
+
+
+* **Start**：启动交易池服务
+
+* **Stop**：关闭交易池服务
+
+* **AddTx**：添加交易至交易池，source为交易的来源，有三种类型：RPC、P2P、INTERNAL，不同来源的交易，对应不同的检查
+
+  * RPC：来自RPC的交易不验证基础的交易信息（如交易ID、时间戳是否符合规范）、不验证交易者的证书；因为RPC模块已做此类校验；成功添加至交易池的交易会广播给其它连接的节点
+  * P2P：进行所有的校验
+  * INTERNAL：如果节点在同一高度接收到多个验证有效的区块，当其中某个区块上链后，其余的相同高度区块内的交易会被重新添加进交易池。此时会使用DB对添加进交易池的交易做存在性检查，将未上链的交易添加进交易池
+  
+* **AddTrustedTx**：添加可信任的交易至交易池；交易来源设置为 INTERNAL
+
+* **GetTxByTxId**：查询交易池内的交易
+*	如果交易在普通队列中，返回交易数据，且error为nil
+  *	如果交易在pending队列中，表示该交易已经入块，返回error为`Err.ErrTxHadOnTheChain`
+  *	如果交易不在交易池，则error为nil，交易数据为nil
+  
+* **TxExists**：判断交易是否存在与交易池，存在返回true，反之为false
+
+* **RetryAndRemove**：将参数一的交易重新添加入交易池，将参数二的交易从交易池中删除；该接口主要由`core`模块进行调用，当节点在同一高度接收到多个不同区块时，将待上链区块的交易，从交易池中删除；将其它不上链区块的交易，重新添加进交易池；
+
+  * 注意：该接口的内部实现为：先添加参数一的交易，后删除参数二的交易；以便即使参数一与参数二有部分重合交易时，最后也会从交易池中删除。
+
+*	**FetchTxBatch**：从交易池获取一批交易，获取数量最大为配置的单个区块可容纳的交易数，由core模块调用，使用获取的交易打包生成新的区块
+
+* **AddTxsToPendingCache**：将交易添加进交易池的pending队列中；当节点收到一个新区块时，验证通过后，将该区块内的交易添加进交易池的pending队列
+
+#### 组件描述
+
+组件描述分为两部分：交互模块的组件、本模块的组件.
+
+##### 交互模块的组件
+
+* **msgbus.MessageBus**：发送或接收消息给内部的其他模块，提供节点内部模块数据交互的服务.
+* **protocol.NetService**：发送或接收网络请求，提供与其它节点进行网络信息交互的服务.
+* **protocol.BlockchainStore**：提供DB查询服务，获取链上信息，如查询指定交易
+* **protocol.Organization**：验证交易内的证书信息是否有效
+* **protocol.AccessControl**：验证交易内的证书是否有访问特定资源的权限
+
+##### 本模块的组件
+
+* **txList**：用该结构缓存交易池内的交易；由于交易有两种类型，所以，交易池内存在两个`txList`，缓存不同类型的交易
+
+  * **LinkedHashMap.LinkedHashMap**：`txList`内包含三个`LinkedHashMap`，分别存储不同优先级、不同状态的交易
+    * **queue**：存储普通优先级的交易
+    * **priorityQueue**：存储高优先级的交易
+    * **pendingCache**：存储已打包进区块，但未上链的交易；当节点通过core模块调用交易池的`FetchTxBatch`接口获取待打包交易时，交易池内部会先从优先级高的队列中获取交易，再从优先级低的队列中获取交易，然后将这些从优先级队列中删除，添加到`pendingCache`队列中
+
+#### 配置
+
+```go
+type txPoolConfig struct {
+	MaxTxPoolSize       uint32 `mapstructure:"max_txpool_size"`
+	MaxConfigTxPoolSize uint32 `mapstructure:"max_config_txpool_size"`
+	FullNotifyAgainTime uint32 `mapstructure:"full_notify_again_time"`
+	IsMetrics           bool   `mapstructure:"is_metrics"`
+}
+```
+
+
+
+* **MaxTxPoolSize**：交易池可以缓存的普通交易的数量
+* **MaxConfigTxPoolSize**：交易池可以缓存配置交易的数量
+* **FullNotifyAgainTime**：当交易池容量满时，通知上层模块打包区块的时间间隔 
+* **IsMetrics**：是否开启交易池数据监测功能
+
+#### 流程图
+
+<img src="images/chainmaker-txpool-flow.png" width = "700" height = "500" alt="chainmaker-txpool-flow"/>
+
+
+
+
 
 ### 加密算法@张韬
 
