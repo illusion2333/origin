@@ -389,7 +389,7 @@ type BlockchainStore interface {
 	//如果区块不存在，返回false
 	BlockExist(blockHash []byte) (bool, error)
 
-    //按区块高度查询区块
+  //按区块高度查询区块
 	//如果数据库内部错误，error返回错误信息；
 	//如果区块不存在，Block返回nil，error返回nil
 	GetBlock(height int64) (*pb.Block, error)
@@ -425,7 +425,7 @@ type BlockchainStore interface {
 	//如果数据不存在，Object返回nil，error返回nil
 	ReadObject(contractName string, key []byte) ([]byte, error)
 
-    //获取状态数据库的迭代器，按合约名与key区间查询，包括startKey, 不包括limit
+  //获取状态数据库的迭代器，按合约名与key区间查询，包括startKey, 不包括limit
 	SelectObject(contractName string, startKey []byte, limit []byte) Iterator
 
 	//查询交易读写集
