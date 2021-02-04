@@ -41,18 +41,18 @@ make
 ### 3.3 配置设置
 
 ```sh
-cd build/release
+cd release
 
-tar zvxf chainmaker-V1.0.0-wx-org1.chainmaker.org-20201201204232-x86_64.tar.gz
+tar zvxf chainmaker-V1.0.0.xxx-xxx.tar.gz(其中xxx是根据时间和平台不同而变化)
 
-修改链配置文件（路径为chainmaker-V1.0.0-wx-org1.chainmaker.org/config/wx-org1.chainmaker.org/chainconfig/bc1.yml）配置项consensus: type值为6（solo模式）
+修改链配置文件（路径为chainmaker/config/wx-org1/chainconfig/bc1.yml）配置项consensus: type值为6（solo模式）
 ```
 
 ### 3.4 启动
 
 ```sh
-cd chainmaker-V1.0.0-wx-org1.chainmaker.org/bin
-./start.sh
+cd chainmaker/bin
+./chainmaker -e wx-org1 start
 ```
 
 ### 3.5 交易验证
@@ -65,28 +65,48 @@ cd chainmaker-V1.0.0-wx-org1.chainmaker.org/bin
 
 ### 4.1 物料下载
 
-#### 4.1.1 下载源码
-
-git clone --recurse-submodules git@git.code.tencent.com:ChainMaker/chainmaker-go.git
-
-#### 4.1.2 安装tmux
+#### 4.1.1 安装tmux
 
 Mac: brew install tmux
 
 Centos: yum install tmux
 
-### 4.2 编译
+#### 4.1.2 下载源码
 
 ```sh
-cd chainmaker-go
-make pb-dep
+git clone --recurse-submodules git@git.code.tencent.com:ChainMaker/chainmaker-go.git
+cd chainmaker-go/tools
+git clone --recurse-submodules git@git.code.tencent.com:ChainMaker/chainmaker-cryptogen.git
+```
+
+### 4.2 制作部署包
+
+#### 4.2.1 编译chainmaker-cryptogen
+
+```sh
+cd chainmaker-go/tools/chainmaker-cryptogen
 make
+```
+
+#### 4.2.2 生成证书
+
+```sh
+cd chainmaker-go/scripts
+./prepare.sh 4 1 ## 参数4代表节点数量（和组织数量一致），1代表链数量
+```
+
+#### 4.2.3 制作部署包
+
+```sh
+# 制作安装包
+cd chainmaker-go/scripts
+./build_release.sh
 ```
 
 ### 4.3 启动
 
 ```sh
-cd scripts
+cd chainmaker-go/scripts
 ./cluster_quick_start.sh
 ```
 

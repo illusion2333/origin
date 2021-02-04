@@ -52,7 +52,7 @@ ChainMaker提供了快速制作部署包脚本，执行过程如下
 ```shell
 # 制作安装包
 cd chainmaker-go/script
-./build_release
+./build_release.sh
 ```
 
 制作完成后的安装包目录如下：
