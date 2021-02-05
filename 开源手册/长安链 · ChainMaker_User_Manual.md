@@ -127,7 +127,7 @@ ChainMaker目前支持四类智能合约执行引擎：
 
 #### 系统合约
 
-目前系统合约包含以下四种系统合约
+目前系统合约包含：
 
 - SYSTEM_CONTRACT_CHAIN_CONFIG：增删改链配置
 - SYSTEM_CONTRACT_QUERY：查询链上配置
