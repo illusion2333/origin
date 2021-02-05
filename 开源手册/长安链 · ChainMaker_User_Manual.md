@@ -706,7 +706,7 @@ service RpcNode {
 
 存储模块负责存储区块链上的区块、交易、账本数据和历史读写集数据，在提交区块时，这些数据就会被存储模块进行存储。存储模块的整体架构如下图：
 
-![存储架构图](./ChainMaker_User_Manual_Images/store_structure.png)
+![存储架构图](./images/store_structure.png)
 
 #### 账本存储的处理流程
 
@@ -740,7 +740,6 @@ service RpcNode {
 #### 存储模块接口
 
 ```go
-// 
 type BlockchainStore interface {
 
 	//提交区块，批量提交区块数据到账本，保存区块信息、交易信息、读写集、索引，更新状态数据等信息
@@ -757,7 +756,7 @@ type BlockchainStore interface {
 	//如果区块不存在，返回false
 	BlockExist(blockHash []byte) (bool, error)
 
-  //按区块高度查询区块
+	//按区块高度查询区块
 	//如果数据库内部错误，error返回错误信息；
 	//如果区块不存在，Block返回nil，error返回nil
 	GetBlock(height int64) (*pb.Block, error)
@@ -791,9 +790,9 @@ type BlockchainStore interface {
 	//查询状态数据库，按合约名与key
 	//如果数据库内部错误，error返回错误信息；
 	//如果数据不存在，Object返回nil，error返回nil
-	ReadObject(contractName string, key []byte) ([]byte, error)
+	ReadObject(contractName string, key []byte) ([]byte, error) 
 
-  //获取状态数据库的迭代器，按合约名与key区间查询，包括startKey, 不包括limit
+	//获取状态数据库的迭代器，按合约名以及key区间查询，包括startKey, 不包括limit
 	SelectObject(contractName string, startKey []byte, limit []byte) Iterator
 
 	//查询交易读写集
@@ -814,7 +813,7 @@ type BlockchainStore interface {
 
 节点本地配置关于存储部分的配置说明：
 
-```yaml
+```shell
 storage:
 	provider: LevelDB	#数据库类型，支持LevelDB，RocksDB，MySQL/分布式MySQL
 	store_path: ../data/ledgerData  #账本的存储路径， 包括LevelDB、RocksDB的数据目录，Block binary log的数据目录
@@ -1059,8 +1058,6 @@ total 920
 -rw-r--r-- 1 root root 15784 Dec 25 11:14 LOG.old.1608866062091559
 -rw-r--r-- 1 root root    13 Dec 25 11:13 MANIFEST-000001
 -rw-r--r-- 1 root root  4744 Dec 25 11:13 OPTIONS-000005
-[root@VM-219-157-centos /tmp/test_db]# cat 000003.log
-����a1b1[root@VM-219-157-centos /tmp/test_db]#
 
 ```
 
