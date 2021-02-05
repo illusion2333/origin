@@ -90,21 +90,210 @@ typora-root-url: ../开源手册
 
 ### 智能合约@振远
 
-【合约的分类和执行流程】
+#### 合约的分类和执行流程
 
-【合约引擎介绍，WASM、GASM、WXVM】
+ChainMaker可以运行基于WASM和EVM的智能合约，同时内部也内置了多个系统合约。智能合约支持了面向用户的在区块链上可编程的能力，而系统合约为ChainMaker区块链的管理与配置提供了必要条件。
 
-【系统合约，包含哪些】
+当交易在合约模块执行时，先依据合约的名称，来决定是交给智能合约还是系统合约来执行。为系统合约保留的名称包括：
 
-【可支持合约开发语言】
+```
+"SYSTEM_CONTRACT_CHAIN_CONFIG"
+"SYSTEM_CONTRACT_QUERY"
+"SYSTEM_CONTRACT_CERT_MANAGE"
+"SYSTEM_CONTRACT_GOVERNMENT"
+"SYSTEM_CONTRACT_MULT_SIGN"
+```
 
-【合约SDK】
+如果合约名称不在上述列表中，再依据交易类型，来执行智能合约。对调用智能合约而言，有效的交易类型包括：
 
-【合约模块接口说明】
+```
+MANAGE_USER_CONTRACT
+INVOKE_USER_CONTRACT
+QUERY_USER_CONTRACT
+```
 
-【pb数据模型】
+在把智能合约交给智能合约引擎执行前，还会经过一系列的参数校验。这些校验包括字节码、版本、合约调用方法名称、合约调用参数、合约引擎类型。
 
+启动智能合约执行引擎时，将解析字节码、版本、合约调用方法名称、合约调用参数，并且序列化为智能合约执行引擎所需要的数据，并且拷贝数据到智能合约引擎中。智能合约执行引擎在执行过程中，就会依据上述信息执行，并且返回合约执行结果。最终把合约执行结果交给存储模块
 
+#### 合约引擎介绍
+
+ChainMaker目前支持四类智能合约执行引擎：
+
+- WASMER：支持使用Rust语言生成的智能合约wasm字节码，运行时采用aot技术执行
+- GASM：支持使用Go语言编写合约，使用TinyGo编译器生成的智能合约wasm字节码，运行时采用解释技术执行
+- WXVM：支持使用C++语言生成的智能合约wasm字节码，运行时采用本地化编译技术执行
+- EVM：支持使用Solidity语言编写合约，使用solc编译器生成的智能合约字节码，，运行时采用解释技术执行
+
+#### 系统合约
+
+目前系统合约包含：
+
+- SYSTEM_CONTRACT_CHAIN_CONFIG：增删改链配置
+- SYSTEM_CONTRACT_QUERY：查询链上配置
+- SYSTEM_CONTRACT_CERT_MANAGE：证书管理
+- SYSTEM_CONTRACT_GOVERNMENT：链上治理
+- SYSTEM_CONTRACT_MULT_SIGN：链上多重签名
+
+#### 合约SDK
+
+ChainMaker为不同的语言编写智能合约与链上交互提供了多种智能合约编写SDK。SDK主要提供的接口功能包括：
+
+- 读取在区块链数据库上的数据
+- 往区块链数据库上写入数据
+- 获取当前交易ID、区块高度
+- 获取创建合约者的身份信息（公钥、组织、角色）
+- 获取调用合约者（即交易发送者）的身份信息（公钥、组织、角色）
+
+#### 合约模块接口说明
+
+合约模块对外的接口为：
+
+```
+//VmManager manage vm runtime
+type VmManager interface {
+   // GetOrganization get organization or membership
+   GetOrganization() Organization
+   // GetAccessControl get accessControl manages policies and principles
+   GetAccessControl() AccessControl
+   // GetChainNodesInfoProvider get ChainNodesInfoProvider provide base node info list of chain.
+   GetChainNodesInfoProvider() ChainNodesInfoProvider
+   // RunContract run native or user contract according ContractName in contractId, and call the specified function
+   RunContract(contractId *pb.ContractId, method string, byteCode []byte, parameters map[string]string,
+      txContext TxSimContext, gasUsed uint64, refTxType pb.TxType) (*pb.ContractResult, pb.TxStatusCode)
+}
+```
+
+其主要的方法是RunContract，调用该方法时需要提供合约ID信息、调用方法、合约字节码、调用参数、合约执行上下文环境（主要为合约提供访问数据库的接口）、已消耗的资源量和合约操作交易类型（创建、升级、冻结、解冻、废止）
+
+#### PB数据模型
+
+合约ID：
+
+```
+// the unique identifier of a smart contract
+message ContractId {
+    // smart contract name, set by contract creator, can have multiple versions
+    string contract_name = 1;
+    // smart contract version, set by contract creator, name + version should be unique
+    string contract_version = 2;
+    // smart contract runtime type, set by contract creator
+    RuntimeType runtime_type = 3;
+}
+```
+
+智能合约引擎类型（暂时还不支持 DOCKER_GO和 DOCKER_JAVA）
+
+```
+// smart contract runtime, contains vm type and language type
+enum RuntimeType {
+    INVALID = 0;
+    // native implement in chainmaker-go
+    NATIVE = 1;
+    // vm-wasmer, language-c++
+    WASMER = 2;
+    // vm-wxvm, language-cpp
+    WXVM = 3;
+    // wasm interpreter in go
+    GASM = 4;
+    // vm-evm
+    EVM = 5;
+    // vm-docker, language-golang
+    DOCKER_GO = 6;
+    // vm-docker, language-java
+    DOCKER_JAVA = 7;
+}
+```
+
+合约操作交易类型
+
+```
+// transaction type definition
+enum TxType {
+    // call a pre created user contract, included in block
+    INVOKE_USER_CONTRACT = 0;
+    // query a pre created user contract, not included in block
+    QUERY_USER_CONTRACT = 1;
+    // create, upgrade, freeze, unfreeze, revoke a user contract, included in block
+    MANAGE_USER_CONTRACT = 2;
+
+    QUERY_SYSTEM_CONTRACT = 3;
+    // update chain config, included in block
+    UPDATE_CHAIN_CONFIG = 4;
+}
+```
+
+合约操作管理数据结构
+
+```
+// contract management type transaction payload
+// TxType: CREATE_USER_CONTRACT & UPGRADE_USER_CONTRACT & FREEZE_USER_CONTRACT
+message ContractMgmtPayload {
+    // endorsment signature with chain_id, redundant with TxHeader
+    string chain_id = 1;
+    // smart contract name, set by contract creator, can have multiple versions
+    ContractId contract_id = 2;
+    // invoke method in bytes format
+    string method = 3;
+    // invoke parameters in bytes format
+    repeated KeyValuePair parameters = 4; // 合约参数
+    // 合约编译后的字节码
+    bytes byte_code = 5;
+    // payload signature, config_update|contract_mgmt type needed, multi-sign
+    repeated EndorsementEntry endorsement = 6;
+}
+```
+
+系统合约操作数据结构
+
+```
+// config update type transaction payload
+// TxType: UPDATE_CHAIN_CONFIG
+message SystemContractPayload {
+    // endorsment signature with chain_id, redundant with TxHeader
+    string chain_id = 1;
+    // smart contract name
+    string contract_name = 2;
+    // update method
+    string method = 3;
+    // update parameters in k-v format
+    repeated KeyValuePair parameters = 4;
+    // config sequence, starts from 0 (genesis config)
+    uint64 sequence = 5;
+    // multi-sign, signature of [SystemContractPayload] with endorsement = nil
+    repeated EndorsementEntry endorsement = 6;
+}
+```
+
+查询合约操作数据结构
+
+```
+// query type transaction payload
+// TxType: QUERY_USER_CONTRACT & QUERY_SYSTEM_CONTRACT
+message QueryPayload {
+    // smart contract name
+    string contract_name = 1;
+    // query method
+    string method = 2;
+    // query parameters in k-v format
+    repeated KeyValuePair parameters = 3;
+}
+```
+
+调用合约操作数据结构
+
+```
+// transact type transaction payload
+// TxType: INVOKE_USER_CONTRACT
+message TransactPayload {
+    // smart contract name
+    string contract_name = 1;
+    // invoke method
+    string method = 2;
+    // invoke parameters in k-v format
+    repeated KeyValuePair parameters = 3;
+}
+```
 
 ### 共识算法@智超、殷舒
 
@@ -427,7 +616,91 @@ chainmaker节点地址遵循libp2p网络地址格式协定，例如：
 
 ### RPC服务@Jason
 
-【RPC服务、<u>配置说明（TLS、流量控制等）</u>、数据结构内容需要修改】
+#### 功能说明
+
+`RPCServer`采用`gRPC`实现的远程过程调用系统，采用`HTTP/2` 传输协议，使用`Protobuf` 作为接口描述语言，实现模块间的高效交互。
+
+功能上支持处理节点请求、基于流模式的消息订阅，通信上支持`TLS`单向和双向认证、流控机制等。
+
+#### 配置说明
+
+```yml
+rpc:
+  provider: grpc
+  port: 12301
+  # 检查链配置TrustRoots证书变化时间间隔，单位：s，最小值为10s
+  check_chain_conf_trust_roots_change_interval: 60
+  ratelimit:
+    # 每秒补充令牌数，取值：-1-不受限；0-默认值（10000）
+    token_per_second: -1
+    # 令牌桶大小，取值：-1-不受限；0-默认值（10000）
+    token_bucket_size: -1
+  subscriber:
+    # 历史消息订阅流控，实时消息订阅不会进行流控
+    ratelimit:
+      # 每秒补充令牌数，取值：-1-不受限；0-默认值（1000）
+      token_per_second: 100
+      # 令牌桶大小，取值：-1-不受限；0-默认值（1000）
+      token_bucket_size: 100
+  tls:
+    # TLS模式:
+    #   disable - 不启用TLS
+    #   oneway  - 单向认证
+    #   twoway  - 双向认证
+    mode:           twoway
+    priv_key_file:  ./certs/node/consensus1/consensus1.tls.key
+    cert_file:      ./certs/node/consensus1/consensus1.tls.crt
+```
+
+#### 接口定义
+
+```protobuf
+service RpcNode {
+	// 交易消息请求处理
+	rpc SendRequest(TxRequest) returns (TxResponse) {};
+
+	// 消息订阅请求处理
+	rpc Subscribe(TxRequest) returns (stream SubscribeResult) {};
+
+	// 更新日志级别
+	rpc RefreshLogLevelsConfig(LogLevelsRequest) returns (LogLevelsResponse) {};
+
+	// 获取ChainMaker版本
+	rpc GetChainMakerVersion(ChainMakerVersionRequest) returns(ChainMakerVersionResponse) {};
+
+	// 检查链配置并动态加载新链
+	rpc CheckNewBlockChainConfig(CheckNewBlockChainConfigRequest) returns (CheckNewBlockChainConfigResponse) {};
+
+	// 更新Debug状态（开发调试）
+	rpc UpdateDebugConfig(DebugConfigRequest) returns (DebugConfigResponse) {};
+}
+```
+
+#### 关键数据结构
+
+- **TxRequest**
+
+![image-20210205114809765](/images/image-20210205114809765.png)
+
+- **TxResponse**
+
+![image-20210205114858708](/images/image-20210205114858708.png)
+
+#### 关键逻辑
+
+- **消息订阅（事件通知）**
+
+![image-20210205110331710](/images/image-20210205110331710.png)
+
+（1）订阅者发起消息订阅请求，当前支持订阅区块消息和交易消息
+
+（2）如果只是订阅历史数据，直接从账本存储（`Store`）中获取后返回给订阅者
+
+（3）如果需要订阅实时数据，则会有`Subscriber`发起订阅事件，将`chan`注册到订阅者列表中，当`Core`模块有新区块产生，会发送事件通知，通过`chan`通知到`Subscriber`，通过`RPCServer`返回给订阅者
+
+（4）如果需要同时订阅历史和实时数据，则会分别从账本存储（`Store`）以及消息订阅发布者获取，而后返回给订阅者
+
+（5）若订阅消息发送完，`RPCServer`会主动关闭订阅通道，避免资源浪费
 
 ### 存储模块
 
@@ -1612,19 +1885,187 @@ type TxResponse struct {
 
 ### 命令行工具CMC@天乐
 
-
+cmc是一个命令行工具集，主要包括chainmaker节点管理（使用sdk和chainmaker之间通过rpc交互实现）、各类证书生成等功能，可以通过help来查看命令的用法。更多使用示例参考：《长安链 ChainMaker_Deploy_Manual》和《长安链 ChainMaker_Maintenance_Manual》
 
 ### SDK@天乐、Jason
 
+请参考：《chainmaker-go-sdk 》《chainmaker-java-sdk》
 
+### cryptogen@Jason
 
-### 一键部署@Jason
+#### 工具说明
 
+`chainmaker-cryptogen`是基于配置文件生成`ChainMaker`节点和客户端证书的工具，方便在没有`CA`的情况下，进行开发和测试。
 
+#### 工具配置
 
-### crypoto-gen@Jason
+```yml
+crypto_config:
+  - domain: chainmaker.org
+    host_name: wx-org
+    count: 4                # 如果为1，直接使用host_name，否则添加递增编号
+    #pk_algo: ecc_p256
+    pk_algo: sm2
+    ski_hash: sha256
+    specs: &specs_ref
+      expire_year:  10
+      sans:
+        - chainmaker.org
+        - localhost
+        - 127.0.0.1
+    location: &location_ref
+      country:            CN
+      locality:           Beijing
+      province:           Beijing
+    # CA证书配置
+    ca:
+      location:
+        <<: *location_ref
+      specs:
+        <<: *specs_ref
+    # 节点证书配置
+    node:
+      - type: consensus
+        # 共识节点数量
+        count: 1
+        # 共识节点配置
+        location:
+          <<: *location_ref
+        specs:
+          <<: *specs_ref
+          expire_year:  5
+      - type: common
+        # 普通节点数量
+        count: 1
+        # 普通节点配置
+        location:
+          <<: *location_ref
+        specs:
+          <<: *specs_ref
+          expire_year:  5
+    user:
+      - type: admin
+        # 管理员证书数量
+        count: 1
+        # 管理员证书配置
+        location:
+          <<: *location_ref
+        expire_year:  5
+      - type: client
+        # 普通用户证书数量
+        count: 1
+        # 普通用户证书配置
+        location:
+          <<: *location_ref
+        expire_year:  5
+```
 
+#### 使用方法
 
+- 命令帮助
+
+```bash
+$ ./chainmaker-cryptogen -h
+Usage:
+  chainmaker-cryptogen [command]
+
+Available Commands:
+  extend      Extend existing network
+  generate    Generate key material
+  help        Help about any command
+  showconfig  Show config
+
+Flags:
+  -c, --config string   specify config file path (default "../config/crypto_config_template.yml")
+  -h, --help            help for chainmaker-cryptogen
+
+Use "chainmaker-cryptogen [command] --help" for more information about a command.
+```
+
+- 生成证书
+
+```bash
+$ ./chainmaker-cryptogen generate
+
+$ tree -L 3 crypto-config/
+crypto-config/
+├── wx-org1.chainmaker.org
+│   ├── ca
+│   │   ├── ca.crt
+│   │   └── ca.key
+│   ├── node
+│   │   ├── common1
+│   │   └── consensus1
+│   └── user
+│       ├── admin1
+│       └── client1
+├── wx-org2.chainmaker.org
+│   ├── ca
+│   │   ├── ca.crt
+│   │   └── ca.key
+│   ├── node
+│   │   ├── common1
+│   │   └── consensus1
+│   └── user
+│       ├── admin1
+│       └── client1
+├── wx-org3.chainmaker.org
+│   ├── ca
+│   │   ├── ca.crt
+│   │   └── ca.key
+│   ├── node
+│   │   ├── common1
+│   │   └── consensus1
+│   └── user
+│       ├── admin1
+│       └── client1
+└── wx-org4.chainmaker.org
+    ├── ca
+    │   ├── ca.crt
+    │   └── ca.key
+    ├── node
+    │   ├── common1
+    │   └── consensus1
+    └── user
+        ├── admin1
+        └── client1
+```
+
+- 证书目录结构
+
+![image-20210205145640521](/images/image-20210205145640521.png)
+
+```
+$ tree crypto-config/wx-org1.chainmaker.org/
+crypto-config/wx-org1.chainmaker.org/
+├── ca
+│   ├── ca.crt
+│   └── ca.key
+├── node
+│   ├── common1
+│   │   ├── common1.nodeid
+│   │   ├── common1.sign.crt
+│   │   ├── common1.sign.key
+│   │   ├── common1.tls.crt
+│   │   └── common1.tls.key
+│   └── consensus1
+│       ├── consensus1.nodeid
+│       ├── consensus1.sign.crt
+│       ├── consensus1.sign.key
+│       ├── consensus1.tls.crt
+│       └── consensus1.tls.key
+└── user
+    ├── admin1
+    │   ├── admin1.sign.crt
+    │   ├── admin1.sign.key
+    │   ├── admin1.tls.crt
+    │   └── admin1.tls.key
+    └── client1
+        ├── client1.sign.crt
+        ├── client1.sign.key
+        ├── client1.tls.crt
+        └── client1.tls.key
+```
 
 ### 在线IDE@振远
 
