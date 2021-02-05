@@ -21,7 +21,7 @@ typora-root-url: ../开源手册
 
 **灵活高效的装配模式**
 
-- 深度模 块化，根据用户需求，择优选择不同模块组件快速组装定制化区块链系统；
+- 深度模块化，根据用户需求，择优选择不同模块组件快速组装定制化区块链系统；
 - 可插拔、可分离的自主可控核心框架，可快速接入优势底层模块/单一定制化开发模块。
 
 **国际领先的处理性能**
@@ -115,27 +115,313 @@ ChainMaker不仅要求区块链模块功能的完全独立、接口定义清晰�
 
 ### 智能合约@振远
 
-【合约的分类和执行流程】
+#### 合约的分类和执行流程
 
-【合约引擎介绍，WASM、GASM、WXVM】
+ChainMaker可以运行基于WASM和EVM的智能合约，同时内部也内置了多个系统合约。智能合约支持了面向用户的在区块链上可编程的能力，而系统合约为ChainMaker区块链的管理与配置提供了必要条件。
 
-【系统合约，包含哪些】
+当交易在合约模块执行时，先依据合约的名称，来决定是交给智能合约还是系统合约来执行。为系统合约保留的名称包括：
 
-【可支持合约开发语言】
+```
+"SYSTEM_CONTRACT_CHAIN_CONFIG"
+"SYSTEM_CONTRACT_QUERY"
+"SYSTEM_CONTRACT_CERT_MANAGE"
+"SYSTEM_CONTRACT_GOVERNMENT"
+"SYSTEM_CONTRACT_MULT_SIGN"
+```
 
-【合约SDK】
+如果合约名称不在上述列表中，再依据交易类型，来执行智能合约。对调用智能合约而言，有效的交易类型包括：
 
-【合约模块接口说明】
+```
+MANAGE_USER_CONTRACT
+INVOKE_USER_CONTRACT
+QUERY_USER_CONTRACT
+```
 
-【pb数据模型】
+在把智能合约交给智能合约引擎执行前，还会经过一系列的参数校验。这些校验包括字节码、版本、合约调用方法名称、合约调用参数、合约引擎类型。
 
+启动智能合约执行引擎时，将解析字节码、版本、合约调用方法名称、合约调用参数，并且序列化为智能合约执行引擎所需要的数据，并且拷贝数据到智能合约引擎中。智能合约执行引擎在执行过程中，就会依据上述信息执行，并且返回合约执行结果。最终把合约执行结果交给存储模块
 
+#### 合约引擎介绍
+
+ChainMaker目前支持四类智能合约执行引擎：
+
+- WASMER：支持使用Rust语言生成的智能合约wasm字节码，运行时采用aot技术执行
+- GASM：支持使用Go语言编写合约，使用TinyGo编译器生成的智能合约wasm字节码，运行时采用解释技术执行
+- WXVM：支持使用C++语言生成的智能合约wasm字节码，运行时采用本地化编译技术执行
+- EVM：支持使用Solidity语言编写合约，使用solc编译器生成的智能合约字节码，，运行时采用解释技术执行
+
+#### 系统合约
+
+目前系统合约包含：
+
+- SYSTEM_CONTRACT_CHAIN_CONFIG：增删改链配置
+- SYSTEM_CONTRACT_QUERY：查询链上配置
+- SYSTEM_CONTRACT_CERT_MANAGE：证书管理
+- SYSTEM_CONTRACT_GOVERNMENT：链上治理
+- SYSTEM_CONTRACT_MULT_SIGN：链上多重签名
+
+#### 合约SDK
+
+ChainMaker为不同的语言编写智能合约与链上交互提供了多种智能合约编写SDK。SDK主要提供的接口功能包括：
+
+- 读取在区块链数据库上的数据
+- 往区块链数据库上写入数据
+- 获取当前交易ID、区块高度
+- 获取创建合约者的身份信息（公钥、组织、角色）
+- 获取调用合约者（即交易发送者）的身份信息（公钥、组织、角色）
+
+#### 合约模块接口说明
+
+合约模块对外的接口为：
+
+```
+//VmManager manage vm runtime
+type VmManager interface {
+   // GetOrganization get organization or membership
+   GetOrganization() Organization
+   // GetAccessControl get accessControl manages policies and principles
+   GetAccessControl() AccessControl
+   // GetChainNodesInfoProvider get ChainNodesInfoProvider provide base node info list of chain.
+   GetChainNodesInfoProvider() ChainNodesInfoProvider
+   // RunContract run native or user contract according ContractName in contractId, and call the specified function
+   RunContract(contractId *pb.ContractId, method string, byteCode []byte, parameters map[string]string,
+      txContext TxSimContext, gasUsed uint64, refTxType pb.TxType) (*pb.ContractResult, pb.TxStatusCode)
+}
+```
+
+其主要的方法是RunContract，调用该方法时需要提供合约ID信息、调用方法、合约字节码、调用参数、合约执行上下文环境（主要为合约提供访问数据库的接口）、已消耗的资源量和合约操作交易类型（创建、升级、冻结、解冻、废止）
+
+#### PB数据模型
+
+合约ID：
+
+```
+// the unique identifier of a smart contract
+message ContractId {
+    // smart contract name, set by contract creator, can have multiple versions
+    string contract_name = 1;
+    // smart contract version, set by contract creator, name + version should be unique
+    string contract_version = 2;
+    // smart contract runtime type, set by contract creator
+    RuntimeType runtime_type = 3;
+}
+```
+
+智能合约引擎类型（暂时还不支持 DOCKER_GO和 DOCKER_JAVA）
+
+```
+// smart contract runtime, contains vm type and language type
+enum RuntimeType {
+    INVALID = 0;
+    // native implement in chainmaker-go
+    NATIVE = 1;
+    // vm-wasmer, language-c++
+    WASMER = 2;
+    // vm-wxvm, language-cpp
+    WXVM = 3;
+    // wasm interpreter in go
+    GASM = 4;
+    // vm-evm
+    EVM = 5;
+    // vm-docker, language-golang
+    DOCKER_GO = 6;
+    // vm-docker, language-java
+    DOCKER_JAVA = 7;
+}
+```
+
+合约操作交易类型
+
+```
+// transaction type definition
+enum TxType {
+    // call a pre created user contract, included in block
+    INVOKE_USER_CONTRACT = 0;
+    // query a pre created user contract, not included in block
+    QUERY_USER_CONTRACT = 1;
+    // create, upgrade, freeze, unfreeze, revoke a user contract, included in block
+    MANAGE_USER_CONTRACT = 2;
+
+    QUERY_SYSTEM_CONTRACT = 3;
+    // update chain config, included in block
+    UPDATE_CHAIN_CONFIG = 4;
+}
+```
+
+合约操作管理数据结构
+
+```
+// contract management type transaction payload
+// TxType: CREATE_USER_CONTRACT & UPGRADE_USER_CONTRACT & FREEZE_USER_CONTRACT
+message ContractMgmtPayload {
+    // endorsment signature with chain_id, redundant with TxHeader
+    string chain_id = 1;
+    // smart contract name, set by contract creator, can have multiple versions
+    ContractId contract_id = 2;
+    // invoke method in bytes format
+    string method = 3;
+    // invoke parameters in bytes format
+    repeated KeyValuePair parameters = 4; // 合约参数
+    // 合约编译后的字节码
+    bytes byte_code = 5;
+    // payload signature, config_update|contract_mgmt type needed, multi-sign
+    repeated EndorsementEntry endorsement = 6;
+}
+```
+
+系统合约操作数据结构
+
+```
+// config update type transaction payload
+// TxType: UPDATE_CHAIN_CONFIG
+message SystemContractPayload {
+    // endorsment signature with chain_id, redundant with TxHeader
+    string chain_id = 1;
+    // smart contract name
+    string contract_name = 2;
+    // update method
+    string method = 3;
+    // update parameters in k-v format
+    repeated KeyValuePair parameters = 4;
+    // config sequence, starts from 0 (genesis config)
+    uint64 sequence = 5;
+    // multi-sign, signature of [SystemContractPayload] with endorsement = nil
+    repeated EndorsementEntry endorsement = 6;
+}
+```
+
+查询合约操作数据结构
+
+```
+// query type transaction payload
+// TxType: QUERY_USER_CONTRACT & QUERY_SYSTEM_CONTRACT
+message QueryPayload {
+    // smart contract name
+    string contract_name = 1;
+    // query method
+    string method = 2;
+    // query parameters in k-v format
+    repeated KeyValuePair parameters = 3;
+}
+```
+
+调用合约操作数据结构
+
+```
+// transact type transaction payload
+// TxType: INVOKE_USER_CONTRACT
+message TransactPayload {
+    // smart contract name
+    string contract_name = 1;
+    // invoke method
+    string method = 2;
+    // invoke parameters in k-v format
+    repeated KeyValuePair parameters = 3;
+}
+```
 
 ### 共识算法@智超、殷舒
 
 【共识算法说明：SOLO、TBFT】
 
 每个共识算法的【主要流程、与开源版本或论文版本的不同、<u>投票签名和验签机制、共识节点间通信方式、是否有共识状态WAL存储、模块接口说明、pb数据模型</u>】
+
+#### TBFT
+
+##### 算法简述
+TBFT 是一种拜占庭容错的共识算法，可以在拜占庭节点数小于总数1/3的情况下，保证系统的安全运行。
+TBFT 的每轮共识可以分为5个步骤：
+1. NewRound: 共识投票的准备阶段，会初始化共识相关状态
+2. Proposal: 提案阶段，leader节点会打包区块，并广播给follwer节点
+3. Prevote: 预投票阶段，follower节点在收到proposal并验证proposal合法后，广播自己的prevote投票到其他节点
+4. Precommit: 预提交阶段，节点收到 >2/3 针对proposal的prevote投票后，广播自己的precommit投票到其他节点
+5. Commit: 提交阶段，节点收到 >2/3 针对proposal的precommit投票后，提交proposal中的区块到账本
+
+其中共识投票是指其中的Proposal，Prevote，Precommit三个阶段。
+
+阶段图示如下：
+<img src="images/tbft_phase.png"/>
+
+流程图如下：
+<img src="images/tbft_diagram.png"/>
+
+##### 接口说明
+```go
+type ConsensusEngine interface {      
+  // Init starts the consensus engine.
+  Start() error                       
+                                      
+  // Stop stops the consensus engine. 
+  Stop() error                        
+}    
+```
+
+TBFT 实现了Chainmaker的`ConsensusEngine`接口。
+`Start` 方法用来初始化TBFT内部状态及启动TBFT实例。
+`Stop` 方法用来停止TBFT实例。
+
+##### 数据结构
+```protobuf
+// TBFTMsgType defines different type message in tbft
+enum TBFTMsgType {
+  propose   = 0;
+  prevote   = 1;
+  precommit = 2;
+  state     = 3;
+}
+
+message TBFTMsg {
+  TBFTMsgType type = 1;
+  bytes msg        = 2;
+}
+
+// Proposal defined a consesensus proposal which can 
+// be gossiped to other node and can be serilized 
+// for persistent store.
+message Proposal {
+  string voter                 = 1;
+  int64 height                 = 2;
+  int32 round                  = 3;
+  int32 pol_round              = 4;
+  Block block                  = 5;
+  EndorsementEntry endorsement = 6;
+}
+
+// VoteType represents the type of vote
+enum VoteType {
+  VotePrevote   = 0;
+  VotePrecommit = 1;
+}
+
+// Vote represents a tbft vote
+message Vote {
+  VoteType type = 1;
+  string voter  = 2;
+  int64 height  = 3;
+  int32 round   = 4;
+  bytes hash    = 5;
+  EndorsementEntry endorsement = 6;
+}
+
+// Step represents the step in a round 
+enum Step {
+  NewHeight     = 0;
+  NewRound      = 1;
+  Propose       = 2;
+  Prevote       = 3;
+  PrevoteWait   = 4;
+  Precommit     = 5;
+  PrecommitWait = 6;
+  Commit        = 7;
+}
+```
+
+##### 配置参数
+TBFT 可以通过在配置块中的`ext_config`字段配置相关参数：
+1. "TBFT_propose_timeout": 提案的超时时间，如10s, 1m
+2. "TBFT_propose_delta_timeout": 每轮提案超时增加的时间，如10s, 1m
+3. "TBFT_blocks_per_proposer": 每个节点连续出块数，如 3
+
 
 #### SOLO
 
@@ -377,7 +663,91 @@ chainmaker节点地址遵循libp2p网络地址格式协定，例如：
 
 ### RPC服务@Jason
 
-【RPC服务、<u>配置说明（TLS、流量控制等）</u>、数据结构内容需要修改】
+#### 功能说明
+
+`RPCServer`采用`gRPC`实现的远程过程调用系统，采用`HTTP/2` 传输协议，使用`Protobuf` 作为接口描述语言，实现模块间的高效交互。
+
+功能上支持处理节点请求、基于流模式的消息订阅，通信上支持`TLS`单向和双向认证、流控机制等。
+
+#### 配置说明
+
+```yml
+rpc:
+  provider: grpc
+  port: 12301
+  # 检查链配置TrustRoots证书变化时间间隔，单位：s，最小值为10s
+  check_chain_conf_trust_roots_change_interval: 60
+  ratelimit:
+    # 每秒补充令牌数，取值：-1-不受限；0-默认值（10000）
+    token_per_second: -1
+    # 令牌桶大小，取值：-1-不受限；0-默认值（10000）
+    token_bucket_size: -1
+  subscriber:
+    # 历史消息订阅流控，实时消息订阅不会进行流控
+    ratelimit:
+      # 每秒补充令牌数，取值：-1-不受限；0-默认值（1000）
+      token_per_second: 100
+      # 令牌桶大小，取值：-1-不受限；0-默认值（1000）
+      token_bucket_size: 100
+  tls:
+    # TLS模式:
+    #   disable - 不启用TLS
+    #   oneway  - 单向认证
+    #   twoway  - 双向认证
+    mode:           twoway
+    priv_key_file:  ./certs/node/consensus1/consensus1.tls.key
+    cert_file:      ./certs/node/consensus1/consensus1.tls.crt
+```
+
+#### 接口定义
+
+```protobuf
+service RpcNode {
+	// 交易消息请求处理
+	rpc SendRequest(TxRequest) returns (TxResponse) {};
+
+	// 消息订阅请求处理
+	rpc Subscribe(TxRequest) returns (stream SubscribeResult) {};
+
+	// 更新日志级别
+	rpc RefreshLogLevelsConfig(LogLevelsRequest) returns (LogLevelsResponse) {};
+
+	// 获取ChainMaker版本
+	rpc GetChainMakerVersion(ChainMakerVersionRequest) returns(ChainMakerVersionResponse) {};
+
+	// 检查链配置并动态加载新链
+	rpc CheckNewBlockChainConfig(CheckNewBlockChainConfigRequest) returns (CheckNewBlockChainConfigResponse) {};
+
+	// 更新Debug状态（开发调试）
+	rpc UpdateDebugConfig(DebugConfigRequest) returns (DebugConfigResponse) {};
+}
+```
+
+#### 关键数据结构
+
+- **TxRequest**
+
+![image-20210205114809765](./images/image-20210205114809765.png)
+
+- **TxResponse**
+
+![image-20210205114858708](./images/image-20210205114858708.png)
+
+#### 关键逻辑
+
+- **消息订阅（事件通知）**
+
+![image-20210205110331710](./images/image-20210205110331710.png)
+
+（1）订阅者发起消息订阅请求，当前支持订阅区块消息和交易消息
+
+（2）如果只是订阅历史数据，直接从账本存储（`Store`）中获取后返回给订阅者
+
+（3）如果需要订阅实时数据，则会有`Subscriber`发起订阅事件，将`chan`注册到订阅者列表中，当`Core`模块有新区块产生，会发送事件通知，通过`chan`通知到`Subscriber`，通过`RPCServer`返回给订阅者
+
+（4）如果需要同时订阅历史和实时数据，则会分别从账本存储（`Store`）以及消息订阅发布者获取，而后返回给订阅者
+
+（5）若订阅消息发送完，`RPCServer`会主动关闭订阅通道，避免资源浪费
 
 ### 存储模块
 
@@ -417,7 +787,6 @@ chainmaker节点地址遵循libp2p网络地址格式协定，例如：
 #### 存储模块接口
 
 ```go
-// 
 type BlockchainStore interface {
 
 	//提交区块，批量提交区块数据到账本，保存区块信息、交易信息、读写集、索引，更新状态数据等信息
@@ -434,7 +803,7 @@ type BlockchainStore interface {
 	//如果区块不存在，返回false
 	BlockExist(blockHash []byte) (bool, error)
 
-  //按区块高度查询区块
+    //按区块高度查询区块
 	//如果数据库内部错误，error返回错误信息；
 	//如果区块不存在，Block返回nil，error返回nil
 	GetBlock(height int64) (*pb.Block, error)
@@ -470,7 +839,7 @@ type BlockchainStore interface {
 	//如果数据不存在，Object返回nil，error返回nil
 	ReadObject(contractName string, key []byte) ([]byte, error)
 
-  //获取状态数据库的迭代器，按合约名与key区间查询，包括startKey, 不包括limit
+    //获取状态数据库的迭代器，按合约名与key区间查询，包括startKey, 不包括limit
 	SelectObject(contractName string, startKey []byte, limit []byte) Iterator
 
 	//查询交易读写集
@@ -736,8 +1105,6 @@ total 920
 -rw-r--r-- 1 root root 15784 Dec 25 11:14 LOG.old.1608866062091559
 -rw-r--r-- 1 root root    13 Dec 25 11:13 MANIFEST-000001
 -rw-r--r-- 1 root root  4744 Dec 25 11:13 OPTIONS-000005
-[root@VM-219-157-centos /tmp/test_db]# cat 000003.log
-����a1b1[root@VM-219-157-centos /tmp/test_db]#
 
 ```
 
@@ -860,18 +1227,563 @@ CGO_LDFLAGS="-L/usr/local/rocksdb -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz
    
 
 ### 身份管理@张韬
+#### 简介
 
-是否发布中文
+Identity Management (idmgmt) 用于管理区块链的组织成员身份，是一个基于 PKI 体系的管理模块。
 
-我们对证书的使用，角色划分
+- 私钥部分：模块管理本地节点或成员的私钥，本地节点或成员与链上其他节点交互时用这个私钥对消息签名。
 
-Serialize() ([]byte, error)，返回[]byte的结构说明
+- 弓腰部分：该模块从链配置中读取链上所有组织的公共信息，包括公钥、证书等，用于在交互式验证对端的合法性。
 
-依赖模块使用的接口需要详细说明
+
+#### 组织成员身份管理
+
+身份管理模块由两部分组成：组织和成员。组织模块管理全链公共验证信息和本组织的公共信息。成员模块管理本地节点或本地成员的私钥相关信息。
+
+##### 成员及其签名能力
+
+成员接口和代表一个成员的签名接口如下：
+```go
+type Member interface {
+	// Returns the identity of this member and its group
+	GetIdentity() string
+
+	// Returns the Group Id which this identity belongs to
+	GetOrgIdentity() string
+
+	// Get the role of this identity
+	GetRole() []Role
+
+	// Get SKI (for certificate mode) or Public key PEM (for pk mode)
+	GetSKI() []byte
+
+	// Get public key PEM
+	GetPublicKeyPEM() ([]byte, error)
+
+	// Anonymous returns true if this is an anonymous identity, false otherwise
+	Anonymous() bool
+
+	// Check the validity of this identity
+	// 		White list: check whether pk or cert of this identity is in the list
+	//		Consortium: check whether cert of this identity is in a sub-tree of the group's CA
+	Validate() error
+
+	// Check whether this instance matches the description supplied in PrincipleWhiteList
+	SatisfiesPrinciple(principle *PrincipleWhiteList) error
+
+	// Verify a signature over some message using this identity as reference
+	Verify(hashType string, msg []byte, sig []byte) error
+
+	// Serialize converts an identity to bytes
+	Serialize() ([]byte, error)
+
+	// Get serializable member
+	GetSerializeMember() (*pb.SerializedMember, error)
+}
+
+type SigningMember interface {
+	// Extends Identity
+	Member
+
+	// Sign the message
+	Sign(hashType string, msg []byte) ([]byte, error)
+}
+```
+Sign() 使用成员的私钥对入参数据生成一个签名。
+
+Verify() 验证一个入参签名、数据是否是由这个成员签发的。
+
+Serialize() 和 GetSerializeMember() 接口用于序列化成员。其中，GetSerializeMember() 接口将 Member 结构转化为 protobuf 中定义的可序列化结构，其中包含成员的关键信息：证书、组织、证书是否压缩。Serialize() 接口则是跳过转化为 protobuf 类的这一步，直接讲 Member 的关键信息以字符串形式表示。这两个接口根据需要，在包装请求报文时使用。私钥为不可序列化的部分，以防止错误地将私钥序列化后在网络中传输。原则上私钥不会离开本地。
+
+
+##### 组织
+组织模块的接口如下：
+```go
+type Organization interface {
+	MemberDeserializer
+
+	// Return the identity of this group
+	GetIdentity() (string, error)
+
+	// Return the identity with signing feature of this group
+	GetSigningIdentity() (SigningMember, error)
+
+	// Return trusted root certificates or white list
+	GetTrustedRootCerts() map[string]*x509.Certificate
+
+	// Return trusted intermediate certificates or white list
+	GetTrustedIntermediateCerts() map[string]*x509.Certificate
+
+	// Check whether the provided member is a valid member of this group
+	Validate(id Member) error
+
+	// Check whether the provided member's role matches the description supplied in PrincipleWhiteList
+	SatisfiesPrinciple(id Member, principle *PrincipleWhiteList) error
+
+	// all-in-one validation for signing members: certificate chain/whitelist, signature, principles
+	ValidateMemberMsg(policy Policy, ac AccessControl) (Policy, error)
+
+	Module() string                         // 模块名称
+	Watch(chainConfig pb.ChainConfig) error // 观察配置信息
+}
+```
+Validate() 验证签名者的证书是否在一条根证书在链配置 (或创世块) 中的证书链上。该接口验证了证书吊销、冻结列表。
+
+
+
+#### Description
+
+Identity Management (idmgmt) module is in charge of the PKI mechanism. It manages the membership service of an organization (in the case of a permissionless chain, it maintains the public keys of each node), maintains the private key of the local node itself, and maintains the public information including certificates of all the organizations on the chain.
+
+- Private part. This part has the ability to create signatures on behalf of the local node.
+
+- Public part. This part can verify whether a message from another node or a client-side software belongs to an organization on the chain.
+
+
+#### Identity Management Components
+
+Identity Management consists of two parts: Organization and Member. Organization submodule maintains the universal public information and the organizational public information. Member submodule maintains the local node's private information.
+
+##### Member and SigningMember
+
+Interfaces of Member and SigningMember are
+```go
+type Member interface {
+	// Returns the identity of this member and its group
+	GetIdentity() string
+
+	// Returns the Group Id which this identity belongs to
+	GetOrgIdentity() string
+
+	// Get the role of this identity
+	GetRole() []Role
+
+	// Get SKI (for certificate mode) or Public key PEM (for pk mode)
+	GetSKI() []byte
+
+	// Get public key PEM
+	GetPublicKeyPEM() ([]byte, error)
+
+	// Anonymous returns true if this is an anonymous identity, false otherwise
+	Anonymous() bool
+
+	// Check the validity of this identity
+	// 		White list: check whether pk or cert of this identity is in the list
+	//		Consortium: check whether cert of this identity is in a sub-tree of the group's CA
+	Validate() error
+
+	// Check whether this instance matches the description supplied in PrincipleWhiteList
+	SatisfiesPrinciple(principle *PrincipleWhiteList) error
+
+	// Verify a signature over some message using this identity as reference
+	Verify(hashType string, msg []byte, sig []byte) error
+
+	// Serialize converts an identity to bytes
+	Serialize() ([]byte, error)
+
+	// Get serializable member
+	GetSerializeMember() (*pb.SerializedMember, error)
+}
+
+type SigningMember interface {
+	// Extends Identity
+	Member
+
+	// Sign the message
+	Sign(hashType string, msg []byte) ([]byte, error)
+}
+```
+Sign() create a signature using the SigningMember's own private key.
+Verify() verifies the validity of a signature with the public key of a Member.
+
+
+##### Organization
+Format of Organizaiton is
+```go
+type Organization interface {
+	MemberDeserializer
+
+	// Return the identity of this group
+	GetIdentity() (string, error)
+
+	// Return the identity with signing feature of this group
+	GetSigningIdentity() (SigningMember, error)
+
+	// Return trusted root certificates or white list
+	GetTrustedRootCerts() map[string]*x509.Certificate
+
+	// Return trusted intermediate certificates or white list
+	GetTrustedIntermediateCerts() map[string]*x509.Certificate
+
+	// Check whether the provided member is a valid member of this group
+	Validate(id Member) error
+
+	// Check whether the provided member's role matches the description supplied in PrincipleWhiteList
+	SatisfiesPrinciple(id Member, principle *PrincipleWhiteList) error
+
+	// all-in-one validation for signing members: certificate chain/whitelist, signature, principles
+	ValidateMemberMsg(policy Policy, ac AccessControl) (Policy, error)
+
+	Module() string                         // 模块名称
+	Watch(chainConfig pb.ChainConfig) error // 观察配置信息
+}
+```
+Validate() verifies the certificate chain from a given Member to one of the trusted root certificates stored in chain configuration (aka. the genesis block). 
+
 
 ### 权限管理@张韬
 
-是否发布中文
+#### 简介
+Access Control (权限管理) 模块实现了链上资源与权限规则的匹配，并在链的参与者使用链上资源时验证其权限是否符合目标资源的权限规则。
+
+- 权限管理：解析默认配置、链配置中的权限配置，并维护一个资源-权限规则列表。
+
+- 鉴权：与 IDMgmt (身份管理模块) 一起，为链上成员与资源的权限规则提供验证能力。
+
+#### Access Control 模块组件
+Policy：链上成员所持有的身份。
+Principle：一个链上资源的权限规则。
+AccessControl 结构定义了权限管理对外的接口。
+```go
+type AccessControl interface {
+	GetHashAlg() string
+	VerifyPolicy(policy Policy, organization Organization) (bool, error)
+
+	NewPolicy(resourceId ResourceId, endorsements []*pb.EndorsementEntry, message []byte) (Policy, error)
+	NewSelfPolicy(resourceId ResourceId, endorsements []*pb.EndorsementEntry, message []byte, targetOrg string) (Policy, error)
+
+	LookUpResourceIdByTxType(txType pb.TxType) (ResourceId, error)
+	LookUpPolicyByResourceId(id ResourceId) (Principle, error)
+
+	CheckPrincipleValidity(permission *pb.Permission) bool
+
+	LookUpSignerCache(signer string) (Member, bool)
+	AddSignerCache(signer string, info Member)
+
+	// watcher for configuration update
+	Module() string
+	Watch(chainConfig pb.ChainConfig) error
+}
+```
+权限管理模块的核心接口是 NewPolicy(), NewSelfPolicy(), 和 VerifyPolicy()。前两个接口用于根据请求者身份和所请求的资源构建一个被验证的身份-权限对，后一个接口用于验证这个身份-权限对中的身份是否满足权限要求。
+
+在其他接口中，CheckPrincipleValidity() 用于判断读自配置中的权限配置是否合理，主要用在链用户发起修改权限配置的请求时。
+
+#### 权限规则
+权限规则的结构如下：
+```go
+type Principle interface {
+	GetRule() RuleKeyword
+	GetOrgList() []string
+	GetRoleList() []Role
+}
+
+type principle struct {
+	rule     protocol.RuleKeyword
+	orgList  []string
+	roleList []protocol.Role
+}
+
+func NewPrinciple(rule protocol.RuleKeyword, orgList []string, roleList []protocol.Role) protocol.Principle
+```
+1. orgList 用于存储一个组织名列表，如果一个签名者不属于列表中的任何一个组织，那么他的签名在当前规则中会被鉴定为不合法。
+2. roleList 用于储存一个身份名列表，如果一个签名者不具备列表中的任何一个身份，那么他的签名在当前规则中会被鉴定为不合法。
+3. "rule" 是权限类型，有以下几种类型：
+	1. "MAJORITY". 要求半数以上组织共同参与，每个组织至少一个管理员身份 (admin) 的成员提供签名。
+		a. 只有 “admin" 身份被认为合法。默认 roleList 中只有 "admin"。
+		b. 可以自定义 orgList。
+		c. 这个类型是修改大部分链配置的默认权限类型。
+		d. 来自同一个组织的多个 "admin" 身份签名只会被统计一次。
+	2. "SELF". 签名者必须与目标资源所属同一个组织：
+		a. 这个规则只能用于与组织有所属关系的资源。该规则下，自定义 orgList 将不会生效。
+		b. 只接受 "admin" 身份的签名者签名，自定义 roleList 将不会生效。
+		c. 一个符合组织、身份要求的签名就足够满足本规则。
+		d. 目前，只有组织根证书、组织共识节点两项配置可以且应该使用此规则。
+	3. "ANY". 签名者属于 orgList 中的任意一个组织，且签名者拥有 roleList 中的任意一个身份，则签名被视为有效：
+		a. orgList 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
+		b. roleList可以随意配置任意身份集合，留空则代表所有身份都满足要求。
+		c. 这类规则目前主要用于宽泛的读写权限控制。
+	4. "ALL". 要求 orgList 列表中所有组织参与，每个组织至少提供一个符合 roleList 要求身份的签名:
+		a. orgList 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
+		b. roleList可以随意配置任意身份集合，留空则代表所有身份都满足要求。
+		c. 来自同一个组织的合法签名只会被统计一次。
+	5. 一个以字符串形式表达的整数 (eg. "3") 作为阈值：
+		a. orgList 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
+		b. roleList可以随意配置任意身份集合，留空则代表所有身份都满足要求。
+		c. 这是个用户自定义的规则，这个证书可以为1到组织总数间的任意一个数，包括1和组织总数。
+		d. 这条规则与 "ALL" 规则相似，但不要求 orgList 中的所有组织参与，而只要求大于或等于阈值数量的 orgList 中的不同组织参与即可。
+	6. 一个以字符串形式表达的分数 (eg. "1/3") 作为比例：
+		a. orgList 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
+		b. roleList可以随意配置任意身份集合，留空则代表所有身份都满足要求。
+		c. 这是个用户自定义的规则，可以配置 [0, 1] 间的任意分数。
+		d. 这条规则与 "ALL" 规则相似，但不要求 orgList 中的所有组织参与，而只要求大于或等于比例 orgList 中的不同组织参与即可。
+	7. "FORBIDDEN"：这个类型的资源被禁用了。
+
+
+#### 身份、权利策略对
+身份、权利策略对的结构：
+```go
+type Policy interface {
+	GetResourceId() ResourceId
+	GetEndorsement() []*pb.EndorsementEntry
+	GetMessage() []byte
+
+	GetTargetOrg() string
+}
+
+type policy struct {
+	resourceId  protocol.ResourceId
+	endorsement []*pb.EndorsementEntry
+	message     []byte
+
+	targetOrg string
+}
+
+func (ac *accesscontrol) NewPolicy(resourceId protocol.ResourceId, endorsements []*pb.EndorsementEntry, message []byte) (protocol.Policy, error)
+func (ac *accesscontrol) NewSelfPolicy(resourceId protocol.ResourceId, endorsements []*pb.EndorsementEntry, message []byte, targetOrg string) (protocol.Policy, error)
+```
+1. resourceId 字段是被调用资源的ID。当前资源包括配置项的增、删、查、改，链上数据查询、写入等。
+2. endorsement 字段存有一个 (签名者，签名) 对的列表。
+3. message 字段是请求的消息体。
+4. targetOrg 是可选字段。这个字段仅在 resourceId 字段所指示的资源是属于某个特定组织时被使用到。可以参看 "SELF" 规则的说明。
+
+#### 接口使用说明
+## 验证权限
+首先，构建身份策略 (Policy) 用于判断某一组签名者是否满足目标资源的权限规则：
+```go
+policy, err := ac.NewPolicy(Target_Resource_ID, Endorsement_List, Request_Message)
+```
+若资源属于特定组织，则用以下方式：
+```go
+policy, err := ac.NewSelfPolicy(Target_Resource_ID, Endorsement_List, Request_Message, Target_Organization)
+```
+最后调用以下接口来验证身份策略与权限规则是否匹配：
+```go
+ok, err := ac.VerifyPolicy(policy, org)
+```
+其中，入参 org 是 chainmaker.org/chainmaker-go/protocol 包中的 Organization 接口类型，他的实现在包 chainmaker.org/chainmaker-go/module/idmgmt 中。
+
+##### 新增资源
+首选，为新资源添加一个ID。(可参考系统合约 CREATE_USER_CONTRACT 创建用户合约接口，他的资源ID是 TxType_CREATE_USER_CONTRACT)。
+
+然后，把新资源ID添加到默认权限配置列表中，为他赋予一个默认外层权限。
+```go
+var txTypeToResourceIdMap = map[pb.TxType]protocol.ResourceId{
+	pb.TxType_QUERY_USER_CONTRACT:   protocol.RESOURCE_CATEGORY_READ_DATA,
+	pb.TxType_QUERY_SYSTEM_CONTRACT: protocol.RESOURCE_CATEGORY_READ_DATA,
+	pb.TxType_INVOKE_USER_CONTRACT:  protocol.RESOURCE_CATEGORY_WRITE_DATA,
+	pb.TxType_UPDATE_CHAIN_CONFIG:   protocol.RESOURCE_CATEGORY_WRITE_DATA,
+	pb.TxType_CREATE_USER_CONTRACT:  protocol.RESOURCE_CATEGORY_WRITE_DATA,
+	pb.TxType_UPGRADE_USER_CONTRACT: protocol.RESOURCE_CATEGORY_WRITE_DATA,
+	pb.TxType_SUBSCRIBE_BLOCK_INFO:  protocol.RESOURCE_CATEGORY_READ_DATA,
+	pb.TxType_SUBSCRIBE_TX_INFO:     protocol.RESOURCE_CATEGORY_READ_DATA,
+	pb.TxType_SYSTEM_CONTRACT:       protocol.RESOURCE_CATEGORY_WRITE_DATA,
+}
+```
+这个 map 被定义在 chainmaker-go/module/access/access_control.go 中. 为新资源ID配置一个下表中的默认权限。
+```go
+const (
+	RESOURCE_UNKNOWN ResourceId = "UNKNOWN"
+
+	RESOURCE_CATEGORY_READ_DATA  ResourceId = "READ"
+	RESOURCE_CATEGORY_WRITE_DATA ResourceId = "WRITE"
+
+	RESOURCE_CATEGORY_P2P            ResourceId = "P2P"
+	RESOURCE_CATEGORY_CONSENSUS_NODE ResourceId = "CONSENSUS"
+	RESOURCE_CATEGORY_ADMIN          ResourceId = "ADMIN"
+
+	RESOURCE_CATEGORY_UPDATE_CONFIG      ResourceId = "CONFIG"
+	RESOURCE_CATEGORY_UPDATE_SELF_CONFIG ResourceId = "SELF_CONFIG"
+
+	// fine-grained source id for different access policies
+	RESOURCE_TX_QUERY     ResourceId = "query"
+	RESOURCE_TX_TRANSACT  ResourceId = "transaction"
+	RESOURCE_CATEGORY_ALL ResourceId = "ALL_TEST"
+)
+```
+如果需要配置自定义权限，可以在链配置中设置 (可参考 bc1.yml 文件的 permissions 部分)。
+
+##### 注意
+当新增一个系统合约接口时，必须要为该合约接口配置一个默认的权限，或者在链配置里为他添加一个配置项，否则将无法调用这个合约接口。添加链配置可以用 UPDATE_CHAIN_CONFIG 合约来实现。
+
+
+#### Description
+
+Access Control module is in charge of managing the access policies for chain resources, and verifying requests on chain resources.
+
+- Access policy management. Resolve the access policies in default configurations and chain configurations, and maintain a map from resources to their corresponding access policies.
+
+- Access authentication. With Identity Management module (idmgmt), Access Control module provides interface to verify whether a request is authorized.
+
+
+#### Access Control Components
+
+Access control checks whether the policy from the signer and the principle from the resource match. A functional interface AccessControl provides the necessary interface for this purpose.
+```go
+type AccessControl interface {
+	GetHashAlg() string
+	VerifyPolicy(policy Policy, organization Organization) (bool, error)
+
+	NewPolicy(resourceId ResourceId, endorsements []*pb.EndorsementEntry, message []byte) (Policy, error)
+	NewSelfPolicy(resourceId ResourceId, endorsements []*pb.EndorsementEntry, message []byte, targetOrg string) (Policy, error)
+
+	LookUpResourceIdByTxType(txType pb.TxType) (ResourceId, error)
+	LookUpPolicyByResourceId(id ResourceId) (Principle, error)
+
+	CheckPrincipleValidity(permission *pb.Permission) bool
+
+	LookUpSignerCache(signer string) (Member, bool)
+	AddSignerCache(signer string, info Member)
+
+	// watcher for configuration update
+	Module() string
+	Watch(chainConfig pb.ChainConfig) error
+}
+```
+
+The core function of this module consists of the interfaces NewPolicy(), NewSelfPolicy(), and VerifyPolicy(). They together provide the ability to verify the authenticity of a incoming request.
+
+The interface CheckPrincipleValidity() is used to check the validity of the access control constraints in the configuration, ensuring that the configured rules for each resource are reasonable.
+
+##### Access Principle
+
+Format of access principle is
+```go
+type Principle interface {
+	GetRule() RuleKeyword
+	GetOrgList() []string
+	GetRoleList() []Role
+}
+
+type principle struct {
+	rule     protocol.RuleKeyword
+	orgList  []string
+	roleList []protocol.Role
+}
+
+func NewPrinciple(rule protocol.RuleKeyword, orgList []string, roleList []protocol.Role) protocol.Principle
+```
+1. orgList contains a list of organization names which are to be considered in authentication procedure. Any signers belonging to an organization other than the ones in this list are considered as invalid and ignored when counting valid endorsements. If set to empty, all organizations on the chain are considered valid.
+2. roleList contains a list of role names which are to be considered in authentication procedure. Any signers bearing a role other than the ones in this list are considered as invalid and ignored when counting valid endorsements. If set to empty, all roles (even user defined roles) are considered valid.
+3. "rule" accepts the following types of input:
+	1. "MAJORITY". Require signatures signed by admins from more than half (exclusive) of the listed organizations.
+		a. Only “admin" is allowed in the role list. If missing, "admin" role will be automatically added to the list. Any other roles in the customized list are ignored.
+		b. The organization list can be customized.
+		c. If not specified, chain configurations are recommended to use this access rule. (default configuration)
+		d. Signatures from the same organization count for one vote.
+	2. "SELF". Require signatures signed by any admin from the organization which the targe resource belongs to.
+		a. This rule can only be applied to the resources which inherently belongs to an organization. And this organization is automatically used to replace the customized organization list.
+		b. Only “admin" is allowed in the role list. If missing, "admin" role will be automatically added to the list. Any other roles in the customized list are ignored.
+		c. The organization list is ignored.
+		d. One valid signature is adequate to fulfilling this access requirement.
+		e. For now, only the update for a trusted root certification and the update for the address of a consensus node should use this rule. Any other resources are restricted to use this rule. (default configuration)
+	3. "ANY". Require one signature signed by any role in the provided role list from any organization in the provided organization list.
+		a. The organization list can contain any organizations which are on the chain. If empty, it is considered as the set of all organizations on the chain.
+		b. The role list can contain any roles, even user-defined ones. If empty, any role is considered valid.
+		c. This rule is generally used to configure the read/write permissions for the data in chain ledger. (default configuration)
+	4. "ALL". Require at least one signature signed by any role in the provided role list from each of the organizations in the provided organization list.
+		a. The organization list can contain any organizations which are on the chain. If empty, it is considered as the set of all organizations on the chain.
+		b. The role list can contain any roles, even user-defined ones. If empty, any role is considered valid.
+		c. Signatures from the same organization count for one vote.
+	5. An integer in the form of a string (eg. "3") considered as a threshold
+		a. The organization list can contain any organizations which are on the chain. If empty, it is considered as the set of all organizations on the chain.
+		b. The role list can contain any roles, even user-defined ones. If empty, any role is considered valid.
+		c. This rule can be customized. It accept any integer number which is less than the size of the provided organization list.
+		d. This rule behaves in the similar way as "ALL". Their difference is that this rule requires signatures from at least the number of organizations specified by its rule field while the rule "ALL" requires signatures from all the organizations in the provided list.
+	6. A fraction in the form of a string (eg. "1/3") considered as a portion
+		a. The organization list can contain any organizations which are on the chain. If empty, it is considered as the set of all organizations on the chain.
+		b. The role list can contain any roles, even user-defined ones. If empty, any role is considered valid.
+		c. This rule can be customized. It accept any integer number which is less than the size of the provided organization list.
+		d. This rule behaves in the similar way as "ALL". Their difference is that this rule requires signatures from at least the portion of organizations specified by its rule field while the rule "ALL" requires signatures from all the organizations in the provided list.
+	7. "FORBIDDEN". Resources with this access rule are restricted to access. They are disabled. 
+
+
+##### Access Policy
+Format of access policy is
+```go
+type Policy interface {
+	GetResourceId() ResourceId
+	GetEndorsement() []*pb.EndorsementEntry
+	GetMessage() []byte
+
+	GetTargetOrg() string
+}
+
+type policy struct {
+	resourceId  protocol.ResourceId
+	endorsement []*pb.EndorsementEntry
+	message     []byte
+
+	targetOrg string
+}
+
+func (ac *accesscontrol) NewPolicy(resourceId protocol.ResourceId, endorsements []*pb.EndorsementEntry, message []byte) (protocol.Policy, error)
+func (ac *accesscontrol) NewSelfPolicy(resourceId protocol.ResourceId, endorsements []*pb.EndorsementEntry, message []byte, targetOrg string) (protocol.Policy, error)
+```
+1. resourceId field specifies the reference of the target resource to be accessed. For now, we only support system pre-defined resources.
+2. endorsement field contains a list of signer-signature pairs.
+3. message field contains the request information which is signed by the signers in the endorsement field.
+4. targetOrg field is optional. It specifies the organization which the resource specified by the resourceId field belongs to. This field is only used for trusted root certification and consensus node address.
+
+#### How to use
+##### Verifications
+First construct the policy used to testify the access principle using the following code:
+```go
+policy, err := ac.NewPolicy(Target_Resource_ID, Endorsement_List, Request_Message)
+```
+or with target organization
+```go
+policy, err := ac.NewSelfPolicy(Target_Resource_ID, Endorsement_List, Request_Message, Target_Organization)
+```
+Then verify the authenticity of this policy by the following code:
+```go
+ok, err := ac.VerifyPolicy(policy, org)
+```
+where, the argument org is an instance of the interface Organization in package chainmaker.org/chainmaker-go/protocol, and its implementation can be found in the package chainmaker.org/chainmaker-go/module/idmgmt
+
+##### Add new resource
+First, define a resource ID for the new resource. (Refer to the system contract CREATE_USER_CONTRACT (the constant for resource ID is TxType_CREATE_USER_CONTRACT)).
+
+Then, add the defined resource ID to default permission list.
+```go
+var txTypeToResourceIdMap = map[pb.TxType]protocol.ResourceId{
+	pb.TxType_QUERY_USER_CONTRACT:   protocol.RESOURCE_CATEGORY_READ_DATA,
+	pb.TxType_QUERY_SYSTEM_CONTRACT: protocol.RESOURCE_CATEGORY_READ_DATA,
+	pb.TxType_INVOKE_USER_CONTRACT:  protocol.RESOURCE_CATEGORY_WRITE_DATA,
+	pb.TxType_UPDATE_CHAIN_CONFIG:   protocol.RESOURCE_CATEGORY_WRITE_DATA,
+	pb.TxType_CREATE_USER_CONTRACT:  protocol.RESOURCE_CATEGORY_WRITE_DATA,
+	pb.TxType_UPGRADE_USER_CONTRACT: protocol.RESOURCE_CATEGORY_WRITE_DATA,
+	pb.TxType_SUBSCRIBE_BLOCK_INFO:  protocol.RESOURCE_CATEGORY_READ_DATA,
+	pb.TxType_SUBSCRIBE_TX_INFO:     protocol.RESOURCE_CATEGORY_READ_DATA,
+	pb.TxType_SYSTEM_CONTRACT:       protocol.RESOURCE_CATEGORY_WRITE_DATA,
+}
+```
+This map is defined in the file chainmaker-go/module/access/access_control.go. Add your resource ID here with a pre-defined default permission. This permission list is as below.
+```go
+const (
+	RESOURCE_UNKNOWN ResourceId = "UNKNOWN"
+
+	RESOURCE_CATEGORY_READ_DATA  ResourceId = "READ"
+	RESOURCE_CATEGORY_WRITE_DATA ResourceId = "WRITE"
+
+	RESOURCE_CATEGORY_P2P            ResourceId = "P2P"
+	RESOURCE_CATEGORY_CONSENSUS_NODE ResourceId = "CONSENSUS"
+	RESOURCE_CATEGORY_ADMIN          ResourceId = "ADMIN"
+
+	RESOURCE_CATEGORY_UPDATE_CONFIG      ResourceId = "CONFIG"
+	RESOURCE_CATEGORY_UPDATE_SELF_CONFIG ResourceId = "SELF_CONFIG"
+
+	// fine-grained source id for different access policies
+	RESOURCE_TX_QUERY     ResourceId = "query"
+	RESOURCE_TX_TRANSACT  ResourceId = "transaction"
+	RESOURCE_CATEGORY_ALL ResourceId = "ALL_TEST"
+)
+```
+And these default permission names are self-explanatory. If you need customized permissions for a specific resource, you can define it in the chain configuration file. (Refer to the "permissions" section in the default bc1.yml file.)
+
+##### Caution
+When you add a new system contract, you must register a default access policy as above, or at least configure a permission entry in the chain configuration file or invoke UPDATE_CHAIN_CONFIG contract to add a permission entry for this new system contract. Otherwise, this new contract can never be accessed.
+
 
 ### 配置模块@瑞波
 
@@ -1327,231 +2239,9 @@ type txPoolConfig struct {
 
 【算法的支持、配置规则、接口说明】
 
-### 核心引擎
+### 核心引擎@殷舒
 
 【处理逻辑说明】
-
-#### 简要描述
-
-core模块（核心引擎）负责区块的打包、验证和落块的处理。其中：
-
-- 区块打包需要与共识模块和TxPool模块交互，基于当前最新区块以及打包的前置条件（当前）触发操作。
-
-- 交易调度，负责将待打包区块的交易调用智能合约执行，如果发现交易存在读写集冲突，按照规则重新调度，并返回交易执行结果和交易执行排序（DAG）；同时，该模块支持按照给定的DAG执行智能合约，得到交易执行结果，用于有效性校验。
-
-- 区块的验证，在该节点收到共识或同步模块接收的区块后，对该区块的合法性进行校验。校验的详细内容参见流程说明部分。
-
-- 区块的落块，在共识或同步模块确认区块合法并完成投票处理（共识需要）后，将区块和区块中读写集记录到账本数据库中。在落块成功后，将最新区块信息更新至账本缓存（ledger模块），并通知新区块事件至共识、同步和消息订阅模块。
-
-#### 接口说明
-
-- BlockProposer（区块提案）
-
-```go
-// Block proposer, generate new block when node is consensus proposer.
-type BlockProposer interface {
-	// Start proposer.
-	Start() error
-	// Stop proposer
-	Stop() error
-	// Receive propose signal from txpool module.
-	OnReceiveTxPoolSignal(proposeSignal *pb.TxPoolSignal)
-	// Receive signal indicates if node is proposer from consensus module.
-	OnReceiveProposeStatusChange(proposeStatus bool)
-}
-```
-
-
-
-- TxScheduler（交易调度）
-
-```go
-// TxScheduler schedules a transaction batch and returns a block (maybe not complete) with DAG
-// TxScheduler also can run VM with a given DAG, and return results.
-// It can only be called by BlockProposer
-// Should have multiple implementations and adaptive mode
-type TxScheduler interface {
-	// schedule a transaction batch into a block with DAG
-	// Return result(and read write set) of each transaction, no matter it is executed OK, or fail, or timeout.
-	// For cross-contracts invoke, result(and read write set) include all contract relative.
-	Schedule(block *pb.Block, txBatch []*pb.Transaction, snapshot Snapshot) (map[string]*pb.TxRWSet, error)
-	// Run VM with a given DAG, and return results.
-	SimulateWithDag(block *pb.Block, snapshot Snapshot) (map[string]*pb.TxRWSet, map[string]*pb.Result, error)
-	// To halt scheduler and release VM resources.
-	Halt()
-}
-```
-
-
-
-- TxSimContext（交易执行上下文）
-
-```go
-// The simulated execution context of the transaction, providing a cache for the transaction to read and write
-type TxSimContext interface {
-	// Get key from cache
-	Get(namespace string, key []byte) ([]byte, error)
-	// Put key into cache
-	Put(namespace string, key []byte, value []byte) error
-	// Delete key from cache
-	Del(namespace string, key []byte) error
-	// TODO Query a series of keys from the database, not yet implemented
-	Select(namespace string, startKey []byte, limit []byte) (Iterator, error)
-	// Get related transaction
-	GetTx() *pb.Transaction
-	// Get related transaction
-	GetBlockHeight() int64
-	// Get the tx result
-	GetTxResult() *pb.Result
-	// Set the tx result
-	SetTxResult(*pb.Result)
-	// Get the read and write set completed by the current transaction
-	GetTxRWSet() *pb.TxRWSet
-	// Get the creator of the contract
-	GetCreator(namespace string) *pb.SerializedMember
-	// Get the invoker of the transaction
-	GetSender() *pb.SerializedMember
-	// Get related blockchain store
-	GetBlockchainStore() BlockchainStore
-	// Get organization service
-	GetOrganization() (Organization, error)
-	// Get access control service
-	GetAccessControl() (AccessControl, error)
-	//获取状态数据库的的创建\升级合约对应的交易Id列表
-	GetContractTxIds() ([]string, error)
-	// Get organization service
-	GetNet() (Net, error)
-	// The execution sequence of the transaction, used to construct the dag,
-	// indicating the number of completed transactions during transaction scheduling
-	GetTxExecSeq() int
-	SetTxExecSeq(int)
-}
-```
-
-
-
-- BlockVerifier（区块验证）
-
-```go
-// Block verifier, verify if a block is valid
-type BlockVerifier interface {
-	// Verify if a block is valid
-	VerifyBlock(block *pb.Block, mode VerifyMode) error
-}
-```
-
-
-
-- BlockCommitter（区块提交）
-
-```go
-// Block committer, put block and read write set into ledger(DB).
-type BlockCommitter interface {
-	// Put block into ledger(DB) after block verify. Invoke by consensus or sync module.
-	AddBlock(blk *pb.Block) error
-}
-```
-
-
-
-#### 流程说明
-
-- BlockProposer（区块提案）
-
-1. 确定是否是提案节点（通过OnReceiveProposeStatusChange方法获得共识模块的通知，变更核心引擎的proposer状态）
-2. 触发打包事件
-   1. 先基于重入锁进行并发控制，只有一个线程进行打包任务执行
-   2. 触发机制包括：proposer的超时或TxPool模块池大小超过阈值
-   3. 判断是否可以打包，如果通过，进入第3步
-      1. 再次确认本节点是proposer
-      2. 判断本阶段未处在正在打包区块或提案区块未落块状态
-3. 区块打包
-   1. 判断本节点在此区块高度是否已提案过区块，如果已提案，则不重复打包新区块，将已提案区块重复进行共识投票；
-   2. 从交易池获取一批交易；
-   3. 判断该批次交易是否有重复，包括：账本已存在或批次内部有重复交易，去重判断后，如果待出块交易集为空，则停止打包；
-   4. 通过TxScheduler调度智能合约执行交易，获得各交易的执行结果（包括读写集）；
-   5. 基于智能合约执行结果，打包区块，包括：区块交易笔数、区块TxRoot、区块DAG哈希、区块读写集哈希；
-   6. 如果前一区块是配置块，则修改PreConfHeight为前一区块高度，关联配置区块；
-   7. 打包完成，缓存当前proposed block，并通知共识模块。
-
-上述打包操作可终止，触发条件为，proposer模块接到共识模块通知，已更换为非proposer身份。终止时，会调用TxScheduler的Halt方法，停止虚拟机的调度执行。
-
-
-
-- TxScheduler（交易调度）
-  - 预执行（Schedule）
-
-1. 根据各交易请求，调度对应的VM执行合约，并收集结果；如果存在读写集冲突，则重新调度（并行执行）；
-
-2. 超时或合约调度结束，则跳出并行执行逻辑；
-
-3. 构建DAG；
-
-4. 基于TxId生成读写集map，并返回该map；
-
-   根据DAG执行（SimulateWithDAG）
-
-1. 基于DAG的顺序，并发调用VM执行合约；
-2. 超时或合约调度结束，则跳出并行执行逻辑；；
-3. 基于TxId生成读写集map，并返回读写集map和交易结果（本次执行的交易结果，单独运算，与原区块的结果进行对比验证）。
-
-
-
-- BlockVerifier（区块验证）
-
-1. 区块头基本信息非空校验
-2. 并行冲突检测，不允许并发对相同哈希的区块进校验，允许并发对不同区块校验
-3. 是否已校验过该高度该哈希的区块，如果校验过，直接返回通过；
-4. 区块校验
-   1. 区块高度，是否为当前账本区块高度+1
-   2. 本区块前序哈希校验
-   3. 区块打包的交易数量是否和区块头里的交易数量一致
-   4. 区块完整性
-      1. 区块签名，哈希根据区块头重新计算并校验签名
-      2. proposer身份
-      3. proposer权限
-   5. 交易完整性，merkle根校验，区块Txs的顺序计算得到的merkle根，与块头的merkle根比对是否一致
-   6. DAG完整性，DAG哈希校验，序列化区块DAG结构并计算哈希，比对与块头的DAG哈希比对是否一致
-   7. 读写集完整性，按照DAG模拟执行的结果读写集结果计算哈希，与区块头的读写集哈希比对是否一致
-   8. 如果是同步模块验证区块，则需要对共识投票签名进行验证，判断投票签名正确性和投票者身份及权限
-5. 交易校验
-   1. 交易防重
-      1. 交易是否已落块，如果账本中存在该交易，则不通过（可并行）
-      2. 本区块中是否有重复交易*
-   2. 交易完整性，如果交易存在与TxPool中，则取出来校验交易哈希完整性是否正确，并跳过下述校验，否则进行下述校验（可并行）：
-      1. 交易签名
-      2. 交易提交者身份
-      3. 交易提交者权限
-
-- BlockCommitter（区块提交）
-
-1. 从缓存中获取proposed block，如果不存在，则说明该区块未通过严格校验，不能落块；
-2. 对待落块区块进行简单校验，包括：块高度、前块哈希、本区块哈希（缓存的proposed block是通过区块哈希提取的，因此本步骤待落块区块哈希校验通过，说明与缓存区块一致）；
-3. 调用存储模块接口，保存区块和读写集数据，如果失败，则panic；
-4. 清除缓存数据、交易池数据、snapshot数据；
-5. 如果是配置区块，通知链配置（chainconf）模块；
-6. 通过msgBus将最新区块同步给共识、同步和消息订阅模块。
-
-
-
-# 配置说明
-
-```yaml
-# 交易、区块相关配置
-block:
-  tx_timestamp_verify: true # 是否需要开启交易时间戳校验
-  tx_timeout: 600  # 交易时间戳的过期时间(秒)
-  block_tx_capacity: 100  # 区块中最大交易数
-  block_size: 10  # 区块最大限制，单位MB
-  block_interval: 2000 # 出块间隔，单位:ms
-
-# core模块
-core:
-  tx_scheduler_timeout: 10 #  [0, 60] 交易调度器从交易池拿到交易后, 进行调度的时间
-  tx_scheduler_validate_timeout: 10 # [0, 60] 交易调度器从区块中拿到交易后, 进行验证的超时时间
-```
-
-
 
 ### 日志@瑞波
 
@@ -1611,6 +2301,10 @@ log:
 ```
 
 ## 数据模型@永芯
+
+### 结构示意图
+
+![image-20210205154124447](/images/image-20210205154124447.png)
 
 ### 区块
 
@@ -1790,9 +2484,181 @@ cmc是一个命令行工具集，主要包括chainmaker节点管理（使用sdk�
 
 请参考：《chainmaker-go-sdk 》《chainmaker-java-sdk》
 
-### crypoto-gen@Jason
+### cryptogen@Jason
 
+#### 工具说明
 
+`chainmaker-cryptogen`是基于配置文件生成`ChainMaker`节点和客户端证书的工具，方便在没有`CA`的情况下，进行开发和测试。
+
+#### 工具配置
+
+```yml
+crypto_config:
+  - domain: chainmaker.org
+    host_name: wx-org
+    count: 4                # 如果为1，直接使用host_name，否则添加递增编号
+    #pk_algo: ecc_p256
+    pk_algo: sm2
+    ski_hash: sha256
+    specs: &specs_ref
+      expire_year:  10
+      sans:
+        - chainmaker.org
+        - localhost
+        - 127.0.0.1
+    location: &location_ref
+      country:            CN
+      locality:           Beijing
+      province:           Beijing
+    # CA证书配置
+    ca:
+      location:
+        <<: *location_ref
+      specs:
+        <<: *specs_ref
+    # 节点证书配置
+    node:
+      - type: consensus
+        # 共识节点数量
+        count: 1
+        # 共识节点配置
+        location:
+          <<: *location_ref
+        specs:
+          <<: *specs_ref
+          expire_year:  5
+      - type: common
+        # 普通节点数量
+        count: 1
+        # 普通节点配置
+        location:
+          <<: *location_ref
+        specs:
+          <<: *specs_ref
+          expire_year:  5
+    user:
+      - type: admin
+        # 管理员证书数量
+        count: 1
+        # 管理员证书配置
+        location:
+          <<: *location_ref
+        expire_year:  5
+      - type: client
+        # 普通用户证书数量
+        count: 1
+        # 普通用户证书配置
+        location:
+          <<: *location_ref
+        expire_year:  5
+```
+
+#### 使用方法
+
+- 命令帮助
+
+```bash
+$ ./chainmaker-cryptogen -h
+Usage:
+  chainmaker-cryptogen [command]
+
+Available Commands:
+  extend      Extend existing network
+  generate    Generate key material
+  help        Help about any command
+  showconfig  Show config
+
+Flags:
+  -c, --config string   specify config file path (default "../config/crypto_config_template.yml")
+  -h, --help            help for chainmaker-cryptogen
+
+Use "chainmaker-cryptogen [command] --help" for more information about a command.
+```
+
+- 生成证书
+
+```bash
+$ ./chainmaker-cryptogen generate
+
+$ tree -L 3 crypto-config/
+crypto-config/
+├── wx-org1.chainmaker.org
+│   ├── ca
+│   │   ├── ca.crt
+│   │   └── ca.key
+│   ├── node
+│   │   ├── common1
+│   │   └── consensus1
+│   └── user
+│       ├── admin1
+│       └── client1
+├── wx-org2.chainmaker.org
+│   ├── ca
+│   │   ├── ca.crt
+│   │   └── ca.key
+│   ├── node
+│   │   ├── common1
+│   │   └── consensus1
+│   └── user
+│       ├── admin1
+│       └── client1
+├── wx-org3.chainmaker.org
+│   ├── ca
+│   │   ├── ca.crt
+│   │   └── ca.key
+│   ├── node
+│   │   ├── common1
+│   │   └── consensus1
+│   └── user
+│       ├── admin1
+│       └── client1
+└── wx-org4.chainmaker.org
+    ├── ca
+    │   ├── ca.crt
+    │   └── ca.key
+    ├── node
+    │   ├── common1
+    │   └── consensus1
+    └── user
+        ├── admin1
+        └── client1
+```
+
+- 证书目录结构
+
+![image-20210205145640521](/images/image-20210205145640521.png)
+
+```
+$ tree crypto-config/wx-org1.chainmaker.org/
+crypto-config/wx-org1.chainmaker.org/
+├── ca
+│   ├── ca.crt
+│   └── ca.key
+├── node
+│   ├── common1
+│   │   ├── common1.nodeid
+│   │   ├── common1.sign.crt
+│   │   ├── common1.sign.key
+│   │   ├── common1.tls.crt
+│   │   └── common1.tls.key
+│   └── consensus1
+│       ├── consensus1.nodeid
+│       ├── consensus1.sign.crt
+│       ├── consensus1.sign.key
+│       ├── consensus1.tls.crt
+│       └── consensus1.tls.key
+└── user
+    ├── admin1
+    │   ├── admin1.sign.crt
+    │   ├── admin1.sign.key
+    │   ├── admin1.tls.crt
+    │   └── admin1.tls.key
+    └── client1
+        ├── client1.sign.crt
+        ├── client1.sign.key
+        ├── client1.tls.crt
+        └── client1.tls.key
+```
 
 ### 在线IDE@振远
 
