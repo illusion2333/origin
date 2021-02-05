@@ -1327,9 +1327,231 @@ type txPoolConfig struct {
 
 【算法的支持、配置规则、接口说明】
 
-### 核心引擎@殷舒
+### 核心引擎
 
 【处理逻辑说明】
+
+#### 简要描述
+
+core模块（核心引擎）负责区块的打包、验证和落块的处理。其中：
+
+- 区块打包需要与共识模块和TxPool模块交互，基于当前最新区块以及打包的前置条件（当前）触发操作。
+
+- 交易调度，负责将待打包区块的交易调用智能合约执行，如果发现交易存在读写集冲突，按照规则重新调度，并返回交易执行结果和交易执行排序（DAG）；同时，该模块支持按照给定的DAG执行智能合约，得到交易执行结果，用于有效性校验。
+
+- 区块的验证，在该节点收到共识或同步模块接收的区块后，对该区块的合法性进行校验。校验的详细内容参见流程说明部分。
+
+- 区块的落块，在共识或同步模块确认区块合法并完成投票处理（共识需要）后，将区块和区块中读写集记录到账本数据库中。在落块成功后，将最新区块信息更新至账本缓存（ledger模块），并通知新区块事件至共识、同步和消息订阅模块。
+
+#### 接口说明
+
+- BlockProposer（区块提案）
+
+```go
+// Block proposer, generate new block when node is consensus proposer.
+type BlockProposer interface {
+	// Start proposer.
+	Start() error
+	// Stop proposer
+	Stop() error
+	// Receive propose signal from txpool module.
+	OnReceiveTxPoolSignal(proposeSignal *pb.TxPoolSignal)
+	// Receive signal indicates if node is proposer from consensus module.
+	OnReceiveProposeStatusChange(proposeStatus bool)
+}
+```
+
+
+
+- TxScheduler（交易调度）
+
+```go
+// TxScheduler schedules a transaction batch and returns a block (maybe not complete) with DAG
+// TxScheduler also can run VM with a given DAG, and return results.
+// It can only be called by BlockProposer
+// Should have multiple implementations and adaptive mode
+type TxScheduler interface {
+	// schedule a transaction batch into a block with DAG
+	// Return result(and read write set) of each transaction, no matter it is executed OK, or fail, or timeout.
+	// For cross-contracts invoke, result(and read write set) include all contract relative.
+	Schedule(block *pb.Block, txBatch []*pb.Transaction, snapshot Snapshot) (map[string]*pb.TxRWSet, error)
+	// Run VM with a given DAG, and return results.
+	SimulateWithDag(block *pb.Block, snapshot Snapshot) (map[string]*pb.TxRWSet, map[string]*pb.Result, error)
+	// To halt scheduler and release VM resources.
+	Halt()
+}
+```
+
+
+
+- TxSimContext（交易执行上下文）
+
+```go
+// The simulated execution context of the transaction, providing a cache for the transaction to read and write
+type TxSimContext interface {
+	// Get key from cache
+	Get(namespace string, key []byte) ([]byte, error)
+	// Put key into cache
+	Put(namespace string, key []byte, value []byte) error
+	// Delete key from cache
+	Del(namespace string, key []byte) error
+	// TODO Query a series of keys from the database, not yet implemented
+	Select(namespace string, startKey []byte, limit []byte) (Iterator, error)
+	// Get related transaction
+	GetTx() *pb.Transaction
+	// Get related transaction
+	GetBlockHeight() int64
+	// Get the tx result
+	GetTxResult() *pb.Result
+	// Set the tx result
+	SetTxResult(*pb.Result)
+	// Get the read and write set completed by the current transaction
+	GetTxRWSet() *pb.TxRWSet
+	// Get the creator of the contract
+	GetCreator(namespace string) *pb.SerializedMember
+	// Get the invoker of the transaction
+	GetSender() *pb.SerializedMember
+	// Get related blockchain store
+	GetBlockchainStore() BlockchainStore
+	// Get organization service
+	GetOrganization() (Organization, error)
+	// Get access control service
+	GetAccessControl() (AccessControl, error)
+	//获取状态数据库的的创建\升级合约对应的交易Id列表
+	GetContractTxIds() ([]string, error)
+	// Get organization service
+	GetNet() (Net, error)
+	// The execution sequence of the transaction, used to construct the dag,
+	// indicating the number of completed transactions during transaction scheduling
+	GetTxExecSeq() int
+	SetTxExecSeq(int)
+}
+```
+
+
+
+- BlockVerifier（区块验证）
+
+```go
+// Block verifier, verify if a block is valid
+type BlockVerifier interface {
+	// Verify if a block is valid
+	VerifyBlock(block *pb.Block, mode VerifyMode) error
+}
+```
+
+
+
+- BlockCommitter（区块提交）
+
+```go
+// Block committer, put block and read write set into ledger(DB).
+type BlockCommitter interface {
+	// Put block into ledger(DB) after block verify. Invoke by consensus or sync module.
+	AddBlock(blk *pb.Block) error
+}
+```
+
+
+
+#### 流程说明
+
+- BlockProposer（区块提案）
+
+1. 确定是否是提案节点（通过OnReceiveProposeStatusChange方法获得共识模块的通知，变更核心引擎的proposer状态）
+2. 触发打包事件
+   1. 先基于重入锁进行并发控制，只有一个线程进行打包任务执行
+   2. 触发机制包括：proposer的超时或TxPool模块池大小超过阈值
+   3. 判断是否可以打包，如果通过，进入第3步
+      1. 再次确认本节点是proposer
+      2. 判断本阶段未处在正在打包区块或提案区块未落块状态
+3. 区块打包
+   1. 判断本节点在此区块高度是否已提案过区块，如果已提案，则不重复打包新区块，将已提案区块重复进行共识投票；
+   2. 从交易池获取一批交易；
+   3. 判断该批次交易是否有重复，包括：账本已存在或批次内部有重复交易，去重判断后，如果待出块交易集为空，则停止打包；
+   4. 通过TxScheduler调度智能合约执行交易，获得各交易的执行结果（包括读写集）；
+   5. 基于智能合约执行结果，打包区块，包括：区块交易笔数、区块TxRoot、区块DAG哈希、区块读写集哈希；
+   6. 如果前一区块是配置块，则修改PreConfHeight为前一区块高度，关联配置区块；
+   7. 打包完成，缓存当前proposed block，并通知共识模块。
+
+上述打包操作可终止，触发条件为，proposer模块接到共识模块通知，已更换为非proposer身份。终止时，会调用TxScheduler的Halt方法，停止虚拟机的调度执行。
+
+
+
+- TxScheduler（交易调度）
+  - 预执行（Schedule）
+
+1. 根据各交易请求，调度对应的VM执行合约，并收集结果；如果存在读写集冲突，则重新调度（并行执行）；
+
+2. 超时或合约调度结束，则跳出并行执行逻辑；
+
+3. 构建DAG；
+
+4. 基于TxId生成读写集map，并返回该map；
+
+   根据DAG执行（SimulateWithDAG）
+
+1. 基于DAG的顺序，并发调用VM执行合约；
+2. 超时或合约调度结束，则跳出并行执行逻辑；；
+3. 基于TxId生成读写集map，并返回读写集map和交易结果（本次执行的交易结果，单独运算，与原区块的结果进行对比验证）。
+
+
+
+- BlockVerifier（区块验证）
+
+1. 区块头基本信息非空校验
+2. 并行冲突检测，不允许并发对相同哈希的区块进校验，允许并发对不同区块校验
+3. 是否已校验过该高度该哈希的区块，如果校验过，直接返回通过；
+4. 区块校验
+   1. 区块高度，是否为当前账本区块高度+1
+   2. 本区块前序哈希校验
+   3. 区块打包的交易数量是否和区块头里的交易数量一致
+   4. 区块完整性
+      1. 区块签名，哈希根据区块头重新计算并校验签名
+      2. proposer身份
+      3. proposer权限
+   5. 交易完整性，merkle根校验，区块Txs的顺序计算得到的merkle根，与块头的merkle根比对是否一致
+   6. DAG完整性，DAG哈希校验，序列化区块DAG结构并计算哈希，比对与块头的DAG哈希比对是否一致
+   7. 读写集完整性，按照DAG模拟执行的结果读写集结果计算哈希，与区块头的读写集哈希比对是否一致
+   8. 如果是同步模块验证区块，则需要对共识投票签名进行验证，判断投票签名正确性和投票者身份及权限
+5. 交易校验
+   1. 交易防重
+      1. 交易是否已落块，如果账本中存在该交易，则不通过（可并行）
+      2. 本区块中是否有重复交易*
+   2. 交易完整性，如果交易存在与TxPool中，则取出来校验交易哈希完整性是否正确，并跳过下述校验，否则进行下述校验（可并行）：
+      1. 交易签名
+      2. 交易提交者身份
+      3. 交易提交者权限
+
+- BlockCommitter（区块提交）
+
+1. 从缓存中获取proposed block，如果不存在，则说明该区块未通过严格校验，不能落块；
+2. 对待落块区块进行简单校验，包括：块高度、前块哈希、本区块哈希（缓存的proposed block是通过区块哈希提取的，因此本步骤待落块区块哈希校验通过，说明与缓存区块一致）；
+3. 调用存储模块接口，保存区块和读写集数据，如果失败，则panic；
+4. 清除缓存数据、交易池数据、snapshot数据；
+5. 如果是配置区块，通知链配置（chainconf）模块；
+6. 通过msgBus将最新区块同步给共识、同步和消息订阅模块。
+
+
+
+# 配置说明
+
+```yaml
+# 交易、区块相关配置
+block:
+  tx_timestamp_verify: true # 是否需要开启交易时间戳校验
+  tx_timeout: 600  # 交易时间戳的过期时间(秒)
+  block_tx_capacity: 100  # 区块中最大交易数
+  block_size: 10  # 区块最大限制，单位MB
+  block_interval: 2000 # 出块间隔，单位:ms
+
+# core模块
+core:
+  tx_scheduler_timeout: 10 #  [0, 60] 交易调度器从交易池拿到交易后, 进行调度的时间
+  tx_scheduler_validate_timeout: 10 # [0, 60] 交易调度器从区块中拿到交易后, 进行验证的超时时间
+```
+
+
 
 ### 日志@瑞波
 
