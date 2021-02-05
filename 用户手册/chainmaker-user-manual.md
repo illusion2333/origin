@@ -99,7 +99,7 @@ mbft达成共识的过程和pbft达成共识的三阶段协议类似，基本上
 
 tbft共识也是pbft的一种，共识形成也是采用三阶段协议，即propose、prevote、precommit。具体描述如下：
 
-Every height has 0~n rounds and every round has 3 steps: Prevote、Precommit and commit.
+Every height has 0~n rounds and every round has 3 steps: Propose、Prevote、Precommit.
 
 1. Propose: The leader node generates a block of new height. Other nodes will wait for the broadcast of the leader node's block in this step. After receiving the broadcast, other nodes verify the block and vote. The vote will be collect in *Prevote*.
 2. Prevote: All nodes wait and collect the votes of other nodes. When +2/3 votes are collected, the next step is taken.
