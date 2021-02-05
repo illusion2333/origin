@@ -112,7 +112,102 @@ typora-root-url: ../开源手册
 
 每个共识算法的【主要流程、与开源版本或论文版本的不同、<u>投票签名和验签机制、共识节点间通信方式、是否有共识状态WAL存储、模块接口说明、pb数据模型</u>】
 
+#### TBFT
 
+##### 算法简述
+TBFT 是一种拜占庭容错的共识算法，可以在拜占庭节点数小于总数1/3的情况下，保证系统的安全运行。
+TBFT 的每轮共识可以分为5个步骤：
+1. NewRound: 共识投票的准备阶段，会初始化共识相关状态
+2. Proposal: 提案阶段，leader节点会打包区块，并广播给follwer节点
+3. Prevote: 预投票阶段，follower节点在收到proposal并验证proposal合法后，广播自己的prevote投票到其他节点
+4. Precommit: 预提交阶段，节点收到 >2/3 针对proposal的prevote投票后，广播自己的precommit投票到其他节点
+5. Commit: 提交阶段，节点收到 >2/3 针对proposal的precommit投票后，提交proposal中的区块到账本
+
+其中共识投票是指其中的Proposal，Prevote，Precommit三个阶段。
+
+阶段图示如下：
+<img src="images/tbft_phase.png"/>
+
+流程图如下：
+<img src="images/tbft_diagram.png"/>
+
+##### 接口说明
+```go
+type ConsensusEngine interface {      
+  // Init starts the consensus engine.
+  Start() error                       
+                                      
+  // Stop stops the consensus engine. 
+  Stop() error                        
+}    
+```
+
+TBFT 实现了Chainmaker的`ConsensusEngine`接口。
+`Start` 方法用来初始化TBFT内部状态及启动TBFT实例。
+`Stop` 方法用来停止TBFT实例。
+
+##### 数据结构
+```protobuf
+// TBFTMsgType defines different type message in tbft
+enum TBFTMsgType {
+  propose   = 0;
+  prevote   = 1;
+  precommit = 2;
+  state     = 3;
+}
+
+message TBFTMsg {
+  TBFTMsgType type = 1;
+  bytes msg        = 2;
+}
+
+// Proposal defined a consesensus proposal which can 
+// be gossiped to other node and can be serilized 
+// for persistent store.
+message Proposal {
+  string voter                 = 1;
+  int64 height                 = 2;
+  int32 round                  = 3;
+  int32 pol_round              = 4;
+  Block block                  = 5;
+  EndorsementEntry endorsement = 6;
+}
+
+// VoteType represents the type of vote
+enum VoteType {
+  VotePrevote   = 0;
+  VotePrecommit = 1;
+}
+
+// Vote represents a tbft vote
+message Vote {
+  VoteType type = 1;
+  string voter  = 2;
+  int64 height  = 3;
+  int32 round   = 4;
+  bytes hash    = 5;
+  EndorsementEntry endorsement = 6;
+}
+
+// Step represents the step in a round 
+enum Step {
+  NewHeight     = 0;
+  NewRound      = 1;
+  Propose       = 2;
+  Prevote       = 3;
+  PrevoteWait   = 4;
+  Precommit     = 5;
+  PrecommitWait = 6;
+  Commit        = 7;
+}
+```
+
+##### 配置参数
+TBFT 可以通过在配置块中的`ext_config`字段配置相关参数：
+1. "TBFT_propose_timeout": 提案的超时时间，如10s, 1m
+2. "TBFT_propose_delta_timeout": 每轮提案超时增加的时间，如10s, 1m
+3. "TBFT_blocks_per_proposer": 每个节点连续出块数，如 3
+ 
 
 ### P2P网络@瑞波
 
