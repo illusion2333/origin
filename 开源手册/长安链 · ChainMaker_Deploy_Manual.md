@@ -40,15 +40,19 @@ make
 
 ### 3.3 配置设置
 
+修改链配置文件（路径为chainmaker-V1.0.0-wx-org1.chainmaker.org/config/wx-org1.chainmaker.org/chainconfig/bc1.yml）配置项consensus: type值为6（solo模式）
+
 ```sh
 cd build/release
 
 tar zvxf chainmaker-V1.0.0-wx-org1.chainmaker.org-20201201204232-x86_64.tar.gz
 
-修改链配置文件（路径为chainmaker-V1.0.0-wx-org1.chainmaker.org/config/wx-org1.chainmaker.org/chainconfig/bc1.yml）配置项consensus: type值为6（solo模式）
+
 ```
 
 ### 3.4 启动
+
+
 
 ```sh
 cd chainmaker-V1.0.0-wx-org1.chainmaker.org/bin
