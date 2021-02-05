@@ -803,7 +803,7 @@ type BlockchainStore interface {
 	//如果区块不存在，返回false
 	BlockExist(blockHash []byte) (bool, error)
 
-    //按区块高度查询区块
+	//按区块高度查询区块
 	//如果数据库内部错误，error返回错误信息；
 	//如果区块不存在，Block返回nil，error返回nil
 	GetBlock(height int64) (*pb.Block, error)
@@ -837,9 +837,9 @@ type BlockchainStore interface {
 	//查询状态数据库，按合约名与key
 	//如果数据库内部错误，error返回错误信息；
 	//如果数据不存在，Object返回nil，error返回nil
-	ReadObject(contractName string, key []byte) ([]byte, error)
+	ReadObject(contractName string, key []byte) ([]byte, error) 
 
-    //获取状态数据库的迭代器，按合约名与key区间查询，包括startKey, 不包括limit
+	//获取状态数据库的迭代器，按合约名以及key区间查询，包括startKey, 不包括limit
 	SelectObject(contractName string, startKey []byte, limit []byte) Iterator
 
 	//查询交易读写集
@@ -1226,7 +1226,8 @@ CGO_LDFLAGS="-L/usr/local/rocksdb -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz
 
    
 
-### 身份管理@张韬
+### 身份管理
+
 #### 简介
 
 Identity Management (idmgmt) 用于管理区块链的组织成员身份，是一个基于 PKI 体系的管理模块。
@@ -1330,108 +1331,7 @@ type Organization interface {
 Validate() 验证签名者的证书是否在一条根证书在链配置 (或创世块) 中的证书链上。该接口验证了证书吊销、冻结列表。
 
 
-
-#### Description
-
-Identity Management (idmgmt) module is in charge of the PKI mechanism. It manages the membership service of an organization (in the case of a permissionless chain, it maintains the public keys of each node), maintains the private key of the local node itself, and maintains the public information including certificates of all the organizations on the chain.
-
-- Private part. This part has the ability to create signatures on behalf of the local node.
-
-- Public part. This part can verify whether a message from another node or a client-side software belongs to an organization on the chain.
-
-
-#### Identity Management Components
-
-Identity Management consists of two parts: Organization and Member. Organization submodule maintains the universal public information and the organizational public information. Member submodule maintains the local node's private information.
-
-##### Member and SigningMember
-
-Interfaces of Member and SigningMember are
-```go
-type Member interface {
-	// Returns the identity of this member and its group
-	GetIdentity() string
-
-	// Returns the Group Id which this identity belongs to
-	GetOrgIdentity() string
-
-	// Get the role of this identity
-	GetRole() []Role
-
-	// Get SKI (for certificate mode) or Public key PEM (for pk mode)
-	GetSKI() []byte
-
-	// Get public key PEM
-	GetPublicKeyPEM() ([]byte, error)
-
-	// Anonymous returns true if this is an anonymous identity, false otherwise
-	Anonymous() bool
-
-	// Check the validity of this identity
-	// 		White list: check whether pk or cert of this identity is in the list
-	//		Consortium: check whether cert of this identity is in a sub-tree of the group's CA
-	Validate() error
-
-	// Check whether this instance matches the description supplied in PrincipleWhiteList
-	SatisfiesPrinciple(principle *PrincipleWhiteList) error
-
-	// Verify a signature over some message using this identity as reference
-	Verify(hashType string, msg []byte, sig []byte) error
-
-	// Serialize converts an identity to bytes
-	Serialize() ([]byte, error)
-
-	// Get serializable member
-	GetSerializeMember() (*pb.SerializedMember, error)
-}
-
-type SigningMember interface {
-	// Extends Identity
-	Member
-
-	// Sign the message
-	Sign(hashType string, msg []byte) ([]byte, error)
-}
-```
-Sign() create a signature using the SigningMember's own private key.
-Verify() verifies the validity of a signature with the public key of a Member.
-
-
-##### Organization
-Format of Organizaiton is
-```go
-type Organization interface {
-	MemberDeserializer
-
-	// Return the identity of this group
-	GetIdentity() (string, error)
-
-	// Return the identity with signing feature of this group
-	GetSigningIdentity() (SigningMember, error)
-
-	// Return trusted root certificates or white list
-	GetTrustedRootCerts() map[string]*x509.Certificate
-
-	// Return trusted intermediate certificates or white list
-	GetTrustedIntermediateCerts() map[string]*x509.Certificate
-
-	// Check whether the provided member is a valid member of this group
-	Validate(id Member) error
-
-	// Check whether the provided member's role matches the description supplied in PrincipleWhiteList
-	SatisfiesPrinciple(id Member, principle *PrincipleWhiteList) error
-
-	// all-in-one validation for signing members: certificate chain/whitelist, signature, principles
-	ValidateMemberMsg(policy Policy, ac AccessControl) (Policy, error)
-
-	Module() string                         // 模块名称
-	Watch(chainConfig pb.ChainConfig) error // 观察配置信息
-}
-```
-Validate() verifies the certificate chain from a given Member to one of the trusted root certificates stored in chain configuration (aka. the genesis block). 
-
-
-### 权限管理@张韬
+### 权限管理
 
 #### 简介
 Access Control (权限管理) 模块实现了链上资源与权限规则的匹配，并在链的参与者使用链上资源时验证其权限是否符合目标资源的权限规则。
@@ -1548,7 +1448,8 @@ func (ac *accesscontrol) NewSelfPolicy(resourceId protocol.ResourceId, endorseme
 4. targetOrg 是可选字段。这个字段仅在 resourceId 字段所指示的资源是属于某个特定组织时被使用到。可以参看 "SELF" 规则的说明。
 
 #### 接口使用说明
-## 验证权限
+
+##### 验证权限
 首先，构建身份策略 (Policy) 用于判断某一组签名者是否满足目标资源的权限规则：
 ```go
 policy, err := ac.NewPolicy(Target_Resource_ID, Endorsement_List, Request_Message)
@@ -1605,184 +1506,6 @@ const (
 
 ##### 注意
 当新增一个系统合约接口时，必须要为该合约接口配置一个默认的权限，或者在链配置里为他添加一个配置项，否则将无法调用这个合约接口。添加链配置可以用 UPDATE_CHAIN_CONFIG 合约来实现。
-
-
-#### Description
-
-Access Control module is in charge of managing the access policies for chain resources, and verifying requests on chain resources.
-
-- Access policy management. Resolve the access policies in default configurations and chain configurations, and maintain a map from resources to their corresponding access policies.
-
-- Access authentication. With Identity Management module (idmgmt), Access Control module provides interface to verify whether a request is authorized.
-
-
-#### Access Control Components
-
-Access control checks whether the policy from the signer and the principle from the resource match. A functional interface AccessControl provides the necessary interface for this purpose.
-```go
-type AccessControl interface {
-	GetHashAlg() string
-	VerifyPolicy(policy Policy, organization Organization) (bool, error)
-
-	NewPolicy(resourceId ResourceId, endorsements []*pb.EndorsementEntry, message []byte) (Policy, error)
-	NewSelfPolicy(resourceId ResourceId, endorsements []*pb.EndorsementEntry, message []byte, targetOrg string) (Policy, error)
-
-	LookUpResourceIdByTxType(txType pb.TxType) (ResourceId, error)
-	LookUpPolicyByResourceId(id ResourceId) (Principle, error)
-
-	CheckPrincipleValidity(permission *pb.Permission) bool
-
-	LookUpSignerCache(signer string) (Member, bool)
-	AddSignerCache(signer string, info Member)
-
-	// watcher for configuration update
-	Module() string
-	Watch(chainConfig pb.ChainConfig) error
-}
-```
-
-The core function of this module consists of the interfaces NewPolicy(), NewSelfPolicy(), and VerifyPolicy(). They together provide the ability to verify the authenticity of a incoming request.
-
-The interface CheckPrincipleValidity() is used to check the validity of the access control constraints in the configuration, ensuring that the configured rules for each resource are reasonable.
-
-##### Access Principle
-
-Format of access principle is
-```go
-type Principle interface {
-	GetRule() RuleKeyword
-	GetOrgList() []string
-	GetRoleList() []Role
-}
-
-type principle struct {
-	rule     protocol.RuleKeyword
-	orgList  []string
-	roleList []protocol.Role
-}
-
-func NewPrinciple(rule protocol.RuleKeyword, orgList []string, roleList []protocol.Role) protocol.Principle
-```
-1. orgList contains a list of organization names which are to be considered in authentication procedure. Any signers belonging to an organization other than the ones in this list are considered as invalid and ignored when counting valid endorsements. If set to empty, all organizations on the chain are considered valid.
-2. roleList contains a list of role names which are to be considered in authentication procedure. Any signers bearing a role other than the ones in this list are considered as invalid and ignored when counting valid endorsements. If set to empty, all roles (even user defined roles) are considered valid.
-3. "rule" accepts the following types of input:
-	1. "MAJORITY". Require signatures signed by admins from more than half (exclusive) of the listed organizations.
-		a. Only “admin" is allowed in the role list. If missing, "admin" role will be automatically added to the list. Any other roles in the customized list are ignored.
-		b. The organization list can be customized.
-		c. If not specified, chain configurations are recommended to use this access rule. (default configuration)
-		d. Signatures from the same organization count for one vote.
-	2. "SELF". Require signatures signed by any admin from the organization which the targe resource belongs to.
-		a. This rule can only be applied to the resources which inherently belongs to an organization. And this organization is automatically used to replace the customized organization list.
-		b. Only “admin" is allowed in the role list. If missing, "admin" role will be automatically added to the list. Any other roles in the customized list are ignored.
-		c. The organization list is ignored.
-		d. One valid signature is adequate to fulfilling this access requirement.
-		e. For now, only the update for a trusted root certification and the update for the address of a consensus node should use this rule. Any other resources are restricted to use this rule. (default configuration)
-	3. "ANY". Require one signature signed by any role in the provided role list from any organization in the provided organization list.
-		a. The organization list can contain any organizations which are on the chain. If empty, it is considered as the set of all organizations on the chain.
-		b. The role list can contain any roles, even user-defined ones. If empty, any role is considered valid.
-		c. This rule is generally used to configure the read/write permissions for the data in chain ledger. (default configuration)
-	4. "ALL". Require at least one signature signed by any role in the provided role list from each of the organizations in the provided organization list.
-		a. The organization list can contain any organizations which are on the chain. If empty, it is considered as the set of all organizations on the chain.
-		b. The role list can contain any roles, even user-defined ones. If empty, any role is considered valid.
-		c. Signatures from the same organization count for one vote.
-	5. An integer in the form of a string (eg. "3") considered as a threshold
-		a. The organization list can contain any organizations which are on the chain. If empty, it is considered as the set of all organizations on the chain.
-		b. The role list can contain any roles, even user-defined ones. If empty, any role is considered valid.
-		c. This rule can be customized. It accept any integer number which is less than the size of the provided organization list.
-		d. This rule behaves in the similar way as "ALL". Their difference is that this rule requires signatures from at least the number of organizations specified by its rule field while the rule "ALL" requires signatures from all the organizations in the provided list.
-	6. A fraction in the form of a string (eg. "1/3") considered as a portion
-		a. The organization list can contain any organizations which are on the chain. If empty, it is considered as the set of all organizations on the chain.
-		b. The role list can contain any roles, even user-defined ones. If empty, any role is considered valid.
-		c. This rule can be customized. It accept any integer number which is less than the size of the provided organization list.
-		d. This rule behaves in the similar way as "ALL". Their difference is that this rule requires signatures from at least the portion of organizations specified by its rule field while the rule "ALL" requires signatures from all the organizations in the provided list.
-	7. "FORBIDDEN". Resources with this access rule are restricted to access. They are disabled. 
-
-
-##### Access Policy
-Format of access policy is
-```go
-type Policy interface {
-	GetResourceId() ResourceId
-	GetEndorsement() []*pb.EndorsementEntry
-	GetMessage() []byte
-
-	GetTargetOrg() string
-}
-
-type policy struct {
-	resourceId  protocol.ResourceId
-	endorsement []*pb.EndorsementEntry
-	message     []byte
-
-	targetOrg string
-}
-
-func (ac *accesscontrol) NewPolicy(resourceId protocol.ResourceId, endorsements []*pb.EndorsementEntry, message []byte) (protocol.Policy, error)
-func (ac *accesscontrol) NewSelfPolicy(resourceId protocol.ResourceId, endorsements []*pb.EndorsementEntry, message []byte, targetOrg string) (protocol.Policy, error)
-```
-1. resourceId field specifies the reference of the target resource to be accessed. For now, we only support system pre-defined resources.
-2. endorsement field contains a list of signer-signature pairs.
-3. message field contains the request information which is signed by the signers in the endorsement field.
-4. targetOrg field is optional. It specifies the organization which the resource specified by the resourceId field belongs to. This field is only used for trusted root certification and consensus node address.
-
-#### How to use
-##### Verifications
-First construct the policy used to testify the access principle using the following code:
-```go
-policy, err := ac.NewPolicy(Target_Resource_ID, Endorsement_List, Request_Message)
-```
-or with target organization
-```go
-policy, err := ac.NewSelfPolicy(Target_Resource_ID, Endorsement_List, Request_Message, Target_Organization)
-```
-Then verify the authenticity of this policy by the following code:
-```go
-ok, err := ac.VerifyPolicy(policy, org)
-```
-where, the argument org is an instance of the interface Organization in package chainmaker.org/chainmaker-go/protocol, and its implementation can be found in the package chainmaker.org/chainmaker-go/module/idmgmt
-
-##### Add new resource
-First, define a resource ID for the new resource. (Refer to the system contract CREATE_USER_CONTRACT (the constant for resource ID is TxType_CREATE_USER_CONTRACT)).
-
-Then, add the defined resource ID to default permission list.
-```go
-var txTypeToResourceIdMap = map[pb.TxType]protocol.ResourceId{
-	pb.TxType_QUERY_USER_CONTRACT:   protocol.RESOURCE_CATEGORY_READ_DATA,
-	pb.TxType_QUERY_SYSTEM_CONTRACT: protocol.RESOURCE_CATEGORY_READ_DATA,
-	pb.TxType_INVOKE_USER_CONTRACT:  protocol.RESOURCE_CATEGORY_WRITE_DATA,
-	pb.TxType_UPDATE_CHAIN_CONFIG:   protocol.RESOURCE_CATEGORY_WRITE_DATA,
-	pb.TxType_CREATE_USER_CONTRACT:  protocol.RESOURCE_CATEGORY_WRITE_DATA,
-	pb.TxType_UPGRADE_USER_CONTRACT: protocol.RESOURCE_CATEGORY_WRITE_DATA,
-	pb.TxType_SUBSCRIBE_BLOCK_INFO:  protocol.RESOURCE_CATEGORY_READ_DATA,
-	pb.TxType_SUBSCRIBE_TX_INFO:     protocol.RESOURCE_CATEGORY_READ_DATA,
-	pb.TxType_SYSTEM_CONTRACT:       protocol.RESOURCE_CATEGORY_WRITE_DATA,
-}
-```
-This map is defined in the file chainmaker-go/module/access/access_control.go. Add your resource ID here with a pre-defined default permission. This permission list is as below.
-```go
-const (
-	RESOURCE_UNKNOWN ResourceId = "UNKNOWN"
-
-	RESOURCE_CATEGORY_READ_DATA  ResourceId = "READ"
-	RESOURCE_CATEGORY_WRITE_DATA ResourceId = "WRITE"
-
-	RESOURCE_CATEGORY_P2P            ResourceId = "P2P"
-	RESOURCE_CATEGORY_CONSENSUS_NODE ResourceId = "CONSENSUS"
-	RESOURCE_CATEGORY_ADMIN          ResourceId = "ADMIN"
-
-	RESOURCE_CATEGORY_UPDATE_CONFIG      ResourceId = "CONFIG"
-	RESOURCE_CATEGORY_UPDATE_SELF_CONFIG ResourceId = "SELF_CONFIG"
-
-	// fine-grained source id for different access policies
-	RESOURCE_TX_QUERY     ResourceId = "query"
-	RESOURCE_TX_TRANSACT  ResourceId = "transaction"
-	RESOURCE_CATEGORY_ALL ResourceId = "ALL_TEST"
-)
-```
-And these default permission names are self-explanatory. If you need customized permissions for a specific resource, you can define it in the chain configuration file. (Refer to the "permissions" section in the default bc1.yml file.)
-
-##### Caution
-When you add a new system contract, you must register a default access policy as above, or at least configure a permission entry in the chain configuration file or invoke UPDATE_CHAIN_CONFIG contract to add a permission entry for this new system contract. Otherwise, this new contract can never be accessed.
 
 
 ### 配置模块@瑞波
