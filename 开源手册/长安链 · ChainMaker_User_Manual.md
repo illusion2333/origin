@@ -396,7 +396,7 @@ TBFT 可以通过在配置块中的`ext_config`字段配置相关参数：
 1. "TBFT_propose_timeout": 提案的超时时间，如10s, 1m
 2. "TBFT_propose_delta_timeout": 每轮提案超时增加的时间，如10s, 1m
 3. "TBFT_blocks_per_proposer": 每个节点连续出块数，如 3
- 
+
 
 ### P2P网络@瑞波
 
@@ -680,17 +680,17 @@ service RpcNode {
 
 - **TxRequest**
 
-![image-20210205114809765](/images/image-20210205114809765.png)
+![image-20210205114809765](./images/image-20210205114809765.png)
 
 - **TxResponse**
 
-![image-20210205114858708](/images/image-20210205114858708.png)
+![image-20210205114858708](./images/image-20210205114858708.png)
 
 #### 关键逻辑
 
 - **消息订阅（事件通知）**
 
-![image-20210205110331710](/images/image-20210205110331710.png)
+![image-20210205110331710](./images/image-20210205110331710.png)
 
 （1）订阅者发起消息订阅请求，当前支持订阅区块消息和交易消息
 
@@ -1715,7 +1715,7 @@ log:
 
 ### 结构示意图
 
-![image-20210205154124447](/images/image-20210205154124447.png)
+![image-20210205154124447](./images/image-20210205154124447.png)
 
 ### 区块
 
