@@ -1183,18 +1183,564 @@ CGO_LDFLAGS="-L/usr/local/rocksdb -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz
    
 
 ### 身份管理@张韬
+# 简介
 
-是否发布中文
+Identity Management (idmgmt) 用于管理区块链的组织成员身份，是一个基于 PKI 体系的管理模块。
 
-我们对证书的使用，角色划分
+- 私钥部分：模块管理本地节点或成员的私钥，本地节点或成员与链上其他节点交互时用这个私钥对消息签名。
 
-Serialize() ([]byte, error)，返回[]byte的结构说明
+- 弓腰部分：该模块从链配置中读取链上所有组织的公共信息，包括公钥、证书等，用于在交互式验证对端的合法性。
 
-依赖模块使用的接口需要详细说明
+
+# 组织成员身份管理
+
+身份管理模块由两部分组成：组织和成员。组织模块管理全链公共验证信息和本组织的公共信息。成员模块管理本地节点或本地成员的私钥相关信息。
+
+## 成员及其签名能力
+
+成员接口和代表一个成员的签名接口如下：
+```go
+type Member interface {
+	// Returns the identity of this member and its group
+	GetIdentity() string
+
+	// Returns the Group Id which this identity belongs to
+	GetOrgIdentity() string
+
+	// Get the role of this identity
+	GetRole() []Role
+
+	// Get SKI (for certificate mode) or Public key PEM (for pk mode)
+	GetSKI() []byte
+
+	// Get public key PEM
+	GetPublicKeyPEM() ([]byte, error)
+
+	// Anonymous returns true if this is an anonymous identity, false otherwise
+	Anonymous() bool
+
+	// Check the validity of this identity
+	// 		White list: check whether pk or cert of this identity is in the list
+	//		Consortium: check whether cert of this identity is in a sub-tree of the group's CA
+	Validate() error
+
+	// Check whether this instance matches the description supplied in PrincipleWhiteList
+	SatisfiesPrinciple(principle *PrincipleWhiteList) error
+
+	// Verify a signature over some message using this identity as reference
+	Verify(hashType string, msg []byte, sig []byte) error
+
+	// Serialize converts an identity to bytes
+	Serialize() ([]byte, error)
+
+	// Get serializable member
+	GetSerializeMember() (*pb.SerializedMember, error)
+}
+
+type SigningMember interface {
+	// Extends Identity
+	Member
+
+	// Sign the message
+	Sign(hashType string, msg []byte) ([]byte, error)
+}
+```
+Sign() 使用成员的私钥对入参数据生成一个签名。
+
+Verify() 验证一个入参签名、数据是否是由这个成员签发的。
+
+Serialize() 和 GetSerializeMember() 接口用于序列化成员。其中，GetSerializeMember() 接口将 Member 结构转化为 protobuf 中定义的可序列化结构，其中包含成员的关键信息：证书、组织、证书是否压缩。Serialize() 接口则是跳过转化为 protobuf 类的这一步，直接讲 Member 的关键信息以字符串形式表示。这两个接口根据需要，在包装请求报文时使用。私钥为不可序列化的部分，以防止错误地将私钥序列化后在网络中传输。原则上私钥不会离开本地。
+
+
+## 组织
+组织模块的接口如下：
+```go
+type Organization interface {
+	MemberDeserializer
+
+	// Return the identity of this group
+	GetIdentity() (string, error)
+
+	// Return the identity with signing feature of this group
+	GetSigningIdentity() (SigningMember, error)
+
+	// Return trusted root certificates or white list
+	GetTrustedRootCerts() map[string]*x509.Certificate
+
+	// Return trusted intermediate certificates or white list
+	GetTrustedIntermediateCerts() map[string]*x509.Certificate
+
+	// Check whether the provided member is a valid member of this group
+	Validate(id Member) error
+
+	// Check whether the provided member's role matches the description supplied in PrincipleWhiteList
+	SatisfiesPrinciple(id Member, principle *PrincipleWhiteList) error
+
+	// all-in-one validation for signing members: certificate chain/whitelist, signature, principles
+	ValidateMemberMsg(policy Policy, ac AccessControl) (Policy, error)
+
+	Module() string                         // 模块名称
+	Watch(chainConfig pb.ChainConfig) error // 观察配置信息
+}
+```
+Validate() 验证签名者的证书是否在一条根证书在链配置 (或创世块) 中的证书链上。该接口验证了证书吊销、冻结列表。
+
+
+
+# Description
+
+Identity Management (idmgmt) module is in charge of the PKI mechanism. It manages the membership service of an organization (in the case of a permissionless chain, it maintains the public keys of each node), maintains the private key of the local node itself, and maintains the public information including certificates of all the organizations on the chain.
+
+- Private part. This part has the ability to create signatures on behalf of the local node.
+
+- Public part. This part can verify whether a message from another node or a client-side software belongs to an organization on the chain.
+
+
+# Identity Management Components
+
+Identity Management consists of two parts: Organization and Member. Organization submodule maintains the universal public information and the organizational public information. Member submodule maintains the local node's private information.
+
+## Member and SigningMember
+
+Interfaces of Member and SigningMember are
+```go
+type Member interface {
+	// Returns the identity of this member and its group
+	GetIdentity() string
+
+	// Returns the Group Id which this identity belongs to
+	GetOrgIdentity() string
+
+	// Get the role of this identity
+	GetRole() []Role
+
+	// Get SKI (for certificate mode) or Public key PEM (for pk mode)
+	GetSKI() []byte
+
+	// Get public key PEM
+	GetPublicKeyPEM() ([]byte, error)
+
+	// Anonymous returns true if this is an anonymous identity, false otherwise
+	Anonymous() bool
+
+	// Check the validity of this identity
+	// 		White list: check whether pk or cert of this identity is in the list
+	//		Consortium: check whether cert of this identity is in a sub-tree of the group's CA
+	Validate() error
+
+	// Check whether this instance matches the description supplied in PrincipleWhiteList
+	SatisfiesPrinciple(principle *PrincipleWhiteList) error
+
+	// Verify a signature over some message using this identity as reference
+	Verify(hashType string, msg []byte, sig []byte) error
+
+	// Serialize converts an identity to bytes
+	Serialize() ([]byte, error)
+
+	// Get serializable member
+	GetSerializeMember() (*pb.SerializedMember, error)
+}
+
+type SigningMember interface {
+	// Extends Identity
+	Member
+
+	// Sign the message
+	Sign(hashType string, msg []byte) ([]byte, error)
+}
+```
+Sign() create a signature using the SigningMember's own private key.
+Verify() verifies the validity of a signature with the public key of a Member.
+
+
+## Organization
+Format of Organizaiton is
+```go
+type Organization interface {
+	MemberDeserializer
+
+	// Return the identity of this group
+	GetIdentity() (string, error)
+
+	// Return the identity with signing feature of this group
+	GetSigningIdentity() (SigningMember, error)
+
+	// Return trusted root certificates or white list
+	GetTrustedRootCerts() map[string]*x509.Certificate
+
+	// Return trusted intermediate certificates or white list
+	GetTrustedIntermediateCerts() map[string]*x509.Certificate
+
+	// Check whether the provided member is a valid member of this group
+	Validate(id Member) error
+
+	// Check whether the provided member's role matches the description supplied in PrincipleWhiteList
+	SatisfiesPrinciple(id Member, principle *PrincipleWhiteList) error
+
+	// all-in-one validation for signing members: certificate chain/whitelist, signature, principles
+	ValidateMemberMsg(policy Policy, ac AccessControl) (Policy, error)
+
+	Module() string                         // 模块名称
+	Watch(chainConfig pb.ChainConfig) error // 观察配置信息
+}
+```
+Validate() verifies the certificate chain from a given Member to one of the trusted root certificates stored in chain configuration (aka. the genesis block). 
+
+
 
 ### 权限管理@张韬
 
-是否发布中文
+# 简介
+Access Control (权限管理) 模块实现了链上资源与权限规则的匹配，并在链的参与者使用链上资源时验证其权限是否符合目标资源的权限规则。
+
+- 权限管理：解析默认配置、链配置中的权限配置，并维护一个资源-权限规则列表。
+
+- 鉴权：与 IDMgmt (身份管理模块) 一起，为链上成员与资源的权限规则提供验证能力。
+
+# Access Control 模块组件
+Policy：链上成员所持有的身份。
+Principle：一个链上资源的权限规则。
+AccessControl 结构定义了权限管理对外的接口。
+```go
+type AccessControl interface {
+	GetHashAlg() string
+	VerifyPolicy(policy Policy, organization Organization) (bool, error)
+
+	NewPolicy(resourceId ResourceId, endorsements []*pb.EndorsementEntry, message []byte) (Policy, error)
+	NewSelfPolicy(resourceId ResourceId, endorsements []*pb.EndorsementEntry, message []byte, targetOrg string) (Policy, error)
+
+	LookUpResourceIdByTxType(txType pb.TxType) (ResourceId, error)
+	LookUpPolicyByResourceId(id ResourceId) (Principle, error)
+
+	CheckPrincipleValidity(permission *pb.Permission) bool
+
+	LookUpSignerCache(signer string) (Member, bool)
+	AddSignerCache(signer string, info Member)
+
+	// watcher for configuration update
+	Module() string
+	Watch(chainConfig pb.ChainConfig) error
+}
+```
+权限管理模块的核心接口是 NewPolicy(), NewSelfPolicy(), 和 VerifyPolicy()。前两个接口用于根据请求者身份和所请求的资源构建一个被验证的身份-权限对，后一个接口用于验证这个身份-权限对中的身份是否满足权限要求。
+
+在其他接口中，CheckPrincipleValidity() 用于判断读自配置中的权限配置是否合理，主要用在链用户发起修改权限配置的请求时。
+
+# 权限规则
+权限规则的结构如下：
+```go
+type Principle interface {
+	GetRule() RuleKeyword
+	GetOrgList() []string
+	GetRoleList() []Role
+}
+
+type principle struct {
+	rule     protocol.RuleKeyword
+	orgList  []string
+	roleList []protocol.Role
+}
+
+func NewPrinciple(rule protocol.RuleKeyword, orgList []string, roleList []protocol.Role) protocol.Principle
+```
+1. orgList 用于存储一个组织名列表，如果一个签名者不属于列表中的任何一个组织，那么他的签名在当前规则中会被鉴定为不合法。
+2. roleList 用于储存一个身份名列表，如果一个签名者不具备列表中的任何一个身份，那么他的签名在当前规则中会被鉴定为不合法。
+3. "rule" 是权限类型，有以下几种类型：
+	1. "MAJORITY". 要求半数以上组织共同参与，每个组织至少一个管理员身份 (admin) 的成员提供签名。
+		a. 只有 “admin" 身份被认为合法。默认 roleList 中只有 "admin"。
+		b. 可以自定义 orgList。
+		c. 这个类型是修改大部分链配置的默认权限类型。
+		d. 来自同一个组织的多个 "admin" 身份签名只会被统计一次。
+	2. "SELF". 签名者必须与目标资源所属同一个组织：
+		a. 这个规则只能用于与组织有所属关系的资源。该规则下，自定义 orgList 将不会生效。
+		b. 只接受 "admin" 身份的签名者签名，自定义 roleList 将不会生效。
+		c. 一个符合组织、身份要求的签名就足够满足本规则。
+		d. 目前，只有组织根证书、组织共识节点两项配置可以且应该使用此规则。
+	3. "ANY". 签名者属于 orgList 中的任意一个组织，且签名者拥有 roleList 中的任意一个身份，则签名被视为有效：
+		a. orgList 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
+		b. roleList可以随意配置任意身份集合，留空则代表所有身份都满足要求。
+		c. 这类规则目前主要用于宽泛的读写权限控制。
+	4. "ALL". 要求 orgList 列表中所有组织参与，每个组织至少提供一个符合 roleList 要求身份的签名:
+		a. orgList 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
+		b. roleList可以随意配置任意身份集合，留空则代表所有身份都满足要求。
+		c. 来自同一个组织的合法签名只会被统计一次。
+	5. 一个以字符串形式表达的整数 (eg. "3") 作为阈值：
+		a. orgList 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
+		b. roleList可以随意配置任意身份集合，留空则代表所有身份都满足要求。
+		c. 这是个用户自定义的规则，这个证书可以为1到组织总数间的任意一个数，包括1和组织总数。
+		d. 这条规则与 "ALL" 规则相似，但不要求 orgList 中的所有组织参与，而只要求大于或等于阈值数量的 orgList 中的不同组织参与即可。
+	6. 一个以字符串形式表达的分数 (eg. "1/3") 作为比例：
+		a. orgList 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
+		b. roleList可以随意配置任意身份集合，留空则代表所有身份都满足要求。
+		c. 这是个用户自定义的规则，可以配置 [0, 1] 间的任意分数。
+		d. 这条规则与 "ALL" 规则相似，但不要求 orgList 中的所有组织参与，而只要求大于或等于比例 orgList 中的不同组织参与即可。
+	7. "FORBIDDEN"：这个类型的资源被禁用了。
+
+
+# 身份、权利策略对
+身份、权利策略对的结构：
+```go
+type Policy interface {
+	GetResourceId() ResourceId
+	GetEndorsement() []*pb.EndorsementEntry
+	GetMessage() []byte
+
+	GetTargetOrg() string
+}
+
+type policy struct {
+	resourceId  protocol.ResourceId
+	endorsement []*pb.EndorsementEntry
+	message     []byte
+
+	targetOrg string
+}
+
+func (ac *accesscontrol) NewPolicy(resourceId protocol.ResourceId, endorsements []*pb.EndorsementEntry, message []byte) (protocol.Policy, error)
+func (ac *accesscontrol) NewSelfPolicy(resourceId protocol.ResourceId, endorsements []*pb.EndorsementEntry, message []byte, targetOrg string) (protocol.Policy, error)
+```
+1. resourceId 字段是被调用资源的ID。当前资源包括配置项的增、删、查、改，链上数据查询、写入等。
+2. endorsement 字段存有一个 (签名者，签名) 对的列表。
+3. message 字段是请求的消息体。
+4. targetOrg 是可选字段。这个字段仅在 resourceId 字段所指示的资源是属于某个特定组织时被使用到。可以参看 "SELF" 规则的说明。
+
+# 接口使用说明
+## 验证权限
+首先，构建身份策略 (Policy) 用于判断某一组签名者是否满足目标资源的权限规则：
+```go
+policy, err := ac.NewPolicy(Target_Resource_ID, Endorsement_List, Request_Message)
+```
+若资源属于特定组织，则用以下方式：
+```go
+policy, err := ac.NewSelfPolicy(Target_Resource_ID, Endorsement_List, Request_Message, Target_Organization)
+```
+最后调用以下接口来验证身份策略与权限规则是否匹配：
+```go
+ok, err := ac.VerifyPolicy(policy, org)
+```
+其中，入参 org 是 chainmaker.org/chainmaker-go/protocol 包中的 Organization 接口类型，他的实现在包 chainmaker.org/chainmaker-go/module/idmgmt 中。
+
+## 新增资源
+首选，为新资源添加一个ID。(可参考系统合约 CREATE_USER_CONTRACT 创建用户合约接口，他的资源ID是 TxType_CREATE_USER_CONTRACT)。
+
+然后，把新资源ID添加到默认权限配置列表中，为他赋予一个默认外层权限。
+```go
+var txTypeToResourceIdMap = map[pb.TxType]protocol.ResourceId{
+	pb.TxType_QUERY_USER_CONTRACT:   protocol.RESOURCE_CATEGORY_READ_DATA,
+	pb.TxType_QUERY_SYSTEM_CONTRACT: protocol.RESOURCE_CATEGORY_READ_DATA,
+	pb.TxType_INVOKE_USER_CONTRACT:  protocol.RESOURCE_CATEGORY_WRITE_DATA,
+	pb.TxType_UPDATE_CHAIN_CONFIG:   protocol.RESOURCE_CATEGORY_WRITE_DATA,
+	pb.TxType_CREATE_USER_CONTRACT:  protocol.RESOURCE_CATEGORY_WRITE_DATA,
+	pb.TxType_UPGRADE_USER_CONTRACT: protocol.RESOURCE_CATEGORY_WRITE_DATA,
+	pb.TxType_SUBSCRIBE_BLOCK_INFO:  protocol.RESOURCE_CATEGORY_READ_DATA,
+	pb.TxType_SUBSCRIBE_TX_INFO:     protocol.RESOURCE_CATEGORY_READ_DATA,
+	pb.TxType_SYSTEM_CONTRACT:       protocol.RESOURCE_CATEGORY_WRITE_DATA,
+}
+```
+这个 map 被定义在 chainmaker-go/module/access/access_control.go 中. 为新资源ID配置一个下表中的默认权限。
+```go
+const (
+	RESOURCE_UNKNOWN ResourceId = "UNKNOWN"
+
+	RESOURCE_CATEGORY_READ_DATA  ResourceId = "READ"
+	RESOURCE_CATEGORY_WRITE_DATA ResourceId = "WRITE"
+
+	RESOURCE_CATEGORY_P2P            ResourceId = "P2P"
+	RESOURCE_CATEGORY_CONSENSUS_NODE ResourceId = "CONSENSUS"
+	RESOURCE_CATEGORY_ADMIN          ResourceId = "ADMIN"
+
+	RESOURCE_CATEGORY_UPDATE_CONFIG      ResourceId = "CONFIG"
+	RESOURCE_CATEGORY_UPDATE_SELF_CONFIG ResourceId = "SELF_CONFIG"
+
+	// fine-grained source id for different access policies
+	RESOURCE_TX_QUERY     ResourceId = "query"
+	RESOURCE_TX_TRANSACT  ResourceId = "transaction"
+	RESOURCE_CATEGORY_ALL ResourceId = "ALL_TEST"
+)
+```
+如果需要配置自定义权限，可以在链配置中设置 (可参考 bc1.yml 文件的 permissions 部分)。
+
+## 注意
+当新增一个系统合约接口时，必须要为该合约接口配置一个默认的权限，或者在链配置里为他添加一个配置项，否则将无法调用这个合约接口。添加链配置可以用 UPDATE_CHAIN_CONFIG 合约来实现。
+
+
+# Description
+
+Access Control module is in charge of managing the access policies for chain resources, and verifying requests on chain resources.
+
+- Access policy management. Resolve the access policies in default configurations and chain configurations, and maintain a map from resources to their corresponding access policies.
+
+- Access authentication. With Identity Management module (idmgmt), Access Control module provides interface to verify whether a request is authorized.
+
+
+# Access Control Components
+
+Access control checks whether the policy from the signer and the principle from the resource match. A functional interface AccessControl provides the necessary interface for this purpose.
+```go
+type AccessControl interface {
+	GetHashAlg() string
+	VerifyPolicy(policy Policy, organization Organization) (bool, error)
+
+	NewPolicy(resourceId ResourceId, endorsements []*pb.EndorsementEntry, message []byte) (Policy, error)
+	NewSelfPolicy(resourceId ResourceId, endorsements []*pb.EndorsementEntry, message []byte, targetOrg string) (Policy, error)
+
+	LookUpResourceIdByTxType(txType pb.TxType) (ResourceId, error)
+	LookUpPolicyByResourceId(id ResourceId) (Principle, error)
+
+	CheckPrincipleValidity(permission *pb.Permission) bool
+
+	LookUpSignerCache(signer string) (Member, bool)
+	AddSignerCache(signer string, info Member)
+
+	// watcher for configuration update
+	Module() string
+	Watch(chainConfig pb.ChainConfig) error
+}
+```
+
+The core function of this module consists of the interfaces NewPolicy(), NewSelfPolicy(), and VerifyPolicy(). They together provide the ability to verify the authenticity of a incoming request.
+
+The interface CheckPrincipleValidity() is used to check the validity of the access control constraints in the configuration, ensuring that the configured rules for each resource are reasonable.
+
+## Access Principle
+
+Format of access principle is
+```go
+type Principle interface {
+	GetRule() RuleKeyword
+	GetOrgList() []string
+	GetRoleList() []Role
+}
+
+type principle struct {
+	rule     protocol.RuleKeyword
+	orgList  []string
+	roleList []protocol.Role
+}
+
+func NewPrinciple(rule protocol.RuleKeyword, orgList []string, roleList []protocol.Role) protocol.Principle
+```
+1. orgList contains a list of organization names which are to be considered in authentication procedure. Any signers belonging to an organization other than the ones in this list are considered as invalid and ignored when counting valid endorsements. If set to empty, all organizations on the chain are considered valid.
+2. roleList contains a list of role names which are to be considered in authentication procedure. Any signers bearing a role other than the ones in this list are considered as invalid and ignored when counting valid endorsements. If set to empty, all roles (even user defined roles) are considered valid.
+3. "rule" accepts the following types of input:
+	1. "MAJORITY". Require signatures signed by admins from more than half (exclusive) of the listed organizations.
+		a. Only “admin" is allowed in the role list. If missing, "admin" role will be automatically added to the list. Any other roles in the customized list are ignored.
+		b. The organization list can be customized.
+		c. If not specified, chain configurations are recommended to use this access rule. (default configuration)
+		d. Signatures from the same organization count for one vote.
+	2. "SELF". Require signatures signed by any admin from the organization which the targe resource belongs to.
+		a. This rule can only be applied to the resources which inherently belongs to an organization. And this organization is automatically used to replace the customized organization list.
+		b. Only “admin" is allowed in the role list. If missing, "admin" role will be automatically added to the list. Any other roles in the customized list are ignored.
+		c. The organization list is ignored.
+		d. One valid signature is adequate to fulfilling this access requirement.
+		e. For now, only the update for a trusted root certification and the update for the address of a consensus node should use this rule. Any other resources are restricted to use this rule. (default configuration)
+	3. "ANY". Require one signature signed by any role in the provided role list from any organization in the provided organization list.
+		a. The organization list can contain any organizations which are on the chain. If empty, it is considered as the set of all organizations on the chain.
+		b. The role list can contain any roles, even user-defined ones. If empty, any role is considered valid.
+		c. This rule is generally used to configure the read/write permissions for the data in chain ledger. (default configuration)
+	4. "ALL". Require at least one signature signed by any role in the provided role list from each of the organizations in the provided organization list.
+		a. The organization list can contain any organizations which are on the chain. If empty, it is considered as the set of all organizations on the chain.
+		b. The role list can contain any roles, even user-defined ones. If empty, any role is considered valid.
+		c. Signatures from the same organization count for one vote.
+	5. An integer in the form of a string (eg. "3") considered as a threshold
+		a. The organization list can contain any organizations which are on the chain. If empty, it is considered as the set of all organizations on the chain.
+		b. The role list can contain any roles, even user-defined ones. If empty, any role is considered valid.
+		c. This rule can be customized. It accept any integer number which is less than the size of the provided organization list.
+		d. This rule behaves in the similar way as "ALL". Their difference is that this rule requires signatures from at least the number of organizations specified by its rule field while the rule "ALL" requires signatures from all the organizations in the provided list.
+	6. A fraction in the form of a string (eg. "1/3") considered as a portion
+		a. The organization list can contain any organizations which are on the chain. If empty, it is considered as the set of all organizations on the chain.
+		b. The role list can contain any roles, even user-defined ones. If empty, any role is considered valid.
+		c. This rule can be customized. It accept any integer number which is less than the size of the provided organization list.
+		d. This rule behaves in the similar way as "ALL". Their difference is that this rule requires signatures from at least the portion of organizations specified by its rule field while the rule "ALL" requires signatures from all the organizations in the provided list.
+	7. "FORBIDDEN". Resources with this access rule are restricted to access. They are disabled. 
+
+
+## Access Policy
+Format of access policy is
+```go
+type Policy interface {
+	GetResourceId() ResourceId
+	GetEndorsement() []*pb.EndorsementEntry
+	GetMessage() []byte
+
+	GetTargetOrg() string
+}
+
+type policy struct {
+	resourceId  protocol.ResourceId
+	endorsement []*pb.EndorsementEntry
+	message     []byte
+
+	targetOrg string
+}
+
+func (ac *accesscontrol) NewPolicy(resourceId protocol.ResourceId, endorsements []*pb.EndorsementEntry, message []byte) (protocol.Policy, error)
+func (ac *accesscontrol) NewSelfPolicy(resourceId protocol.ResourceId, endorsements []*pb.EndorsementEntry, message []byte, targetOrg string) (protocol.Policy, error)
+```
+1. resourceId field specifies the reference of the target resource to be accessed. For now, we only support system pre-defined resources.
+2. endorsement field contains a list of signer-signature pairs.
+3. message field contains the request information which is signed by the signers in the endorsement field.
+4. targetOrg field is optional. It specifies the organization which the resource specified by the resourceId field belongs to. This field is only used for trusted root certification and consensus node address.
+
+# How to use
+## Verifications
+First construct the policy used to testify the access principle using the following code:
+```go
+policy, err := ac.NewPolicy(Target_Resource_ID, Endorsement_List, Request_Message)
+```
+or with target organization
+```go
+policy, err := ac.NewSelfPolicy(Target_Resource_ID, Endorsement_List, Request_Message, Target_Organization)
+```
+Then verify the authenticity of this policy by the following code:
+```go
+ok, err := ac.VerifyPolicy(policy, org)
+```
+where, the argument org is an instance of the interface Organization in package chainmaker.org/chainmaker-go/protocol, and its implementation can be found in the package chainmaker.org/chainmaker-go/module/idmgmt
+
+## Add new resource
+First, define a resource ID for the new resource. (Refer to the system contract CREATE_USER_CONTRACT (the constant for resource ID is TxType_CREATE_USER_CONTRACT)).
+
+Then, add the defined resource ID to default permission list.
+```go
+var txTypeToResourceIdMap = map[pb.TxType]protocol.ResourceId{
+	pb.TxType_QUERY_USER_CONTRACT:   protocol.RESOURCE_CATEGORY_READ_DATA,
+	pb.TxType_QUERY_SYSTEM_CONTRACT: protocol.RESOURCE_CATEGORY_READ_DATA,
+	pb.TxType_INVOKE_USER_CONTRACT:  protocol.RESOURCE_CATEGORY_WRITE_DATA,
+	pb.TxType_UPDATE_CHAIN_CONFIG:   protocol.RESOURCE_CATEGORY_WRITE_DATA,
+	pb.TxType_CREATE_USER_CONTRACT:  protocol.RESOURCE_CATEGORY_WRITE_DATA,
+	pb.TxType_UPGRADE_USER_CONTRACT: protocol.RESOURCE_CATEGORY_WRITE_DATA,
+	pb.TxType_SUBSCRIBE_BLOCK_INFO:  protocol.RESOURCE_CATEGORY_READ_DATA,
+	pb.TxType_SUBSCRIBE_TX_INFO:     protocol.RESOURCE_CATEGORY_READ_DATA,
+	pb.TxType_SYSTEM_CONTRACT:       protocol.RESOURCE_CATEGORY_WRITE_DATA,
+}
+```
+This map is defined in the file chainmaker-go/module/access/access_control.go. Add your resource ID here with a pre-defined default permission. This permission list is as below.
+```go
+const (
+	RESOURCE_UNKNOWN ResourceId = "UNKNOWN"
+
+	RESOURCE_CATEGORY_READ_DATA  ResourceId = "READ"
+	RESOURCE_CATEGORY_WRITE_DATA ResourceId = "WRITE"
+
+	RESOURCE_CATEGORY_P2P            ResourceId = "P2P"
+	RESOURCE_CATEGORY_CONSENSUS_NODE ResourceId = "CONSENSUS"
+	RESOURCE_CATEGORY_ADMIN          ResourceId = "ADMIN"
+
+	RESOURCE_CATEGORY_UPDATE_CONFIG      ResourceId = "CONFIG"
+	RESOURCE_CATEGORY_UPDATE_SELF_CONFIG ResourceId = "SELF_CONFIG"
+
+	// fine-grained source id for different access policies
+	RESOURCE_TX_QUERY     ResourceId = "query"
+	RESOURCE_TX_TRANSACT  ResourceId = "transaction"
+	RESOURCE_CATEGORY_ALL ResourceId = "ALL_TEST"
+)
+```
+And these default permission names are self-explanatory. If you need customized permissions for a specific resource, you can define it in the chain configuration file. (Refer to the "permissions" section in the default bc1.yml file.)
+
+## Caution
+When you add a new system contract, you must register a default access policy as above, or at least configure a permission entry in the chain configuration file or invoke UPDATE_CHAIN_CONFIG contract to add a permission entry for this new system contract. Otherwise, this new contract can never be accessed.
+
 
 ### 配置模块@瑞波
 
@@ -1648,7 +2194,85 @@ type txPoolConfig struct {
 
 ### 加密算法@张韬
 
-【算法的支持、配置规则、接口说明】
+# 简介
+
+common/crypto 模块提供了一些密码学算法 (包括加密、签名、哈希等) 能力及其相关的协议的接口。
+
+# 密码学算法
+
+## 非对称密码学算法接口
+
+定义了如下的非对称体系公私钥接口：
+```go
+// Signing options
+type SignOpts struct {
+	Hash HashType
+	UID  string
+}
+
+// === 秘钥接口 ===
+type Key interface {
+	// 获取秘钥字节数组
+	Bytes() ([]byte, error)
+
+	// 获取秘钥类型
+	Type() KeyType
+
+	// 获取编码后秘钥(PEM格式)
+	String() (string, error)
+}
+
+// === 非对称秘钥签名+验签接口 ===
+// 私钥签名接口
+type PrivateKey interface {
+	Key
+
+	// 私钥签名
+	Sign(data []byte) ([]byte, error)
+
+	SignWithOpts(data []byte, opts *SignOpts) ([]byte, error)
+
+	// 返回公钥
+	PublicKey() PublicKey
+
+	// 转换为crypto包中的 PrivateKey 接口类
+	ToStandardKey() crypto.PrivateKey
+}
+
+// 公钥验签接口
+type PublicKey interface {
+	Key
+
+	// 公钥验签
+	Verify(data []byte, sig []byte) (bool, error)
+
+	VerifyWithOpts(data []byte, sig []byte, opts *SignOpts) (bool, error)
+
+	// 转换为crypto包中的 PublicKey 接口类
+	ToStandardKey() crypto.PublicKey
+}
+
+```
+SignOpts 结构用于为一个签名、验签操作提供灵活的流程变化。其中，Hash 字段可以设置哈希算法，例如 SHA256、SM3 等。UID 字段是 SM2-SM3 签名套件专用字段，用于设置国密局规定的 user ID。
+
+Key 接口定义了密码学公私钥通用的序列化接口，和一个返回密钥算法的 Type() 接口。
+
+PrivateKey 接口用于签名私钥，通常使用的是 SighWithOpts() 接口，其中入参 data 是数据原文，opts是一个 SignOpts 类型的结构，用于指定哈希算法，在 SM2-SM3 签名套件中也用于指定 user ID。在 ChainMaker中应用时，这个哈希算法可能读取自证书中指定的算法套件，也可能来自配置文件设置。
+
+PublicKey 接口用于签名公钥，通常使用的是 VerifyWithOpts() 接口，该接口与 PrivateKey 的 SignWithOpts() 接口对应。
+
+## 公私钥的序列化
+
+在应用中，公钥、私钥通常会以字符串形式保存在配置文件中或用于传输。前面提到的 Key 接口中的 String() 为公钥提供了序列化为 PEM 格式字符串的能力。
+
+要把字符串形式的公私钥反序列化为对象，可以调用 common/crypto/asym 包中的 PublicKeyFromPEM() 或 PrivateKeyFromPEM() 接口。ChainMaker 支持的算法都可以用这两个通用接口反序列化公私钥。
+
+# 证书
+
+ChainMaker 使用的节点、客户端证书需要满足一下要求：
+1. O 字段需要指明节点或客户端所属的组织的名称。
+2. OU 字段需要指明节点或客户端的身份，默认身份有四种：admin、client、consensus、common，分别代表管理员、普通用户、共识节点、普通节点。
+
 
 ### 核心引擎@殷舒
 
