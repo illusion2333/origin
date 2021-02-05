@@ -1,26 +1,20 @@
 # 长安链 · ChainMaker Deploy Manual
 
-@永芯
-
 ## 1 依赖环境
 
+本节描述部署时，需要的主机环境、依赖库、工具等，当前支持在MacOS、Linux本地部署。
+
+|       | 依赖库、工具                                  | 安装方式                                                     |
+| ----- | --------------------------------------------- | ------------------------------------------------------------ |
+| MacOS | golang                                        | [安装方式](https://golang.org/doc/install#install)           |
+| Linux | golang                                        | [安装方式](https://golang.org/doc/install#download)          |
+| MacOS | wasmer运行时库 **libwasmer.dylib**            | 库在`chainmaker-go/main`目录下，将该库路径添加至系统PATH环境变量下 |
+| Linux | wasmer运行时库 **libwasmer_runtime_c_api.so** | 库在`chainmaker-go/main`目录下，将该库路径添加至系统PATH环境变量下 |
 
 
 ## 2 部署方式
 
-### 本地部署
-
-【简述，同步源码、下载可执行文件】
-
-### docker
-
-【简述，我们提供的镜像】
-
-### ~~K8S~~
-
-
-
-
+下面将描述本地部署单节点、四节点方式，其中单节点启用**SOLO**共识机制，四节点使用**TBFT**共识机制；项目`scripts`目录下提供了一键配置部署环境的脚本，支持在MacOS、Linux平台上，快速搭建不同的节点环境。
 
 ## 3 快速部署（SOLO模式）
 
@@ -40,26 +34,28 @@ make
 
 ### 3.3 配置设置
 
-修改链配置文件（路径为chainmaker-V1.0.0-wx-org1.chainmaker.org/config/wx-org1.chainmaker.org/chainconfig/bc1.yml）配置项consensus: type值为6（solo模式）
+#### 3.3.1 解压缩编译好的压缩包
 
 ```sh
-cd build/release
-
-tar zvxf chainmaker-V1.0.0-wx-org1.chainmaker.org-20201201204232-x86_64.tar.gz
-
-
+cd chainmaker-go/release
+#解压编译的压缩包
+tar zvxf chainmaker-V1.0.0.xxx-xxx.tar.gz(其中xxx是根据时间和平台不同而变化)
 ```
+
+#### 3.3.2 修改链配置文件，将共识改为solo模式
+
+打开路径为chainmaker/config/wx-org1/chainconfig/bc1.yml的配置文件，修改配置项consensus: type值为6（solo模式）
 
 ### 3.4 启动
 
-
-
 ```sh
-cd chainmaker-V1.0.0-wx-org1.chainmaker.org/bin
-./start.sh
+cd chainmaker/bin
+./chainmaker -e wx-org1 start
 ```
 
 ### 3.5 交易验证
+
+使用cmc工具创建一个合约进行测试，命令如下：
 
 ```sh
 ./cmc client contract user create --admin-key-file-paths=../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.key --admin-crt-file-paths=../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.crt  --org-id=wx-org1.chainmaker.org --chain-id=chain1 --client-crt-file-paths=../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt --client-key-file-paths=../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key --byte-code-path=../../test/wasm/asset-rust-0.7.2.wasm --contract-name=asset_new24 --runtime-type=WASMER --sdk-conf-path=../sdk/testdata/sdk_config.yml --version=1.0 --sync-result=true --params="{\"issue_limit\":\"500000000\",\"total_supply\":\"1000000000\"}"
@@ -69,32 +65,54 @@ cd chainmaker-V1.0.0-wx-org1.chainmaker.org/bin
 
 ### 4.1 物料下载
 
-#### 4.1.1 下载源码
-
-git clone --recurse-submodules git@git.code.tencent.com:ChainMaker/chainmaker-go.git
-
-#### 4.1.2 安装tmux
+#### 4.1.1 安装tmux
 
 Mac: brew install tmux
 
 Centos: yum install tmux
 
-### 4.2 编译
+#### 4.1.2 下载源码
 
 ```sh
-cd chainmaker-go
-make pb-dep
+git clone --recurse-submodules git@git.code.tencent.com:ChainMaker/chainmaker-go.git
+cd chainmaker-go/tools
+git clone --recurse-submodules git@git.code.tencent.com:ChainMaker/chainmaker-cryptogen.git
+```
+
+### 4.2 制作部署包
+
+#### 4.2.1 编译chainmaker-cryptogen
+
+```sh
+cd chainmaker-go/tools/chainmaker-cryptogen
 make
+```
+
+#### 4.2.2 生成证书
+
+```sh
+cd chainmaker-go/scripts
+./prepare.sh 4 1 ## 参数4代表节点数量（和组织数量一致），1代表链数量
+```
+
+#### 4.2.3 制作部署包
+
+```sh
+# 制作安装包
+cd chainmaker-go/scripts
+./build_release.sh
 ```
 
 ### 4.3 启动
 
 ```sh
-cd scripts
+cd chainmaker-go/scripts
 ./cluster_quick_start.sh
 ```
 
 ### 4.4 交易验证
+
+使用cmc工具创建一个合约进行测试，命令如下：
 
 ```sh
 ./cmc client contract user create --admin-key-file-paths=../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.key --admin-crt-file-paths=../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.crt  --org-id=wx-org1.chainmaker.org --chain-id=chain1 --client-crt-file-paths=../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt --client-key-file-paths=../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key --byte-code-path=../../test/wasm/asset-rust-0.7.2.wasm --contract-name=asset_new24 --runtime-type=WASMER --sdk-conf-path=../sdk/testdata/sdk_config.yml --version=1.0 --sync-result=true --params="{\"issue_limit\":\"500000000\",\"total_supply\":\"1000000000\"}"
