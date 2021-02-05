@@ -1517,15 +1517,11 @@ type TxResponse struct {
 
 ### 命令行工具CMC@天乐
 
-
+cmc是一个命令行工具集，主要包括chainmaker节点管理（使用sdk和chainmaker之间通过rpc交互实现）、各类证书生成等功能，可以通过help来查看命令的用法。更多使用示例参考：《长安链 ChainMaker_Deploy_Manual》和《长安链 ChainMaker_Maintenance_Manual》
 
 ### SDK@天乐、Jason
 
-
-
-### 一键部署@Jason
-
-
+请参考：《chainmaker-go-sdk 》《chainmaker-java-sdk》
 
 ### crypoto-gen@Jason
 

@@ -18,30 +18,29 @@ cluster_quick_stop.sh: 快速停止脚本，可以同时把本地启动的多节
 
 启动包解压后主要包含的目录说明如下：
 
-config/wx-orgx.chainmaker.org: 配置文件路径，子目录说明如下：
-
-- certs: 证书目录
-- certs/ca: 存放所有组织根证书的目录，每个组织有一个以组织名称命名的文件夹
-- certs/node/consensusx: 全节点身份证证的证书目录
-- certs/node/commonx: 其他类型节点身份认证的证书目录
-- certs/user/adminx: 节点管理员身份认证证书目录
-- certs/user/clientx: 节点普通用户身份认证证书目录
-- chainconfig: 链配置目录
-- chainconfig/bcx.yml: 具体的链配置文件
-- chainmaker.yml: 节点主配置文件
-- log.yml: 日志配置文件
-
-bin: 启动程序和脚本
-
-- start.sh: 启动脚本
-- restart.sh: 重启脚本
-- stop.sh: 重启脚本
-
-data: 存放数据库存储的目录
-
-lib: 存储依赖库的目录
-
-log: 日志路径
+|-- bin                          # 可执行程序路径
+|   |-- chainmaker     # chainmaker主程序
+|   |-- restart.sh         # 重启脚本
+|   |-- start.sh             # 启动脚本
+|   -- stop.sh               #停止脚本
+|-- config                    # 配置文件路径
+|   -- wx-org1.chainmaker.org     # 组织1配置文件路径
+|       |-- certs                                  # 证书路径
+|       |   |-- ca                                  # 存放所有组织根证书的目录，每个组织有一个以组织名称命名的文件夹
+|       |   |-- node                             # 节点证书路径
+|       |   |   |-- common1               # 普通证书路径，证书可用于RPC和网络
+|       |   |   -- consensus1              # 共识证书路径，证书可用于RPC和网络
+|       |   -- user                                # 用户证书路径
+|       |       |-- admin1                    # 管理员用户证书路径
+|       |       -- client1                        # 普通用户证书路径
+|       |-- chainconfig                      # 链配置路径
+|       |   -- bc1.yml                          # 链配置文件路径
+|       |-- chainmaker.yml              #主配置文件路径
+|       -- log.yml                                # 日志配置文件路径
+|-- data                                            # 数据库存储路径
+|-- lib                                               # 依赖动态库路径
+|   -- libwasmer_runtime_c_api.so
+-- log                                                # 日志文件路径
 
 ## 3 配置说明
 
