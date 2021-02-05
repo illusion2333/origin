@@ -1401,7 +1401,8 @@ func (ac *accesscontrol) NewSelfPolicy(resourceId protocol.ResourceId, endorseme
 4. targetOrg 是可选字段。这个字段仅在 resourceId 字段所指示的资源是属于某个特定组织时被使用到。可以参看 "SELF" 规则的说明。
 
 #### 接口使用说明
-## 验证权限
+
+##### 验证权限
 首先，构建身份策略 (Policy) 用于判断某一组签名者是否满足目标资源的权限规则：
 ```go
 policy, err := ac.NewPolicy(Target_Resource_ID, Endorsement_List, Request_Message)
