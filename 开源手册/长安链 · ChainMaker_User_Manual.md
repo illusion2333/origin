@@ -1180,7 +1180,7 @@ CGO_LDFLAGS="-L/usr/local/rocksdb -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz
    
 
 ### 身份管理@张韬
-# 简介
+#### 简介
 
 Identity Management (idmgmt) 用于管理区块链的组织成员身份，是一个基于 PKI 体系的管理模块。
 
@@ -1189,11 +1189,11 @@ Identity Management (idmgmt) 用于管理区块链的组织成员身份，是一
 - 弓腰部分：该模块从链配置中读取链上所有组织的公共信息，包括公钥、证书等，用于在交互式验证对端的合法性。
 
 
-# 组织成员身份管理
+#### 组织成员身份管理
 
 身份管理模块由两部分组成：组织和成员。组织模块管理全链公共验证信息和本组织的公共信息。成员模块管理本地节点或本地成员的私钥相关信息。
 
-## 成员及其签名能力
+##### 成员及其签名能力
 
 成员接口和代表一个成员的签名接口如下：
 ```go
@@ -1249,7 +1249,7 @@ Verify() 验证一个入参签名、数据是否是由这个成员签发的。
 Serialize() 和 GetSerializeMember() 接口用于序列化成员。其中，GetSerializeMember() 接口将 Member 结构转化为 protobuf 中定义的可序列化结构，其中包含成员的关键信息：证书、组织、证书是否压缩。Serialize() 接口则是跳过转化为 protobuf 类的这一步，直接讲 Member 的关键信息以字符串形式表示。这两个接口根据需要，在包装请求报文时使用。私钥为不可序列化的部分，以防止错误地将私钥序列化后在网络中传输。原则上私钥不会离开本地。
 
 
-## 组织
+##### 组织
 组织模块的接口如下：
 ```go
 type Organization interface {
@@ -1284,7 +1284,7 @@ Validate() 验证签名者的证书是否在一条根证书在链配置 (或创�
 
 
 
-# Description
+#### Description
 
 Identity Management (idmgmt) module is in charge of the PKI mechanism. It manages the membership service of an organization (in the case of a permissionless chain, it maintains the public keys of each node), maintains the private key of the local node itself, and maintains the public information including certificates of all the organizations on the chain.
 
@@ -1293,11 +1293,11 @@ Identity Management (idmgmt) module is in charge of the PKI mechanism. It manage
 - Public part. This part can verify whether a message from another node or a client-side software belongs to an organization on the chain.
 
 
-# Identity Management Components
+#### Identity Management Components
 
 Identity Management consists of two parts: Organization and Member. Organization submodule maintains the universal public information and the organizational public information. Member submodule maintains the local node's private information.
 
-## Member and SigningMember
+##### Member and SigningMember
 
 Interfaces of Member and SigningMember are
 ```go
@@ -1350,7 +1350,7 @@ Sign() create a signature using the SigningMember's own private key.
 Verify() verifies the validity of a signature with the public key of a Member.
 
 
-## Organization
+##### Organization
 Format of Organizaiton is
 ```go
 type Organization interface {
@@ -1384,17 +1384,16 @@ type Organization interface {
 Validate() verifies the certificate chain from a given Member to one of the trusted root certificates stored in chain configuration (aka. the genesis block). 
 
 
-
 ### 权限管理@张韬
 
-# 简介
+#### 简介
 Access Control (权限管理) 模块实现了链上资源与权限规则的匹配，并在链的参与者使用链上资源时验证其权限是否符合目标资源的权限规则。
 
 - 权限管理：解析默认配置、链配置中的权限配置，并维护一个资源-权限规则列表。
 
 - 鉴权：与 IDMgmt (身份管理模块) 一起，为链上成员与资源的权限规则提供验证能力。
 
-# Access Control 模块组件
+#### Access Control 模块组件
 Policy：链上成员所持有的身份。
 Principle：一个链上资源的权限规则。
 AccessControl 结构定义了权限管理对外的接口。
@@ -1423,7 +1422,7 @@ type AccessControl interface {
 
 在其他接口中，CheckPrincipleValidity() 用于判断读自配置中的权限配置是否合理，主要用在链用户发起修改权限配置的请求时。
 
-# 权限规则
+#### 权限规则
 权限规则的结构如下：
 ```go
 type Principle interface {
@@ -1474,7 +1473,7 @@ func NewPrinciple(rule protocol.RuleKeyword, orgList []string, roleList []protoc
 	7. "FORBIDDEN"：这个类型的资源被禁用了。
 
 
-# 身份、权利策略对
+#### 身份、权利策略对
 身份、权利策略对的结构：
 ```go
 type Policy interface {
@@ -1501,7 +1500,7 @@ func (ac *accesscontrol) NewSelfPolicy(resourceId protocol.ResourceId, endorseme
 3. message 字段是请求的消息体。
 4. targetOrg 是可选字段。这个字段仅在 resourceId 字段所指示的资源是属于某个特定组织时被使用到。可以参看 "SELF" 规则的说明。
 
-# 接口使用说明
+#### 接口使用说明
 ## 验证权限
 首先，构建身份策略 (Policy) 用于判断某一组签名者是否满足目标资源的权限规则：
 ```go
@@ -1517,7 +1516,7 @@ ok, err := ac.VerifyPolicy(policy, org)
 ```
 其中，入参 org 是 chainmaker.org/chainmaker-go/protocol 包中的 Organization 接口类型，他的实现在包 chainmaker.org/chainmaker-go/module/idmgmt 中。
 
-## 新增资源
+##### 新增资源
 首选，为新资源添加一个ID。(可参考系统合约 CREATE_USER_CONTRACT 创建用户合约接口，他的资源ID是 TxType_CREATE_USER_CONTRACT)。
 
 然后，把新资源ID添加到默认权限配置列表中，为他赋予一个默认外层权限。
@@ -1557,11 +1556,11 @@ const (
 ```
 如果需要配置自定义权限，可以在链配置中设置 (可参考 bc1.yml 文件的 permissions 部分)。
 
-## 注意
+##### 注意
 当新增一个系统合约接口时，必须要为该合约接口配置一个默认的权限，或者在链配置里为他添加一个配置项，否则将无法调用这个合约接口。添加链配置可以用 UPDATE_CHAIN_CONFIG 合约来实现。
 
 
-# Description
+#### Description
 
 Access Control module is in charge of managing the access policies for chain resources, and verifying requests on chain resources.
 
@@ -1570,7 +1569,7 @@ Access Control module is in charge of managing the access policies for chain res
 - Access authentication. With Identity Management module (idmgmt), Access Control module provides interface to verify whether a request is authorized.
 
 
-# Access Control Components
+#### Access Control Components
 
 Access control checks whether the policy from the signer and the principle from the resource match. A functional interface AccessControl provides the necessary interface for this purpose.
 ```go
@@ -1599,7 +1598,7 @@ The core function of this module consists of the interfaces NewPolicy(), NewSelf
 
 The interface CheckPrincipleValidity() is used to check the validity of the access control constraints in the configuration, ensuring that the configured rules for each resource are reasonable.
 
-## Access Principle
+##### Access Principle
 
 Format of access principle is
 ```go
@@ -1652,7 +1651,7 @@ func NewPrinciple(rule protocol.RuleKeyword, orgList []string, roleList []protoc
 	7. "FORBIDDEN". Resources with this access rule are restricted to access. They are disabled. 
 
 
-## Access Policy
+##### Access Policy
 Format of access policy is
 ```go
 type Policy interface {
@@ -1679,8 +1678,8 @@ func (ac *accesscontrol) NewSelfPolicy(resourceId protocol.ResourceId, endorseme
 3. message field contains the request information which is signed by the signers in the endorsement field.
 4. targetOrg field is optional. It specifies the organization which the resource specified by the resourceId field belongs to. This field is only used for trusted root certification and consensus node address.
 
-# How to use
-## Verifications
+#### How to use
+##### Verifications
 First construct the policy used to testify the access principle using the following code:
 ```go
 policy, err := ac.NewPolicy(Target_Resource_ID, Endorsement_List, Request_Message)
@@ -1695,7 +1694,7 @@ ok, err := ac.VerifyPolicy(policy, org)
 ```
 where, the argument org is an instance of the interface Organization in package chainmaker.org/chainmaker-go/protocol, and its implementation can be found in the package chainmaker.org/chainmaker-go/module/idmgmt
 
-## Add new resource
+##### Add new resource
 First, define a resource ID for the new resource. (Refer to the system contract CREATE_USER_CONTRACT (the constant for resource ID is TxType_CREATE_USER_CONTRACT)).
 
 Then, add the defined resource ID to default permission list.
@@ -1735,7 +1734,7 @@ const (
 ```
 And these default permission names are self-explanatory. If you need customized permissions for a specific resource, you can define it in the chain configuration file. (Refer to the "permissions" section in the default bc1.yml file.)
 
-## Caution
+##### Caution
 When you add a new system contract, you must register a default access policy as above, or at least configure a permission entry in the chain configuration file or invoke UPDATE_CHAIN_CONFIG contract to add a permission entry for this new system contract. Otherwise, this new contract can never be accessed.
 
 
@@ -2186,18 +2185,15 @@ type txPoolConfig struct {
 <img src="images/chainmaker-txpool-flow.png" width = "700" height = "500" alt="chainmaker-txpool-flow"/>
 
 
+### 密码学算法@张韬
 
-
-
-### 加密算法@张韬
-
-# 简介
+#### 简介
 
 common/crypto 模块提供了一些密码学算法 (包括加密、签名、哈希等) 能力及其相关的协议的接口。
 
-# 密码学算法
+#### 密码学算法
 
-## 非对称密码学算法接口
+##### 非对称密码学算法接口
 
 定义了如下的非对称体系公私钥接口：
 ```go
@@ -2258,13 +2254,13 @@ PrivateKey 接口用于签名私钥，通常使用的是 SighWithOpts() 接口�
 
 PublicKey 接口用于签名公钥，通常使用的是 VerifyWithOpts() 接口，该接口与 PrivateKey 的 SignWithOpts() 接口对应。
 
-## 公私钥的序列化
+##### 公私钥的序列化
 
 在应用中，公钥、私钥通常会以字符串形式保存在配置文件中或用于传输。前面提到的 Key 接口中的 String() 为公钥提供了序列化为 PEM 格式字符串的能力。
 
 要把字符串形式的公私钥反序列化为对象，可以调用 common/crypto/asym 包中的 PublicKeyFromPEM() 或 PrivateKeyFromPEM() 接口。ChainMaker 支持的算法都可以用这两个通用接口反序列化公私钥。
 
-# 证书
+#### 证书
 
 ChainMaker 使用的节点、客户端证书需要满足一下要求：
 1. O 字段需要指明节点或客户端所属的组织的名称。
