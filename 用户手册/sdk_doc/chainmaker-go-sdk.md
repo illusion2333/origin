@@ -98,9 +98,10 @@ func createClient() (*ChainClient, error) {
 
 ## 4. 接口说明
 
-### 4.1 用户合约接口
+### 4.1 用户合约接口 <span href="useContractInterface"></span>
 #### 4.1.1 创建合约待签名payload生成
 **参数说明**
+
   - contractName: 合约名
   - version: 版本号
   - byteCodePath: 合约路径
