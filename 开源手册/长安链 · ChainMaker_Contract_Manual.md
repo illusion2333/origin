@@ -2,7 +2,7 @@
 
 [TOC]
 
-> 具体使用参考： [rust合约开发使用手册](../用户手册/sdk_doc/chainmaker-contract-programing-for-rust.md)     [go合约开发使用手册](../用户手册/sdk_doc/chainmaker-contract-programing-for-go.md)   [c++合约开发使用手册](../用户手册/sdk_doc/chainmaker-contract-programing-for-c++.md)  
+> 具体使用参考： [rust合约开发使用手册](../用户手册/sdk_doc/chainmaker-contract-programing-for-rust.md)     [go合约开发使用手册](../用户手册/sdk_doc/chainmaker-contract-programing-for-go.md)    [c++合约开发使用手册](../用户手册/sdk_doc/chainmaker-contract-programing-for-c++.md) 
 
 
 ## 智能合约介绍
@@ -18,10 +18,6 @@
 ## 智能合约生命周期管理
 
 >  交易发送参考： [使用GO SDK发送交易](../用户手册/sdk_doc/chainmaker-go-sdk.md#useContractInterface)   [使用JAVA SDK发送交易](../用户手册/sdk_doc/chainmaker-java-sdk.md#useContractInterface)  
->
-> 
->
-> ### 
 
 
 
