@@ -44,13 +44,13 @@ tar zvxf chainmaker-V1.0.0.xxx-xxx.tar.gz(其中xxx是根据时间和平台不�
 
 #### 3.3.2 修改链配置文件，将共识改为solo模式
 
-打开路径为chainmaker/config/wx-org1/chainconfig/bc1.yml的配置文件，修改配置项consensus: type值为6（solo模式）
+打开路径为chainmaker/config/wx-org1/chainconfig/bc1.yml的配置文件，修改配置项consensus: type值为1（solo模式）
 
 ### 3.4 启动
 
 ```sh
 cd chainmaker/bin
-./chainmaker -e wx-org1 start
+./chainmaker -c ../config/wx-org1/chainmaker.yml start
 ```
 
 ### 3.5 交易验证

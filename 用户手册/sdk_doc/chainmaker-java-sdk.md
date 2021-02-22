@@ -89,7 +89,7 @@ public class ResponseInfo {
 }
 ```
 
-## 2 ChainClient类接口定义
+## 2 ChainClient类接口定义 <span href="useContractInterface"></span>
 
 ChainClient类描述了所有用户能够对链进行操作的接口
 
