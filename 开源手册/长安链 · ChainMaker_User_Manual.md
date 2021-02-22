@@ -37,7 +37,7 @@ typora-root-url: ../开源手册
 **完整便捷的配套工具**
 
 - 支持大屏、图表、界面交互多种形式的管理、监控和运维；
-- 支持Java、Golang、nodeJS等多种语言区块链SDK；
+- 支持Java、Golang、JavaScript块链SDK；
 - 支持定制化部署、BaaS等多种落地实施方式；
 - 友好、便捷的在线智能合约开发环境；
 - 支持丰富的区块、交易、订阅、事件监听等处理机制。
@@ -107,7 +107,7 @@ ChainMaker不仅要求区块链模块功能的完全独立、接口定义清晰�
 
 ### 支持广域场景
 
-根据业务场景特性，ChainMaker需生产出从公有链到联盟链各类基于不同信任模型的区块链，支持更加广泛的业务应用。
+根据业务场景特性，ChainMaker可以生产出从公有链到联盟链各类基于不同信任模型的区块链，支持更加广泛的业务应用。
 
 
 
@@ -607,7 +607,8 @@ type NetService interface {
 }
 ```
 #### **使用配置**
-#### chainmaker.yml
+- chainmaker.yml
+
 ```yaml
 net:
   # 底层网络类型
@@ -753,7 +754,7 @@ service RpcNode {
 
 存储模块负责存储区块链上的区块、交易、账本数据和历史读写集数据，在提交区块时，这些数据就会被存储模块进行存储。存储模块的整体架构如下图：
 
-![存储架构图](./ChainMaker_User_Manual_Images/store_structure.png)
+![存储架构图](./images/store_structure.png)
 
 #### 账本存储的处理流程
 
@@ -876,7 +877,7 @@ storage:
 
 #### RocksDB部署
 
-#### 1. Rocksdb使用
+##### Rocksdb使用
 
 因为rocksdb本身是使用C++写的，而目前使用gorocksdb需要依赖rocksdb的库文件，因此直接编译会报错，针对该问题，目前采用了条件编译的方式。
 
@@ -902,7 +903,7 @@ go build -tags=rocksdb
 go run -tags=rocksdb main.go {params}
 ```
 
-#### 2. Linux下Rocksdb环境安装
+##### 2. Linux下Rocksdb环境安装
 
 ##### 2.1 安装依赖
 
@@ -1234,7 +1235,7 @@ Identity Management (idmgmt) 用于管理区块链的组织成员身份，是一
 
 - 私钥部分：模块管理本地节点或成员的私钥，本地节点或成员与链上其他节点交互时用这个私钥对消息签名。
 
-- 弓腰部分：该模块从链配置中读取链上所有组织的公共信息，包括公钥、证书等，用于在交互式验证对端的合法性。
+- 公钥部分：该模块从链配置中读取链上所有组织的公共信息，包括公钥、证书等，用于在交互式验证对端的合法性。
 
 
 #### 组织成员身份管理
@@ -1343,7 +1344,8 @@ Access Control (权限管理) 模块实现了链上资源与权限规则的匹�
 #### Access Control 模块组件
 Policy：链上成员所持有的身份。
 Principle：一个链上资源的权限规则。
-AccessControl 结构定义了权限管理对外的接口。
+AccessControl：结构定义了权限管理对外的接口。
+
 ```go
 type AccessControl interface {
 	GetHashAlg() string
@@ -1851,9 +1853,69 @@ type syncConfig struct {
 
  <img src="images/chainmaker-sync-flow.png" width = "700" height = "700" alt="图片名称"/>
 
-### ~~SPV模块~~
+### SPV模块
 
-【暂缓】
+#### 简要描述
+- 处理RPC请求，接收交易，验证本地账本是否存在，不存在通过P2P网络发送给全节点
+- 从全节点同步数据，校验数据合法性，过滤同属组织的交易并存储
+- 复用全节点的Net，VM，RPCServer，Store等模块，不启动Core，Sync，TxPool，Consensus模块
+- 在Blockchain模块中启动
+
+#### 主要逻辑
+
+##### 处理RPC请求
+1. 接收交易请求，查询交易是否在账本中，防止双花，如果在直接返回
+2. 判断交易请求类型，如果是查询类交易，复用全节点查询逻辑走native合约查询
+3. 如果是写操作交易，走P2P网络广播出去
+
+##### 同步逻辑
+通过P2P连接到网络，监听全节点同步模块发送的消息，起四个协程处理数据，请求和响应数据存储在小顶堆里，通过高度排序
+1. loop：处理全节点同步模块发送的消息
+    1. onReceiveHeartbeat：处理某个节点发送来的高度消息，更新管理节点的高度，判断账本高度和心跳高度的大小，决定好要请求的高度范围，将高度范围拆分成更小范围的一个个请求，发送出去，并放入请求小顶堆
+    2. onReceiveSyncResp: 处理请求节点后响应的区块列表信息，校验高度是否在目前请求的高度范围，符合放入响应的小顶堆
+2. respProcessLoop: 处理响应小顶堆里的消息
+    1. 如果请求小顶堆的Top的高度 = 响应小顶堆的Top的高度，则两个堆的Top是对应的，验证数据合法存储成功后，都Pop掉
+    2. 如果请求小顶堆的Top的高度 > 响应小顶堆的Top的高度，说明响应小顶堆的Top数据是旧的，或者过时的，将其Pop清除掉
+3. refreshReqCache: 处理请求小顶堆里的消息，如果账本的高度>=小顶堆里Top高度，则清除小顶堆的数据直到不满足为止
+4. resyncLoop: 检查请求小顶堆里的请求是否有超时的，有超时则进行重发
+
+
+#### 配置说明
+chainmaker.yml
+节点类型修改成spv，证书做替换成common里的
+```yml
+node:
+  # 节点类型：full、spv
+  type: spv
+  priv_key_file: ./crypto-config/wx-org1.chainmaker.org/node/common1/common1.tls.key
+  cert_file:     ./crypto-config/wx-org1.chainmaker.org/node/common1/common1.tls.crt
+  org_id: wx-org1
+spv:
+  refresh_reqcache_mils: 10000    # 每10秒查一次账本，清除小于账本高度的请求堆
+  message_cahche_size: 12800      # 处理网络消息channel个数
+  resync_check_interval_mils: 10  # 每笔请求同步多少个区块
+  sync_timeout_mils: 1000         # 一次（多笔请求）最多同步多少个区块
+  reqsync_blocknum: 10000         # 定时处理请求堆
+  max_reqsync_blocknum: 10000     # 发出同步请求超时时间
+  peer_active_time: 0             # 判断节点未发送心跳超时时间，剔除节点，0则不判断
+```
+
+如果配置文件没有配置，则取代码中的默认配置
+```go
+func NewConfig() *Config {
+	return &Config{
+		RefreshReqCacheMills:     10000,     // 每10秒查一次账本，清除小于账本高度的请求堆
+		MessageCacheSize:         12800,     // 处理网络消息channel个数
+
+		MaxBlockNumPerSync:       10,		 // 每笔请求同步多少个区块
+		MaxReqSyncBlockNum:       1000,      // 一次（多笔请求）最多同步多少个区块
+
+		ReSyncCheckIntervalMills: 10000,     // 定时处理请求堆
+		SyncTimeoutMills:         10000,     // 发出同步请求超时时间
+		PeerActiveTime:           0,         // 判断节点未发送心跳超时时间，剔除节点，0则不判断
+	}
+}
+```
 
 ### 交易池
 
