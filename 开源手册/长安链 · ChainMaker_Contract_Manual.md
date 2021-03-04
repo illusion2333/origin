@@ -1006,7 +1006,7 @@ ChainMaker支持通过Docker的方式编译和运行智能合约
 
 拉取镜像
 ```
-docker pull huzhenyuan/chainmaker-cpp-contract:1.0.0
+docker pull huzhenyuan/chainmaker-go-contract:1.0.0
 docker run -it --name chainmaker-go-contract -v <WORK_DIR>:/home chainmaker-go-contract bash
 ```
 
@@ -1065,6 +1065,6 @@ docker run -it --name chainmaker-rust-contract -v <WORK_DIR>:/home chainmaker-ru
 
 运行合约
 ```
-# wasmer main.wasm divide num1 100 num2 8
+# wasmer main.wasm save time 20210304 file_hash 12345678 file_name a.txt
 ```
 
