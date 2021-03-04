@@ -1397,24 +1397,29 @@ func NewPrinciple(rule protocol.RuleKeyword, orgList []string, roleList []protoc
 		c. 这个类型是修改大部分链配置的默认权限类型。
 		d. 来自同一个组织的多个 "admin" 身份签名只会被统计一次。
 	2. "SELF". 签名者必须与目标资源所属同一个组织：
+	
 		a. 这个规则只能用于与组织有所属关系的资源。该规则下，自定义 orgList 将不会生效。
 		b. 只接受 "admin" 身份的签名者签名，自定义 roleList 将不会生效。
 		c. 一个符合组织、身份要求的签名就足够满足本规则。
 		d. 目前，只有组织根证书、组织共识节点两项配置可以且应该使用此规则。
 	3. "ANY". 签名者属于 orgList 中的任意一个组织，且签名者拥有 roleList 中的任意一个身份，则签名被视为有效：
+	
 		a. orgList 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
 		b. roleList可以随意配置任意身份集合，留空则代表所有身份都满足要求。
 		c. 这类规则目前主要用于宽泛的读写权限控制。
 	4. "ALL". 要求 orgList 列表中所有组织参与，每个组织至少提供一个符合 roleList 要求身份的签名:
+	
 		a. orgList 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
 		b. roleList可以随意配置任意身份集合，留空则代表所有身份都满足要求。
 		c. 来自同一个组织的合法签名只会被统计一次。
 	5. 一个以字符串形式表达的整数 (eg. "3") 作为阈值：
+	
 		a. orgList 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
 		b. roleList可以随意配置任意身份集合，留空则代表所有身份都满足要求。
 		c. 这是个用户自定义的规则，这个证书可以为1到组织总数间的任意一个数，包括1和组织总数。
 		d. 这条规则与 "ALL" 规则相似，但不要求 orgList 中的所有组织参与，而只要求大于或等于阈值数量的 orgList 中的不同组织参与即可。
 	6. 一个以字符串形式表达的分数 (eg. "1/3") 作为比例：
+	
 		a. orgList 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
 		b. roleList可以随意配置任意身份集合，留空则代表所有身份都满足要求。
 		c. 这是个用户自定义的规则，可以配置 [0, 1] 间的任意分数。
@@ -1835,8 +1840,6 @@ type syncConfig struct {
 * **LivenessTick**：检测区块请求应答是否超时的定时器时长，单位：秒
 * **SchedulerTick**：发送区块请求的定时器时长，单位：秒
 
-
-
 #### 同步流程及状态流转
 
 同步模块内部对特定数据有如下的状态跟踪.
@@ -1935,12 +1938,12 @@ type TxPool interface {
 	Start() error
 	Stop() error
 	AddTx(tx *pb.Transaction, source TxSource) error
-	AddTrustedTx(txs []*pb.Transaction) error
-	GetTxByTxId(txId string) (*pb.Transaction, error)
-	TxExists(tx *pb.Transaction) bool
+  TxExists(tx *pb.Transaction) bool
+	GetTxByTxId(txId string) (tx *pb.Transaction, inBlockHeight int64)
+  GetTxsByTxIds(txIds []string) (txsRet map[string]*pb.Transaction, txsHeightRet map[string]int64)
 	RetryAndRemove(retryTxs, removeTxs []*pb.Transaction)
-	FetchTxBatch() []*pb.Transaction
-	AddTxsToPendingCache(txs []*pb.Transaction)
+	FetchTxBatch(blockHeight int64) []*pb.Transaction
+	AddTxsToPendingCache(txs []*pb.Transaction, blockHeight int64)
 }
 ```
 
@@ -1954,24 +1957,34 @@ type TxPool interface {
 
   * RPC：来自RPC的交易不验证基础的交易信息（如交易ID、时间戳是否符合规范）、不验证交易者的证书；因为RPC模块已做此类校验；成功添加至交易池的交易会广播给其它连接的节点
   * P2P：进行所有的校验
-  * INTERNAL：如果节点在同一高度接收到多个验证有效的区块，当其中某个区块上链后，其余的相同高度区块内的交易会被重新添加进交易池。此时会使用DB对添加进交易池的交易做存在性检查，将未上链的交易添加进交易池
+  * INTERNAL：如果节点在同一高度接收到多个验证有效的区块，当其中某个区块上链后，其余的相同高度区块内的交易会被重新添加进交易池，防止这些交易被抛弃。此时会使用DB对添加进交易池的交易做存在性检查，将未上链的交易添加进交易池
   
-* **AddTrustedTx**：添加可信任的交易至交易池；交易来源设置为 INTERNAL
+* **GetTxByTxId**：依据交易ID在交易池查询该交易，如果交易存在，返回交易数据，以及交易在交易池中记录的高度
+  *	交易在交易池中高度分为三种
+    * 交易池中不存在该交易，返回的高度为-1
+    * 交易存在于交易池的普通队列（即：待打包区块队列），返回的高度为0
+    * 交易存在于交易池的pending队列（即：已打包但未上链的交易），返回的高度为交易所在的区块高度
 
-* **GetTxByTxId**：查询交易池内的交易
-*	如果交易在普通队列中，返回交易数据，且error为nil
-  *	如果交易在pending队列中，表示该交易已经入块，返回error为`Err.ErrTxHadOnTheChain`
-  *	如果交易不在交易池，则error为nil，交易数据为nil
-  
+* **GetTxsByTxIds**：依据交易ID在交易池查询交易的批量接口；
+
+  * 返回值txsRet，存储交易的内容信息，key 为txId，value为交易内容；交易不存在时，value为nil
+  * 返回值txsHeightRet，存储交易所在的区块高度，key 为txId，value为高度信息
+
 * **TxExists**：判断交易是否存在与交易池，存在返回true，反之为false
 
-* **RetryAndRemove**：将参数一的交易重新添加入交易池，将参数二的交易从交易池中删除；该接口主要由`core`模块进行调用，当节点在同一高度接收到多个不同区块时，将待上链区块的交易，从交易池中删除；将其它不上链区块的交易，重新添加进交易池；
+* **RetryAndRemove**：将参数一的交易重新添加至交易池的普通队列，且这些交易如果存在于pending 队列，则从pending队列中删除，将参数二的交易从交易池中删除；该接口主要由`core`模块进行调用，当节点在同一高度接收到多个不同区块时，将待上链区块的交易，从交易池中删除；将其它不上链区块的交易，重新添加进交易池；
 
   * 注意：该接口的内部实现为：先添加参数一的交易，后删除参数二的交易；以便即使参数一与参数二有部分重合交易时，最后也会从交易池中删除。
 
-*	**FetchTxBatch**：从交易池获取一批交易，获取数量最大为配置的单个区块可容纳的交易数，由core模块调用，使用获取的交易打包生成新的区块
+* **FetchTxBatch**：从交易池获取一批交易，获取数量最大为单个区块可容纳的交易数，参数为要打包的区块高度；由core模块调用，使用获取的交易打包生成新的区块
 
-* **AddTxsToPendingCache**：将交易添加进交易池的pending队列中；当节点收到一个新区块时，验证通过后，将该区块内的交易添加进交易池的pending队列
+  * 获取交易时，会将这批交易从交易池的普通队列移动到pending队列
+
+* **AddTxsToPendingCache**：将交易添加进交易池的pending队列中，且这批交易如果存在于交易池的普通队列中，则从普通队列中删除；参数二为这批交易所在的区块高度；
+
+  * 当节点收到一个新区块时，验证通过后，将该区块内的交易添加进交易池的pending队列
+
+  
 
 #### 组件描述
 
@@ -1988,11 +2001,9 @@ type TxPool interface {
 ##### 本模块的组件
 
 * **txList**：用该结构缓存交易池内的交易；由于交易有两种类型，所以，交易池内存在两个`txList`，缓存不同类型的交易
-
-  * **LinkedHashMap.LinkedHashMap**：`txList`内包含三个`LinkedHashMap`，分别存储不同优先级、不同状态的交易
-    * **queue**：存储普通优先级的交易
-    * **priorityQueue**：存储高优先级的交易
-    * **pendingCache**：存储已打包进区块，但未上链的交易；当节点通过core模块调用交易池的`FetchTxBatch`接口获取待打包交易时，交易池内部会先从优先级高的队列中获取交易，再从优先级低的队列中获取交易，然后将这些从优先级队列中删除，添加到`pendingCache`队列中
+* **LinkedHashMap.LinkedHashMap**：`txList`内包含两个`LinkedHashMap`，分别存储不同状态的交易
+    * **queue**：存储待打包区块的交易
+    * **pendingCache**：存储已打包进区块，但未上链的交易
 
 #### 配置
 
