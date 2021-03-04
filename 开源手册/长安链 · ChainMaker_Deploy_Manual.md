@@ -69,9 +69,17 @@ go build
 
 #### 4.1.1 安装tmux
 
-Mac: brew install tmux
+Mac: 
 
-Centos: yum install tmux
+```sh
+brew install tmux
+```
+
+Centos: 
+
+```shell
+yum install tmux
+```
 
 #### 4.1.2 下载源码
 

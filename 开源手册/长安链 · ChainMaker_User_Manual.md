@@ -318,10 +318,6 @@ message TransactPayload {
 
 ### 共识算法
 
-【共识算法说明：SOLO、TBFT】
-
-每个共识算法的【主要流程、与开源版本或论文版本的不同、<u>投票签名和验签机制、共识节点间通信方式、是否有共识状态WAL存储、模块接口说明、pb数据模型</u>】
-
 #### TBFT
 
 ##### 算法简述
@@ -800,71 +796,61 @@ service RpcNode {
 #### 存储模块接口
 
 ```go
+// BlockchainStore provides handle to store instances
 type BlockchainStore interface {
 
-	//提交区块，批量提交区块数据到账本，保存区块信息、交易信息、读写集、索引，更新状态数据等信息
-	//并对外保证多项数据修改的原子性
+	// PutBlock commits the block and the corresponding rwsets in an atomic operation
 	PutBlock(block *pb.Block, txRWSets []*pb.TxRWSet) error
 
-	//按区块hash查询区块，
-	//如果数据库内部错误，error返回错误信息；
-	//如果区块不存在，Block返回nil，error返回nil
+	// GetBlockByHash returns a block given it's hash, or returns nil if none exists.
 	GetBlockByHash(blockHash []byte) (*pb.Block, error)
 
-	//判断区块是否存在
-	//如果数据库内部错误，error返回错误信息；
-	//如果区块不存在，返回false
-	BlockExist(blockHash []byte) (bool, error)
+	// BlockExists returns true if the black hash exist, or returns false if none exists.
+	BlockExists(blockHash []byte) (bool, error)
 
-	//按区块高度查询区块
-	//如果数据库内部错误，error返回错误信息；
-	//如果区块不存在，Block返回nil，error返回nil
+	// GetBlock returns a block given it's block height, or returns nil if none exists.
 	GetBlock(height int64) (*pb.Block, error)
 
-	//获取最新的配置区块
+	// GetLastConfigBlock returns the last config block.
 	GetLastConfigBlock() (*pb.Block, error)
 
-	//更据txid查询区块
+	// GetBlockByTx returns a block which contains a tx.
 	GetBlockByTx(txId string) (*pb.Block, error)
 
-	//查询带读写集的区块，
-	//如果数据库内部错误，error返回错误信息；
-	//如果区块不存在，返回nil，error返回nil
+	// GetBlockWithRWSets returns a block and the corresponding rwsets given
+	// it's block height, or returns nil if none exists.
 	GetBlockWithRWSets(height int64) (*pb.BlockWithRWSet, error)
 
-	//按交易id查询交易
-	//如果数据库内部错误，error返回错误信息；
-	//如果交易不存在，Transaction返回nil，error返回nil
+	// GetTx retrieves a transaction by txid, or returns nil if none exists.
 	GetTx(txId string) (*pb.Transaction, error)
 
-	//判断交易是否存在，按交易id
-	//如果数据库内部错误，error返回错误信息；
-	//如果交易不存在，返回false
+	// TxExists returns true if the tx exist, or returns false if none exists.
 	TxExists(txId string) (bool, error)
 
-	//查询最新的区块
-	//如果数据库内部错误，error返回错误信息；
-	//如果区块不存在，Block返回nil，error返回nil
+	// GetTxConfirmedTime returns the confirmed time for given tx
+	GetTxConfirmedTime(txId string) (int64, error)
+
+	// GetLastBlock returns the last block.
 	GetLastBlock() (*pb.Block, error)
 
-	//查询状态数据库，按合约名与key
-	//如果数据库内部错误，error返回错误信息；
-	//如果数据不存在，Object返回nil，error返回nil
-	ReadObject(contractName string, key []byte) ([]byte, error) 
+	// ReadObject returns the state value for given contract name and key, or returns nil if none exists.
+	ReadObject(contractName string, key []byte) ([]byte, error)
 
-	//获取状态数据库的迭代器，按合约名以及key区间查询，包括startKey, 不包括limit
+	// SelectObject returns an iterator that contains all the key-values between given key ranges.
+	// startKey is included in the results and limit is excluded.
 	SelectObject(contractName string, startKey []byte, limit []byte) Iterator
 
-	//查询交易读写集
+	// GetTxRWSet returns an txRWSet for given txId, or returns nil if none exists.
 	GetTxRWSet(txId string) (*pb.TxRWSet, error)
 
-	//按区块高度查询区块的读写集列表
+	// GetTxRWSetsByHeight returns all the rwsets corresponding to the block,
+	// or returns nil if zhe block does not exist
 	GetTxRWSetsByHeight(height int64) ([]*pb.TxRWSet, error)
 
-	//获取DB的操作句柄，为其他模块提供DB操作接口
+	// GetDBHandle returns the database handle for given dbName
 	GetDBHandle(dbName string) DBHandle
 
-	//关闭存储相关的数据库，释放数据资源
+	// Close closes all the store db instances and releases any resources held by BlockchainStore
 	Close() error
 }
 ```
@@ -1868,7 +1854,7 @@ type syncConfig struct {
 
  <img src="images/chainmaker-sync-flow.png" width = "700" height = "700" alt="图片名称"/>
 
-### SPV模块
+### 轻节点模块
 
 #### 简要描述
 - 处理RPC请求，接收交易，验证本地账本是否存在，不存在通过P2P网络发送给全节点
@@ -2000,7 +1986,7 @@ type TxPool interface {
 
 #### 组件描述
 
-组件描述分为两部分：交互模块的组件、本模块的组件.
+组件描述分为两部分：交互模块的组件、本模块的组件。
 
 ##### 交互模块的组件
 
@@ -2013,7 +1999,7 @@ type TxPool interface {
 ##### 本模块的组件
 
 * **txList**：用该结构缓存交易池内的交易；由于交易有两种类型，所以，交易池内存在两个`txList`，缓存不同类型的交易
-* **LinkedHashMap.LinkedHashMap**：`txList`内包含两个`LinkedHashMap`，分别存储不同状态的交易
+* **common.LinkedHashMap**：`txList`内包含两个`LinkedHashMap`，分别存储不同状态的交易
     * **queue**：存储待打包区块的交易
     * **pendingCache**：存储已打包进区块，但未上链的交易
 
@@ -2446,7 +2432,7 @@ type BlockHeader struct {
 	PreBlockHash   []byte 
 	BlockHash      []byte 
 	PreConfHeight  int64 
-  BlockVersion   []byte 
+    BlockVersion   []byte 
 	DagHash        []byte 
 	RwSetRoot      []byte 
 	TxRoot         []byte 
@@ -2766,7 +2752,7 @@ crypto-config/wx-org1.chainmaker.org/
 
 
 
-### ~~链调试环境~~
+
 
 
 
