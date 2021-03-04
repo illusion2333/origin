@@ -646,14 +646,19 @@ net:
 在链初始化阶段，net_service在初始化时会读取链配置chainconfig下的共识节点列表和trust_root。当前阶段，网络会将共识节点作为种子节点seeds的一员，并会通过ConnSupervisor维护与其之间的链接；网络还会维护一份共识节点ID列表，便于向共识节点定向广播；trust_root作为TLS认证可信根证书池，同时会根据不同链的根证书池来确定对方节点隶属于哪条链。
 
 #### **节点地址格式说明**
-chainmaker节点地址遵循libp2p网络地址格式协定，例如：
+chainmaker节点地址遵循libp2p网络地址格式协定，使用multaddr组件解析地址，例如：
 ```text
 /ip4/127.0.0.1/tcp/6666/p2p/QmQZn3pZCcuEf34FSvucqkvVJEvfzpNjQTk17HS6CYMR35
 ```
 
+或者
+
+```text
+/dns4/chainmaker.org/tcp/6666/p2p/QmQZn3pZCcuEf34FSvucqkvVJEvfzpNjQTk17HS6CYMR35
+```
 地址以"/"开始，并以"/"分段，大多数情况下，各段说明如下：
-- 第一段：IP协议版本，ip4代表IPv4,ip6代表IPv6
-- 第二段：IP地址，需要与第一段对应
+- 第一段：IP协议版本或DNS解析协议版本。ip4代表IPv4，ip6代表IPv6；dns4对应IPv4版本DNS服务，dns6对应IPv6版本DNS服务
+- 第二段：IP地址或域名，需要与第一段对应
 - 第三段：通讯网络协议，默认使用tcp
 - 第四段：监听端口
 - 第五段：固定协议，请勿改动，固定为"p2p"
