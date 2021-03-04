@@ -37,7 +37,7 @@ typora-root-url: ../开源手册
 **完整便捷的配套工具**
 
 - 支持大屏、图表、界面交互多种形式的管理、监控和运维；
-- 支持Java、Golang、nodeJS等多种语言区块链SDK；
+- 支持Java、Golang、JavaScript块链SDK；
 - 支持定制化部署、BaaS等多种落地实施方式；
 - 友好、便捷的在线智能合约开发环境；
 - 支持丰富的区块、交易、订阅、事件监听等处理机制。
@@ -107,7 +107,7 @@ ChainMaker不仅要求区块链模块功能的完全独立、接口定义清晰�
 
 ### 支持广域场景
 
-根据业务场景特性，ChainMaker需生产出从公有链到联盟链各类基于不同信任模型的区块链，支持更加广泛的业务应用。
+根据业务场景特性，ChainMaker可以生产出从公有链到联盟链各类基于不同信任模型的区块链，支持更加广泛的业务应用。
 
 
 
@@ -607,7 +607,8 @@ type NetService interface {
 }
 ```
 #### **使用配置**
-#### chainmaker.yml
+- chainmaker.yml
+
 ```yaml
 net:
   # 底层网络类型
@@ -645,14 +646,19 @@ net:
 在链初始化阶段，net_service在初始化时会读取链配置chainconfig下的共识节点列表和trust_root。当前阶段，网络会将共识节点作为种子节点seeds的一员，并会通过ConnSupervisor维护与其之间的链接；网络还会维护一份共识节点ID列表，便于向共识节点定向广播；trust_root作为TLS认证可信根证书池，同时会根据不同链的根证书池来确定对方节点隶属于哪条链。
 
 #### **节点地址格式说明**
-chainmaker节点地址遵循libp2p网络地址格式协定，例如：
+chainmaker节点地址遵循libp2p网络地址格式协定，使用multaddr组件解析地址，例如：
 ```text
 /ip4/127.0.0.1/tcp/6666/p2p/QmQZn3pZCcuEf34FSvucqkvVJEvfzpNjQTk17HS6CYMR35
 ```
 
+或者
+
+```text
+/dns4/chainmaker.org/tcp/6666/p2p/QmQZn3pZCcuEf34FSvucqkvVJEvfzpNjQTk17HS6CYMR35
+```
 地址以"/"开始，并以"/"分段，大多数情况下，各段说明如下：
-- 第一段：IP协议版本，ip4代表IPv4,ip6代表IPv6
-- 第二段：IP地址，需要与第一段对应
+- 第一段：IP协议版本或DNS解析协议版本。ip4代表IPv4，ip6代表IPv6；dns4对应IPv4版本DNS服务，dns6对应IPv6版本DNS服务
+- 第二段：IP地址或域名，需要与第一段对应
 - 第三段：通讯网络协议，默认使用tcp
 - 第四段：监听端口
 - 第五段：固定协议，请勿改动，固定为"p2p"
@@ -660,6 +666,17 @@ chainmaker节点地址遵循libp2p网络地址格式协定，例如：
 
 以上只是最普通常用场景下节点地址举例，在复杂网络场景下（比如需要使用节点中继、NAT穿透等）地址格式会稍有不同。
 
+#### **网络消息数据格式说明（加密前）**
+加密前的消息数据是由 `8位byte表示数据长度 + 1位byte数据压缩标识 + 实际数据` 来组成。
+
+为了方便说明，我们使用如下例子：
+```text
+[0 0 0 0 0 0 0 78 0 10 57 10 5 ...... 80 85 83 72]
+```
+假设这是一条待发送的网络消息数据，其中：
+- 前8位，[0 0 0 0 0 0 0 78] 表示要发送数据的长度，在接收方接收数据时，若接收到的数据长度不足该值，则会尝试继续读取数据，直至接收全部长度的数据或接收失败。
+- 第9位，[0] 或 [1] 是数据压缩标记位，若是1，接收方在接收到完整数据后，会将接收到的数据进行解压缩，得到最终的数据结果。
+- 剩余位，[10 57 10 5 ...... 80 85 83 72] 为要发送的原始数据或被压缩后的原始数据，是否压缩要与第9位压缩标识相对应。压缩/解压缩使用GZip工具包完成。
 
 ### RPC服务
 
@@ -753,7 +770,7 @@ service RpcNode {
 
 存储模块负责存储区块链上的区块、交易、账本数据和历史读写集数据，在提交区块时，这些数据就会被存储模块进行存储。存储模块的整体架构如下图：
 
-![存储架构图](./ChainMaker_User_Manual_Images/store_structure.png)
+![存储架构图](./images/store_structure.png)
 
 #### 账本存储的处理流程
 
@@ -876,7 +893,7 @@ storage:
 
 #### RocksDB部署
 
-#### 1. Rocksdb使用
+##### Rocksdb使用
 
 因为rocksdb本身是使用C++写的，而目前使用gorocksdb需要依赖rocksdb的库文件，因此直接编译会报错，针对该问题，目前采用了条件编译的方式。
 
@@ -902,7 +919,7 @@ go build -tags=rocksdb
 go run -tags=rocksdb main.go {params}
 ```
 
-#### 2. Linux下Rocksdb环境安装
+##### 2. Linux下Rocksdb环境安装
 
 ##### 2.1 安装依赖
 
@@ -1343,7 +1360,8 @@ Access Control (权限管理) 模块实现了链上资源与权限规则的匹�
 #### Access Control 模块组件
 Policy：链上成员所持有的身份。
 Principle：一个链上资源的权限规则。
-AccessControl 结构定义了权限管理对外的接口。
+AccessControl：结构定义了权限管理对外的接口。
+
 ```go
 type AccessControl interface {
 	GetHashAlg() string
@@ -1395,24 +1413,29 @@ func NewPrinciple(rule protocol.RuleKeyword, orgList []string, roleList []protoc
 		c. 这个类型是修改大部分链配置的默认权限类型。
 		d. 来自同一个组织的多个 "admin" 身份签名只会被统计一次。
 	2. "SELF". 签名者必须与目标资源所属同一个组织：
+	
 		a. 这个规则只能用于与组织有所属关系的资源。该规则下，自定义 orgList 将不会生效。
 		b. 只接受 "admin" 身份的签名者签名，自定义 roleList 将不会生效。
 		c. 一个符合组织、身份要求的签名就足够满足本规则。
 		d. 目前，只有组织根证书、组织共识节点两项配置可以且应该使用此规则。
 	3. "ANY". 签名者属于 orgList 中的任意一个组织，且签名者拥有 roleList 中的任意一个身份，则签名被视为有效：
+	
 		a. orgList 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
 		b. roleList可以随意配置任意身份集合，留空则代表所有身份都满足要求。
 		c. 这类规则目前主要用于宽泛的读写权限控制。
 	4. "ALL". 要求 orgList 列表中所有组织参与，每个组织至少提供一个符合 roleList 要求身份的签名:
+	
 		a. orgList 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
 		b. roleList可以随意配置任意身份集合，留空则代表所有身份都满足要求。
 		c. 来自同一个组织的合法签名只会被统计一次。
 	5. 一个以字符串形式表达的整数 (eg. "3") 作为阈值：
+	
 		a. orgList 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
 		b. roleList可以随意配置任意身份集合，留空则代表所有身份都满足要求。
 		c. 这是个用户自定义的规则，这个证书可以为1到组织总数间的任意一个数，包括1和组织总数。
 		d. 这条规则与 "ALL" 规则相似，但不要求 orgList 中的所有组织参与，而只要求大于或等于阈值数量的 orgList 中的不同组织参与即可。
 	6. 一个以字符串形式表达的分数 (eg. "1/3") 作为比例：
+	
 		a. orgList 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
 		b. roleList可以随意配置任意身份集合，留空则代表所有身份都满足要求。
 		c. 这是个用户自定义的规则，可以配置 [0, 1] 间的任意分数。
@@ -1833,8 +1856,6 @@ type syncConfig struct {
 * **LivenessTick**：检测区块请求应答是否超时的定时器时长，单位：秒
 * **SchedulerTick**：发送区块请求的定时器时长，单位：秒
 
-
-
 #### 同步流程及状态流转
 
 同步模块内部对特定数据有如下的状态跟踪.
@@ -1851,9 +1872,69 @@ type syncConfig struct {
 
  <img src="images/chainmaker-sync-flow.png" width = "700" height = "700" alt="图片名称"/>
 
-### ~~SPV模块~~
+### SPV模块
 
-【暂缓】
+#### 简要描述
+- 处理RPC请求，接收交易，验证本地账本是否存在，不存在通过P2P网络发送给全节点
+- 从全节点同步数据，校验数据合法性，过滤同属组织的交易并存储
+- 复用全节点的Net，VM，RPCServer，Store等模块，不启动Core，Sync，TxPool，Consensus模块
+- 在Blockchain模块中启动
+
+#### 主要逻辑
+
+##### 处理RPC请求
+1. 接收交易请求，查询交易是否在账本中，防止双花，如果在直接返回
+2. 判断交易请求类型，如果是查询类交易，复用全节点查询逻辑走native合约查询
+3. 如果是写操作交易，走P2P网络广播出去
+
+##### 同步逻辑
+通过P2P连接到网络，监听全节点同步模块发送的消息，起四个协程处理数据，请求和响应数据存储在小顶堆里，通过高度排序
+1. loop：处理全节点同步模块发送的消息
+    1. onReceiveHeartbeat：处理某个节点发送来的高度消息，更新管理节点的高度，判断账本高度和心跳高度的大小，决定好要请求的高度范围，将高度范围拆分成更小范围的一个个请求，发送出去，并放入请求小顶堆
+    2. onReceiveSyncResp: 处理请求节点后响应的区块列表信息，校验高度是否在目前请求的高度范围，符合放入响应的小顶堆
+2. respProcessLoop: 处理响应小顶堆里的消息
+    1. 如果请求小顶堆的Top的高度 = 响应小顶堆的Top的高度，则两个堆的Top是对应的，验证数据合法存储成功后，都Pop掉
+    2. 如果请求小顶堆的Top的高度 > 响应小顶堆的Top的高度，说明响应小顶堆的Top数据是旧的，或者过时的，将其Pop清除掉
+3. refreshReqCache: 处理请求小顶堆里的消息，如果账本的高度>=小顶堆里Top高度，则清除小顶堆的数据直到不满足为止
+4. resyncLoop: 检查请求小顶堆里的请求是否有超时的，有超时则进行重发
+
+
+#### 配置说明
+chainmaker.yml
+节点类型修改成spv，证书做替换成common里的
+```yml
+node:
+  # 节点类型：full、spv
+  type: spv
+  priv_key_file: ./crypto-config/wx-org1.chainmaker.org/node/common1/common1.tls.key
+  cert_file:     ./crypto-config/wx-org1.chainmaker.org/node/common1/common1.tls.crt
+  org_id: wx-org1
+spv:
+  refresh_reqcache_mils: 10000    # 每10秒查一次账本，清除小于账本高度的请求堆
+  message_cahche_size: 12800      # 处理网络消息channel个数
+  resync_check_interval_mils: 10  # 每笔请求同步多少个区块
+  sync_timeout_mils: 1000         # 一次（多笔请求）最多同步多少个区块
+  reqsync_blocknum: 10000         # 定时处理请求堆
+  max_reqsync_blocknum: 10000     # 发出同步请求超时时间
+  peer_active_time: 0             # 判断节点未发送心跳超时时间，剔除节点，0则不判断
+```
+
+如果配置文件没有配置，则取代码中的默认配置
+```go
+func NewConfig() *Config {
+	return &Config{
+		RefreshReqCacheMills:     10000,     // 每10秒查一次账本，清除小于账本高度的请求堆
+		MessageCacheSize:         12800,     // 处理网络消息channel个数
+
+		MaxBlockNumPerSync:       10,		 // 每笔请求同步多少个区块
+		MaxReqSyncBlockNum:       1000,      // 一次（多笔请求）最多同步多少个区块
+
+		ReSyncCheckIntervalMills: 10000,     // 定时处理请求堆
+		SyncTimeoutMills:         10000,     // 发出同步请求超时时间
+		PeerActiveTime:           0,         // 判断节点未发送心跳超时时间，剔除节点，0则不判断
+	}
+}
+```
 
 ### 交易池
 
@@ -1873,12 +1954,12 @@ type TxPool interface {
 	Start() error
 	Stop() error
 	AddTx(tx *pb.Transaction, source TxSource) error
-	AddTrustedTx(txs []*pb.Transaction) error
-	GetTxByTxId(txId string) (*pb.Transaction, error)
-	TxExists(tx *pb.Transaction) bool
+  TxExists(tx *pb.Transaction) bool
+	GetTxByTxId(txId string) (tx *pb.Transaction, inBlockHeight int64)
+  GetTxsByTxIds(txIds []string) (txsRet map[string]*pb.Transaction, txsHeightRet map[string]int64)
 	RetryAndRemove(retryTxs, removeTxs []*pb.Transaction)
-	FetchTxBatch() []*pb.Transaction
-	AddTxsToPendingCache(txs []*pb.Transaction)
+	FetchTxBatch(blockHeight int64) []*pb.Transaction
+	AddTxsToPendingCache(txs []*pb.Transaction, blockHeight int64)
 }
 ```
 
@@ -1892,24 +1973,34 @@ type TxPool interface {
 
   * RPC：来自RPC的交易不验证基础的交易信息（如交易ID、时间戳是否符合规范）、不验证交易者的证书；因为RPC模块已做此类校验；成功添加至交易池的交易会广播给其它连接的节点
   * P2P：进行所有的校验
-  * INTERNAL：如果节点在同一高度接收到多个验证有效的区块，当其中某个区块上链后，其余的相同高度区块内的交易会被重新添加进交易池。此时会使用DB对添加进交易池的交易做存在性检查，将未上链的交易添加进交易池
+  * INTERNAL：如果节点在同一高度接收到多个验证有效的区块，当其中某个区块上链后，其余的相同高度区块内的交易会被重新添加进交易池，防止这些交易被抛弃。此时会使用DB对添加进交易池的交易做存在性检查，将未上链的交易添加进交易池
   
-* **AddTrustedTx**：添加可信任的交易至交易池；交易来源设置为 INTERNAL
+* **GetTxByTxId**：依据交易ID在交易池查询该交易，如果交易存在，返回交易数据，以及交易在交易池中记录的高度
+  *	交易在交易池中高度分为三种
+    * 交易池中不存在该交易，返回的高度为-1
+    * 交易存在于交易池的普通队列（即：待打包区块队列），返回的高度为0
+    * 交易存在于交易池的pending队列（即：已打包但未上链的交易），返回的高度为交易所在的区块高度
 
-* **GetTxByTxId**：查询交易池内的交易
-*	如果交易在普通队列中，返回交易数据，且error为nil
-  *	如果交易在pending队列中，表示该交易已经入块，返回error为`Err.ErrTxHadOnTheChain`
-  *	如果交易不在交易池，则error为nil，交易数据为nil
-  
+* **GetTxsByTxIds**：依据交易ID在交易池查询交易的批量接口；
+
+  * 返回值txsRet，存储交易的内容信息，key 为txId，value为交易内容；交易不存在时，value为nil
+  * 返回值txsHeightRet，存储交易所在的区块高度，key 为txId，value为高度信息
+
 * **TxExists**：判断交易是否存在与交易池，存在返回true，反之为false
 
-* **RetryAndRemove**：将参数一的交易重新添加入交易池，将参数二的交易从交易池中删除；该接口主要由`core`模块进行调用，当节点在同一高度接收到多个不同区块时，将待上链区块的交易，从交易池中删除；将其它不上链区块的交易，重新添加进交易池；
+* **RetryAndRemove**：将参数一的交易重新添加至交易池的普通队列，且这些交易如果存在于pending 队列，则从pending队列中删除，将参数二的交易从交易池中删除；该接口主要由`core`模块进行调用，当节点在同一高度接收到多个不同区块时，将待上链区块的交易，从交易池中删除；将其它不上链区块的交易，重新添加进交易池；
 
   * 注意：该接口的内部实现为：先添加参数一的交易，后删除参数二的交易；以便即使参数一与参数二有部分重合交易时，最后也会从交易池中删除。
 
-*	**FetchTxBatch**：从交易池获取一批交易，获取数量最大为配置的单个区块可容纳的交易数，由core模块调用，使用获取的交易打包生成新的区块
+* **FetchTxBatch**：从交易池获取一批交易，获取数量最大为单个区块可容纳的交易数，参数为要打包的区块高度；由core模块调用，使用获取的交易打包生成新的区块
 
-* **AddTxsToPendingCache**：将交易添加进交易池的pending队列中；当节点收到一个新区块时，验证通过后，将该区块内的交易添加进交易池的pending队列
+  * 获取交易时，会将这批交易从交易池的普通队列移动到pending队列
+
+* **AddTxsToPendingCache**：将交易添加进交易池的pending队列中，且这批交易如果存在于交易池的普通队列中，则从普通队列中删除；参数二为这批交易所在的区块高度；
+
+  * 当节点收到一个新区块时，验证通过后，将该区块内的交易添加进交易池的pending队列
+
+  
 
 #### 组件描述
 
@@ -1926,11 +2017,9 @@ type TxPool interface {
 ##### 本模块的组件
 
 * **txList**：用该结构缓存交易池内的交易；由于交易有两种类型，所以，交易池内存在两个`txList`，缓存不同类型的交易
-
-  * **LinkedHashMap.LinkedHashMap**：`txList`内包含三个`LinkedHashMap`，分别存储不同优先级、不同状态的交易
-    * **queue**：存储普通优先级的交易
-    * **priorityQueue**：存储高优先级的交易
-    * **pendingCache**：存储已打包进区块，但未上链的交易；当节点通过core模块调用交易池的`FetchTxBatch`接口获取待打包交易时，交易池内部会先从优先级高的队列中获取交易，再从优先级低的队列中获取交易，然后将这些从优先级队列中删除，添加到`pendingCache`队列中
+* **LinkedHashMap.LinkedHashMap**：`txList`内包含两个`LinkedHashMap`，分别存储不同状态的交易
+    * **queue**：存储待打包区块的交易
+    * **pendingCache**：存储已打包进区块，但未上链的交易
 
 #### 配置
 

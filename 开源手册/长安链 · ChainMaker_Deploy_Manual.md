@@ -4,12 +4,12 @@
 
 本节描述部署时，需要的主机环境、依赖库、工具等，当前支持在MacOS、Linux本地部署。
 
-|       | 依赖库、工具                                  | 安装方式                                                     |
-| ----- | --------------------------------------------- | ------------------------------------------------------------ |
-| MacOS | golang                                        | [安装方式](https://golang.org/doc/install#install)           |
-| Linux | golang                                        | [安装方式](https://golang.org/doc/install#download)          |
-| MacOS | wasmer运行时库 **libwasmer.dylib**            | 库在`chainmaker-go/main`目录下，将该库路径添加至系统PATH环境变量下 |
-| Linux | wasmer运行时库 **libwasmer_runtime_c_api.so** | 库在`chainmaker-go/main`目录下，将该库路径添加至系统PATH环境变量下 |
+| 依赖库、工具                                  | OS    | 安装方式                                                     |
+| --------------------------------------------- | ----- | ------------------------------------------------------------ |
+| golang                                        | MacOS | [安装方式](https://golang.org/doc/install#install)           |
+| golang                                        | Linux | [安装方式](https://golang.org/doc/install#download)          |
+| wasmer运行时库 **libwasmer.dylib**            | MacOS | 库在`chainmaker-go/main`目录下，将该库路径添加至系统PATH环境变量下 |
+| wasmer运行时库 **libwasmer_runtime_c_api.so** | Linux | 库在`chainmaker-go/main`目录下，将该库路径添加至系统PATH环境变量下 |
 
 
 ## 2 部署方式
