@@ -71,13 +71,13 @@ go build
 
 Mac: 
 
-```sh
+```bash
 brew install tmux
 ```
 
 Centos: 
 
-```shell
+```bash
 yum install tmux
 ```
 
