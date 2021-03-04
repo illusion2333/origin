@@ -68,7 +68,7 @@ ChainMaker支持对基于WASM和EVM的字节码进行升级
 
 ### 存证
 
-**go**
+**Go（TinyGo）语言版本**
 
 ```go
 package main
@@ -140,7 +140,7 @@ func main() {
 
 
 
-**rust**
+**rust语言版本**
 
 ```rust
 use crate::sim_context;
@@ -221,7 +221,7 @@ pub extern "C" fn find_by_file_hash() {
 
 
 
-**C++**
+**C++语言版本**
 
 ```c++
 #include "chainmaker/chainmaker.h"
@@ -301,9 +301,7 @@ WASM_EXPORT void find_by_file_hash() {
 
 ### 转账
 
-go
-
-**rust**
+**Rust语言版本**
 
 ```rust
 /// ------user-----
@@ -1000,25 +998,73 @@ fn calc_address(pub_key: &str) -> String {
 
 
 
-C++
+## 编译智能合约
+
+ChainMaker支持通过Docker的方式编译和运行智能合约
+
+**Go（TinyGo）编译和运行**
+
+拉取镜像
+```
+docker pull huzhenyuan/chainmaker-cpp-contract:1.0.0
+docker run -it --name chainmaker-go-contract -v <WORK_DIR>:/home chainmaker-go-contract bash
+```
+
+编译合约
+```
+
+# cd /home/
+# tar xvf /data/contract_go_template.tar.gz
+# cd contract_go
+# sh build.sh
+```
+
+运行合约
+```
+# gasm main.wasm save time 20210304 file_hash 12345678 file_name a.txt
+```
+
+**C++编译和运行**
+
+拉取镜像
+```
+docker pull huzhenyuan/chainmaker-cpp-contract:1.0.0
+docker run -it --name chainmaker-cpp-contract -v <WORK_DIR>:/home chainmaker-cpp-contract bash
+```
+
+编译合约
+```
+
+# cd /home/
+# tar xvf /data/contract_cpp_template.tar.gz
+# cd contract_cpp
+# emmake make
+```
+
+运行合约
+```
+# wxvm main.wasm divide num1 100 num2 8
+```
 
 
+**Rust编译和运行**
 
-## 在线IDE
+拉取镜像
+```
+docker pull huzhenyuan/chainmaker-rust-contract:1.0.0
+docker run -it --name chainmaker-rust-contract -v <WORK_DIR>:/home chainmaker-rust-contract bash
+```
 
-使用说明
+编译合约
+```
+# cd /home/
+# tar xvf /data/contract_rust_template.tar.gz
+# cd contract_rust
+# wasm-pack build
+```
 
-IDE部署，后续提供
-
-基于IDE的发布能力待工具完善后补充
-
-
-
-
-
-
-
-
-
-
+运行合约
+```
+# wasmer main.wasm divide num1 100 num2 8
+```
 
