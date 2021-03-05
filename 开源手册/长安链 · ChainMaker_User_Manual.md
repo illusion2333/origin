@@ -64,7 +64,7 @@ typora-root-url: ../开源手册
 
 ### 逻辑架构
 
-<img src="images/chainmaker.png" alt="chainmaker.png" style="zoom: 60%;" />
+<img src="images/chainmaker.png" style="zoom: 60%;" />
 长安链的应用生态中主要包含以下元素：
 
 - Consensus Node：共识节点，参与共识投票、交易执行、区块验证和记账的节点。
@@ -80,7 +80,7 @@ typora-root-url: ../开源手册
 
 ### 核心流程
 
-<img src="images/business-stream.png" alt="business-stream.png" style="zoom: 60%;" />
+<img src="images/business-stream.png" style="zoom: 60%;" />
 
 区块处理流程为：
 
@@ -741,17 +741,17 @@ service RpcNode {
 
 - **TxRequest**
 
-![image-20210205114809765](./images/image-20210205114809765.png)
+![image-20210205114809765](./images/txrequest.png)
 
 - **TxResponse**
 
-![image-20210205114858708](./images/image-20210205114858708.png)
+![image-20210205114858708](./images/txresponse.png)
 
 #### 关键逻辑
 
 - **消息订阅（事件通知）**
 
-![image-20210205110331710](./images/image-20210205110331710.png)
+![image-20210205110331710](./images/rpc-subscribe.png)
 
 （1）订阅者发起消息订阅请求，当前支持订阅区块消息和交易消息
 
@@ -2386,7 +2386,7 @@ log:
 
 
 
-<img src="images/image-20210205154124447.png" alt="image-20210205154124447.png" style="zoom: 60%;" />
+<img src="images/pb-structure.png" alt="image-20210205154124447.png" style="zoom: 60%;" />
 
 ### 区块
 
@@ -2708,7 +2708,7 @@ crypto-config/
 
 - 证书目录结构
 
-![image-20210205145640521](/images/image-20210205145640521.png)
+![image-20210205145640521](/images/ca-structure.png)
 
 ```
 $ tree crypto-config/wx-org1.chainmaker.org/
