@@ -2,9 +2,6 @@
 
 [TOC]
 
-> 具体使用参考： [rust合约开发使用手册](../用户手册/sdk_doc/chainmaker-contract-programing-for-rust.md)     [go合约开发使用手册](../用户手册/sdk_doc/chainmaker-contract-programing-for-go.md)    [c++合约开发使用手册](../用户手册/sdk_doc/chainmaker-contract-programing-for-c++.md) 
-
-
 ## 智能合约介绍
 
 智能合约是一种计算机程序或交易协议，记录了交易条款信息、事件、行为，旨在减少对可信中间人的需求、仲裁和执行成本。在ChanMaker上，用户可以通过高级语言（C++、Go、Rust、JS）来编写智能合约，经过编译后，以WASM、EVM字节码的形式存储在区块链中。用户可以通过发送交易来触发执行智能合约中的代码。
