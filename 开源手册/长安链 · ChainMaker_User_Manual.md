@@ -131,6 +131,9 @@ typora-root-url: ../开源手册
 MANAGE_USER_CONTRACT
 INVOKE_USER_CONTRACT
 QUERY_USER_CONTRACT
+QUERY_SYSTEM_CONTRACT
+UPDATE_CHAIN_CONFIG
+INVOKE_SYSTEM_CONTRACT
 ```
 
 在把智能合约交给智能合约引擎执行前，还会经过一系列的参数校验。这些校验包括字节码、版本、合约调用方法名称、合约调用参数、合约引擎类型。
@@ -241,6 +244,12 @@ enum TxType {
     QUERY_SYSTEM_CONTRACT = 3;
     // update chain config, included in block
     UPDATE_CHAIN_CONFIG = 4;
+    // subscribe block info
+    SUBSCRIBE_BLOCK_INFO = 5;
+    // subscribe tx info
+    SUBSCRIBE_TX_INFO = 6;
+    // system contract for multi signature
+    INVOKE_SYSTEM_CONTRACT = 7;
 }
 ```
 
@@ -250,7 +259,7 @@ enum TxType {
 // contract management type transaction payload
 // TxType: CREATE_USER_CONTRACT & UPGRADE_USER_CONTRACT & FREEZE_USER_CONTRACT
 message ContractMgmtPayload {
-    // endorsment signature with chain_id, redundant with TxHeader
+    // endorsement signature with chain_id, redundant with TxHeader
     string chain_id = 1;
     // smart contract name, set by contract creator, can have multiple versions
     ContractId contract_id = 2;
@@ -271,7 +280,7 @@ message ContractMgmtPayload {
 // config update type transaction payload
 // TxType: UPDATE_CHAIN_CONFIG
 message SystemContractPayload {
-    // endorsment signature with chain_id, redundant with TxHeader
+    // endorsement signature with chain_id, redundant with TxHeader
     string chain_id = 1;
     // smart contract name
     string contract_name = 2;
