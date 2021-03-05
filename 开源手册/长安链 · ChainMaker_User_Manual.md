@@ -240,14 +240,10 @@ enum TxType {
     QUERY_USER_CONTRACT = 1;
     // create, upgrade, freeze, unfreeze, revoke a user contract, included in block
     MANAGE_USER_CONTRACT = 2;
-
+    // query chain information
     QUERY_SYSTEM_CONTRACT = 3;
     // update chain config, included in block
     UPDATE_CHAIN_CONFIG = 4;
-    // subscribe block info
-    SUBSCRIBE_BLOCK_INFO = 5;
-    // subscribe tx info
-    SUBSCRIBE_TX_INFO = 6;
     // system contract for multi signature
     INVOKE_SYSTEM_CONTRACT = 7;
 }
