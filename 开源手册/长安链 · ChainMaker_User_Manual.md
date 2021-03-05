@@ -1230,15 +1230,23 @@ CGO_LDFLAGS="-L/usr/local/rocksdb -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz
 
    
 
-### 身份管理
+### 身份、权限管理
 
 #### 简介
+
+身份、权限管理分为两个部分：身份管理（Identity Management）和权限管理（Access Control）。
 
 Identity Management (idmgmt) 用于管理区块链的组织成员身份，是一个基于 PKI 体系的管理模块。
 
 - 私钥部分：模块管理本地节点或成员的私钥，本地节点或成员与链上其他节点交互时用这个私钥对消息签名。
 
 - 公钥部分：该模块从链配置中读取链上所有组织的公共信息，包括公钥、证书等，用于在交互式验证对端的合法性。
+
+Access Control (权限管理) 模块实现了链上资源与权限规则的匹配，并在链的参与者使用链上资源时验证其权限是否符合目标资源的权限规则。
+
+- 权限管理：解析默认配置、链配置中的权限配置，并维护一个资源-权限规则列表。
+
+- 鉴权：与 IDMgmt (身份管理模块) 一起，为链上成员与资源的权限规则提供验证能力。
 
 
 #### 组织成员身份管理
@@ -1250,40 +1258,30 @@ Identity Management (idmgmt) 用于管理区块链的组织成员身份，是一
 成员接口和代表一个成员的签名接口如下：
 ```go
 type Member interface {
-	// Returns the identity of this member and its group
-	GetIdentity() string
+	// GetMemberId returns the identity of this member
+	GetMemberId() string
 
-	// Returns the Group Id which this identity belongs to
-	GetOrgIdentity() string
+	// GetOrgId returns the organization id which this member belongs to
+	GetOrgId() string
 
-	// Get the role of this identity
+	// GetRole returns roles of this member
 	GetRole() []Role
 
-	// Get SKI (for certificate mode) or Public key PEM (for pk mode)
+	// GetSKI returns SKI for certificate mode or Public key PEM for pk mode
 	GetSKI() []byte
 
-	// Get public key PEM
-	GetPublicKeyPEM() ([]byte, error)
+	// GetCertificate returns certificate object.
+	// If in public key mode, return a certificate which contains public key object in PublicKey field.
+	GetCertificate() (*x509.Certificate, error)
 
-	// Anonymous returns true if this is an anonymous identity, false otherwise
-	Anonymous() bool
-
-	// Check the validity of this identity
-	// 		White list: check whether pk or cert of this identity is in the list
-	//		Consortium: check whether cert of this identity is in a sub-tree of the group's CA
-	Validate() error
-
-	// Check whether this instance matches the description supplied in PrincipleWhiteList
-	SatisfiesPrinciple(principle *PrincipleWhiteList) error
-
-	// Verify a signature over some message using this identity as reference
+	// Verify verifies a signature over some message using this member
 	Verify(hashType string, msg []byte, sig []byte) error
 
-	// Serialize converts an identity to bytes
-	Serialize() ([]byte, error)
+	// Serialize converts member to bytes
+	Serialize(isFullCert bool) ([]byte, error)
 
-	// Get serializable member
-	GetSerializeMember() (*pb.SerializedMember, error)
+	// GetSerializedMember returns SerializedMember
+	GetSerializedMember(isFullCert bool) (*pb.SerializedMember, error)
 }
 
 type SigningMember interface {
@@ -1300,91 +1298,77 @@ Verify() 验证一个入参签名、数据是否是由这个成员签发的。
 
 Serialize() 和 GetSerializeMember() 接口用于序列化成员。其中，GetSerializeMember() 接口将 Member 结构转化为 protobuf 中定义的可序列化结构，其中包含成员的关键信息：证书、组织、证书是否压缩。Serialize() 接口则是跳过转化为 protobuf 类的这一步，直接讲 Member 的关键信息以字符串形式表示。这两个接口根据需要，在包装请求报文时使用。私钥为不可序列化的部分，以防止错误地将私钥序列化后在网络中传输。原则上私钥不会离开本地。
 
-
-##### 组织
-组织模块的接口如下：
-```go
-type Organization interface {
-	MemberDeserializer
-
-	// Return the identity of this group
-	GetIdentity() (string, error)
-
-	// Return the identity with signing feature of this group
-	GetSigningIdentity() (SigningMember, error)
-
-	// Return trusted root certificates or white list
-	GetTrustedRootCerts() map[string]*x509.Certificate
-
-	// Return trusted intermediate certificates or white list
-	GetTrustedIntermediateCerts() map[string]*x509.Certificate
-
-	// Check whether the provided member is a valid member of this group
-	Validate(id Member) error
-
-	// Check whether the provided member's role matches the description supplied in PrincipleWhiteList
-	SatisfiesPrinciple(id Member, principle *PrincipleWhiteList) error
-
-	// all-in-one validation for signing members: certificate chain/whitelist, signature, principles
-	ValidateMemberMsg(policy Policy, ac AccessControl) (Policy, error)
-
-	Module() string                         // 模块名称
-	Watch(chainConfig pb.ChainConfig) error // 观察配置信息
-}
-```
-Validate() 验证签名者的证书是否在一条根证书在链配置 (或创世块) 中的证书链上。该接口验证了证书吊销、冻结列表。
-
-
-### 权限管理
-
-#### 简介
-Access Control (权限管理) 模块实现了链上资源与权限规则的匹配，并在链的参与者使用链上资源时验证其权限是否符合目标资源的权限规则。
-
-- 权限管理：解析默认配置、链配置中的权限配置，并维护一个资源-权限规则列表。
-
-- 鉴权：与 IDMgmt (身份管理模块) 一起，为链上成员与资源的权限规则提供验证能力。
-
 #### Access Control 模块组件
 Policy：链上成员所持有的身份。
 Principle：一个链上资源的权限规则。
 AccessControl：结构定义了权限管理对外的接口。
 
 ```go
-type AccessControl interface {
+type AccessControlProvider interface {
+	MemberDeserializer
+
+	// GetHashAlg return hash algorithm the access control provider uses
 	GetHashAlg() string
-	VerifyPolicy(policy Policy, organization Organization) (bool, error)
 
-	NewPolicy(resourceId ResourceId, endorsements []*pb.EndorsementEntry, message []byte) (Policy, error)
-	NewSelfPolicy(resourceId ResourceId, endorsements []*pb.EndorsementEntry, message []byte, targetOrg string) (Policy, error)
+	// ValidateResourcePolicy checks whether the given resource policy is valid
+	ValidateResourcePolicy(resourcePolicy *pb.ResourcePolicy) bool
 
-	LookUpResourceIdByTxType(txType pb.TxType) (ResourceId, error)
-	LookUpPolicyByResourceId(id ResourceId) (Principle, error)
+	// LookUpResourceNameByTxType returns resource name corresponding to the tx type
+	LookUpResourceNameByTxType(txType pb.TxType) (string, error)
 
-	CheckPrincipleValidity(permission *pb.Permission) bool
+	// CreatePrincipal creates a principal for one time authentication
+	CreatePrincipal(resourceName string, endorsements []*pb.EndorsementEntry, message []byte) (Principal, error)
 
-	LookUpSignerCache(signer string) (Member, bool)
-	AddSignerCache(signer string, info Member)
+	// CreatePrincipalForTargetOrg creates a principal for "SELF" type policy,
+	// which needs to convert SELF to a sepecific organization id in one authentication
+	CreatePrincipalForTargetOrg(resourceName string, endorsements []*pb.EndorsementEntry, message []byte, targetOrgId string) (Principal, error)
 
-	// watcher for configuration update
-	Module() string
-	Watch(chainConfig pb.ChainConfig) error
+	// GetValidEndorsements filters all endorsement entries and returns all valid ones
+	GetValidEndorsements(principal Principal) ([]*pb.EndorsementEntry, error)
+
+	// VerifyPrincipal verifies if the policy for the resource is met
+	VerifyPrincipal(principal Principal) (bool, error)
+
+	// ValidateCRL validates whether the CRL is issued by a trusted CA
+	ValidateCRL(crl []byte) ([]*pkix.CertificateList, error)
+
+	// IsCertRevoked verify whether cert chain is revoked by a trusted CA.
+	IsCertRevoked(certChain []*x509.Certificate) bool
+
+	// GetLocalOrgId returns local organization id
+	GetLocalOrgId() string
+
+	// GetLocalSigningMember returns local SigningMember
+	GetLocalSigningMember() SigningMember
+
+	// NewMemberFromCertPem creates a member from cert pem
+	NewMemberFromCertPem(orgId, certPEM string) (Member, error)
+
+	// NewMemberFromProto creates a member from SerializedMember
+	NewMemberFromProto(serializedMember *pb.SerializedMember) (Member, error)
+
+	// NewSigningMemberFromCertFile creates a signing member from private key and cert files
+	NewSigningMemberFromCertFile(orgId, prvKeyFile, password, certFile string) (SigningMember, error)
+
+	// NewSigningMember creates a signing member from existing member
+	NewSigningMember(member Member, privateKeyPem, password string) (SigningMember, error)
 }
 ```
-权限管理模块的核心接口是 NewPolicy(), NewSelfPolicy(), 和 VerifyPolicy()。前两个接口用于根据请求者身份和所请求的资源构建一个被验证的身份-权限对，后一个接口用于验证这个身份-权限对中的身份是否满足权限要求。
+权限管理模块的核心接口是 CreatePrincipal(), CreatePrincipalForTargetOrg(), 和 VerifyPrincipal()。前两个接口用于根据请求者身份和所请求的资源构建一个被验证的身份-权限对，后一个接口用于验证这个身份-权限对中的身份是否满足权限要求，包括验证请求者的证书链、签名、身份权限信息。
 
 在其他接口中，CheckPrincipleValidity() 用于判断读自配置中的权限配置是否合理，主要用在链用户发起修改权限配置的请求时。
 
 #### 权限规则
 权限规则的结构如下：
 ```go
-type Principle interface {
-	GetRule() RuleKeyword
-	GetOrgList() []string
-	GetRoleList() []Role
+message Policy {
+    string          rule         = 1; // 规则（ANY，MAJORITY...，全部大写）
+    repeated string org_list     = 2; // 组织名称（组织名称）
+    repeated string role_list    = 3; // 角色名称（role，全部小写）
 }
 
-type principle struct {
-	rule     protocol.RuleKeyword
+type policy struct {
+	rule     protocol.Rule
 	orgList  []string
 	roleList []protocol.Role
 }
@@ -1433,53 +1417,58 @@ func NewPrinciple(rule protocol.RuleKeyword, orgList []string, roleList []protoc
 #### 身份、权利策略对
 身份、权利策略对的结构：
 ```go
-type Policy interface {
-	GetResourceId() ResourceId
+type Principal interface {
+	// GetResourceName returns resource name of the verification
+	GetResourceName() string
+
+	// GetEndorsement returns all endorsements (signatures) of the verification
 	GetEndorsement() []*pb.EndorsementEntry
+
+	// GetMessage returns signing data of the verification
 	GetMessage() []byte
 
-	GetTargetOrg() string
+	// GetTargetOrgId returns target organization id of the verification if the verification is for a specific organization
+	GetTargetOrgId() string
 }
 
-type policy struct {
-	resourceId  protocol.ResourceId
-	endorsement []*pb.EndorsementEntry
-	message     []byte
+type principal struct {
+	resourceName string
+	endorsement  []*pb.EndorsementEntry
+	message      []byte
 
 	targetOrg string
 }
 
-func (ac *accesscontrol) NewPolicy(resourceId protocol.ResourceId, endorsements []*pb.EndorsementEntry, message []byte) (protocol.Policy, error)
-func (ac *accesscontrol) NewSelfPolicy(resourceId protocol.ResourceId, endorsements []*pb.EndorsementEntry, message []byte, targetOrg string) (protocol.Policy, error)
+func (ac *accessControl) CreatePrincipalForTargetOrg(resourceName string, endorsements []*pb.EndorsementEntry, message []byte, targetOrgId string) (protocol.Principal, error)
+func (ac *accessControl) CreatePrincipal(resourceName string, endorsements []*pb.EndorsementEntry, message []byte) (protocol.Principal, error)
 ```
-1. resourceId 字段是被调用资源的ID。当前资源包括配置项的增、删、查、改，链上数据查询、写入等。
-2. endorsement 字段存有一个 (签名者，签名) 对的列表。
+1. resourceName 字段是被调用资源的ID。当前资源包括配置项的增、删、查、改，链上数据查询、写入等。
+2. endorsements 字段存有一个 (签名者，签名) 对的列表。
 3. message 字段是请求的消息体。
-4. targetOrg 是可选字段。这个字段仅在 resourceId 字段所指示的资源是属于某个特定组织时被使用到。可以参看 "SELF" 规则的说明。
+4. targetOrgId 是可选字段。这个字段仅在 resourceId 字段所指示的资源是属于某个特定组织时被使用到。可以参看 "SELF" 规则的说明。
 
 #### 接口使用说明
 
 ##### 验证权限
 首先，构建身份策略 (Policy) 用于判断某一组签名者是否满足目标资源的权限规则：
 ```go
-policy, err := ac.NewPolicy(Target_Resource_ID, Endorsement_List, Request_Message)
+principle, err := ac.CreatePrincipal(Target_Resource_ID, Endorsement_List, Request_Message)
 ```
 若资源属于特定组织，则用以下方式：
 ```go
-policy, err := ac.NewSelfPolicy(Target_Resource_ID, Endorsement_List, Request_Message, Target_Organization)
+principle, err := ac.CreatePrincipalForTargetOrg(Target_Resource_ID, Endorsement_List, Request_Message, Target_Organization)
 ```
 最后调用以下接口来验证身份策略与权限规则是否匹配：
 ```go
-ok, err := ac.VerifyPolicy(policy, org)
+ok, err := ac.VerifyPrincipal(principle)
 ```
-其中，入参 org 是 chainmaker.org/chainmaker-go/protocol 包中的 Organization 接口类型，他的实现在包 chainmaker.org/chainmaker-go/module/idmgmt 中。
 
 ##### 新增资源
 首选，为新资源添加一个ID。(可参考系统合约 CREATE_USER_CONTRACT 创建用户合约接口，他的资源ID是 TxType_CREATE_USER_CONTRACT)。
 
 然后，把新资源ID添加到默认权限配置列表中，为他赋予一个默认外层权限。
 ```go
-var txTypeToResourceIdMap = map[pb.TxType]protocol.ResourceId{
+var txTypeToResourceNameMap = map[pb.TxType]protocol.ResourceId{
 	pb.TxType_QUERY_USER_CONTRACT:   protocol.RESOURCE_CATEGORY_READ_DATA,
 	pb.TxType_QUERY_SYSTEM_CONTRACT: protocol.RESOURCE_CATEGORY_READ_DATA,
 	pb.TxType_INVOKE_USER_CONTRACT:  protocol.RESOURCE_CATEGORY_WRITE_DATA,
