@@ -1072,7 +1072,7 @@ docker run -it --name chainmaker-rust-contract -v <WORK_DIR>:/home chainmaker-ru
 
 - 安装CPP智能合约时，要求共识节点、非共识节点必须安装GCC。
 
-- TinyGo对wasm的支持不太完善，对内存逃逸分析、GC等方面有不足之处，比较容易造成栈溢出。在开发合约时，应尽可能减少循环、内存申请等业务逻辑，一使得栈内存地址在64K以内。
+- TinyGo对wasm的支持不太完善，对内存逃逸分析、GC等方面有不足之处，比较容易造成栈溢出。在开发合约时，应尽可能减少循环、内存申请等业务逻辑，使变量的栈内存地址在64K以内。
 
 
 
