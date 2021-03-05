@@ -2,12 +2,9 @@
 
 [TOC]
 
-> 具体使用参考： [rust合约开发使用手册](../用户手册/sdk_doc/chainmaker-contract-programing-for-rust.md)     [go合约开发使用手册](../用户手册/sdk_doc/chainmaker-contract-programing-for-go.md)    [c++合约开发使用手册](../用户手册/sdk_doc/chainmaker-contract-programing-for-c++.md) 
-
-
 ## 智能合约介绍
 
-智能合约是一种计算机程序或交易协议，记录了交易条款信息、事件、行为，旨在减少对可信中间人的需求、仲裁和执行成本。在ChanMaker上，用户可以通过高级语言（C++、Go、Rust、JS）来编写智能合约，经过编译后，以WASM、EVM字节码的形式存储在区块链中。用户可以通过发送交易来触发执行智能合约中的代码。
+智能合约是一种计算机程序或交易协议，记录了交易条款信息、事件、行为，旨在减少对可信中间人的需求、仲裁和执行成本。在ChanMaker上，用户可以通过高级语言（C++、Go、Rust、JS）来编写智能合约，经过编译后，以WASM、EVM字节码的形式存储在区块链中。用户可以通过发送交易来触发执行智能合约中的代码。其中，ChainMaker对JS和EVM的支持已经开发完毕，将很快集成到ChainMaker中。
 
 ## 智能合约SDK
 
@@ -68,7 +65,7 @@ ChainMaker支持对基于WASM和EVM的字节码进行升级
 
 ### 存证
 
-**go**
+**Go（TinyGo）语言版本**
 
 ```go
 package main
@@ -140,7 +137,7 @@ func main() {
 
 
 
-**rust**
+**rust语言版本**
 
 ```rust
 use crate::sim_context;
@@ -221,7 +218,7 @@ pub extern "C" fn find_by_file_hash() {
 
 
 
-**C++**
+**C++语言版本**
 
 ```c++
 #include "chainmaker/chainmaker.h"
@@ -301,9 +298,7 @@ WASM_EXPORT void find_by_file_hash() {
 
 ### 转账
 
-go
-
-**rust**
+**Rust语言版本**
 
 ```rust
 /// ------user-----
@@ -1000,25 +995,81 @@ fn calc_address(pub_key: &str) -> String {
 
 
 
-C++
+## 编译智能合约
+
+ChainMaker支持通过Docker的方式编译和运行智能合约
+
+**Go（TinyGo）编译和运行**
+
+拉取镜像
+```
+docker pull huzhenyuan/chainmaker-go-contract:1.0.0
+docker run -it --name chainmaker-go-contract -v <WORK_DIR>:/home chainmaker-go-contract bash
+```
+
+编译合约
+```
+
+# cd /home/
+# tar xvf /data/contract_go_template.tar.gz
+# cd contract_go
+# sh build.sh
+```
+
+运行合约
+```
+# gasm main.wasm save time 20210304 file_hash 12345678 file_name a.txt
+```
+
+**C++编译和运行**
+
+拉取镜像
+```
+docker pull huzhenyuan/chainmaker-cpp-contract:1.0.0
+docker run -it --name chainmaker-cpp-contract -v <WORK_DIR>:/home chainmaker-cpp-contract bash
+```
+
+编译合约
+```
+
+# cd /home/
+# tar xvf /data/contract_cpp_template.tar.gz
+# cd contract_cpp
+# emmake make
+```
+
+运行合约
+```
+# wxvm main.wasm divide num1 100 num2 8
+```
 
 
+**Rust编译和运行**
 
-## 在线IDE
+拉取镜像
+```
+docker pull huzhenyuan/chainmaker-rust-contract:1.0.0
+docker run -it --name chainmaker-rust-contract -v <WORK_DIR>:/home chainmaker-rust-contract bash
+```
 
-使用说明
+编译合约
+```
+# cd /home/
+# tar xvf /data/contract_rust_template.tar.gz
+# cd contract_rust
+# wasm-pack build
+```
 
-IDE部署，后续提供
+运行合约
+```
+# wasmer main.wasm save time 20210304 file_hash 12345678 file_name a.txt
+```
 
-基于IDE的发布能力待工具完善后补充
+## 约束条件和已知问题
 
+- 安装CPP智能合约时，要求共识节点、非共识节点必须安装GCC。
 
-
-
-
-
-
-
+- TinyGo对wasm的支持不太完善，对内存逃逸分析、GC等方面有不足之处，比较容易造成栈溢出。在开发合约时，应尽可能减少循环、内存申请等业务逻辑，使变量的栈内存地址在64K以内。
 
 
 

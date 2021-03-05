@@ -70,9 +70,17 @@ cp -r ../sdk/testdata ./
 
 #### 4.1.1 安装tmux
 
-Mac: brew install tmux
+Mac: 
 
-Centos: yum install tmux
+```bash
+brew install tmux
+```
+
+Centos: 
+
+```bash
+yum install tmux
+```
 
 #### 4.1.2 下载源码
 

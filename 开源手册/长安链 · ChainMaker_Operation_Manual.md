@@ -218,60 +218,88 @@ permissions:
 
 #### 4.1.1节点已连通
 
+```sh
 2021-02-03 15:29:01.016 [INFO]  [Net]   p2p/libp2p_connection_supervisor.go:85  [ConnSupervisor] all necessary peers connected.
+```
 
 #### 4.1.2 提案区块
 
+```sh
 2021-01-08 02:47:39.538 [DEBUG] [Consensus] @chain1 tbft/consensus_tbft_impl.go:403 [QmcQHCuAXaFkbcsPUj7e37hXXfZ9DdN7bozseo5oX4qiC4](1/0/Propose) receive proposal from core engine (1/), isProposer: true
+```
 
 #### 4.1.3 区块验证
 
+```sh
 2021-01-08 02:47:44.824 [DEBUG] [Consensus] @chain1 tbft/consensus_tbft_impl.go:614 [QmcQHCuAXaFkbcsPUj7e37hXXfZ9DdN7bozseo5oX4qiC4](2/0/Propose) send for verifying block: (2-312e6f853e6972bc4c5d7145729a22dc72ef5f6629fb376ef1b5c63a9dc8811c)
+```
 
 #### 4.1.4 区块落库
 
+```sh
 2021-01-08 02:47:39.716 [INFO] [Storage] @chain1 store/blockstore_impl.go:154 chain[chain1]: put block[1] (txs:1 bytes:506030), time used (mashal:1, log:7, commit:2, total:10)
+```
 
 #### 4.1.5 共识步骤
 
 tbft进入proposal:
 
+```sh
 2021-01-08 02:47:35.824 [DEBUG] [Consensus] @chain1 tbft/consensus_tbft_impl.go:930 [QmcQHCuAXaFkbcsPUj7e37hXXfZ9DdN7bozseo5oX4qiC4] attempt enterPropose to (1/0)
+```
 
 tbft 进入prevote: 
 
+```sh
 2021-01-08 02:47:44.990 [INFO] [Consensus] @chain1 tbft/consensus_tbft_impl.go:977 [QmcQHCuAXaFkbcsPUj7e37hXXfZ9DdN7bozseo5oX4qiC4](2/0/Propose) enter prevote(2/0)
+```
 
-tbft 进入precommit: 2021-01-08 02:47:39.651 [INFO] [Consensus] @chain1 tbft/consensus_tbft_impl.go:1033 [QmcQHCuAXaFkbcsPUj7e37hXXfZ9DdN7bozseo5oX4qiC4](1/0/Prevote) enter precommit(1/0)
+tbft 进入precommit: 
+
+```sh
+2021-01-08 02:47:39.651 [INFO] [Consensus] @chain1 tbft/consensus_tbft_impl.go:1033 [QmcQHCuAXaFkbcsPUj7e37hXXfZ9DdN7bozseo5oX4qiC4](1/0/Prevote) enter precommit(1/0)
+```
 
 #### 4.1.6 合约执行
 
+```sh
 2021-02-03 15:35:19.218 [INFO]  [Vm] ^[[31;1m@chain1^[[0m       vm/vm_factory.go:554    invoke vm, tx id:f8460d3d738446ad898f94be38f0def612c5d92259154c93bdbfb4f71dc95197, tx type:MANAGE_USER_CONTRACT, contractId:contract_name:"asset_new28" contract_version:"1.0" runtime_type:WASMER , method:init_contract, runtime type:2, byte code len:272611, params:map[__block_height__:3 __creator_org_id__:wx-org1.chainmaker.org __creator_pk__:62c6a0672c28ae914e9c5100a2262762b0a5b7b13bf4b69b3beee92c51aefd0f __creator_role__:client __sender_org_id__:wx-org1.chainmaker.org __sender_pk__:62c6a0672c28ae914e9c5100a2262762b0a5b7b13bf4b69b3beee92c51aefd0f __sender_role__:client __tx_id__:f8460d3d738446ad898f94be38f0def612c5d92259154c93bdbfb4f71dc95197 issue_limit:1000 total_supply:100000000], sender:20b3ce617ba79010bba0bcdb212ab5bc21f32ed92d707b4a9ab891c3a124134e
 
 2021-02-03 15:35:19.221 [DEBUG] [Vm] ^[[31;1m@chain1^[[0m       wasmer/vm_bridge.go:47  waci log>> [f8460d3d738446ad898f94be38f0def612c5d92259154c93bdbfb4f71dc95197] init: successed. Address["62c6a0672c28ae914e9c5100a2262762b0a5b7b13bf4b69b3beee92c51aefd0f"] . Total_supply is 100000000. Issue limit is 1000
 2021-02-03 15:35:19.221 [DEBUG] [Vm] ^[[31;1m@chain1^[[0m       wasmer/runtime.go:27    wasmer runtime invoke[f8460d3d738446ad898f94be38f0def612c5d92259154c93bdbfb4f71dc95197]:used gas 29740112 , used time 3
+```
 
 #### 4.1.7 交易验证
 
+```sh
 2021-02-03 19:25:59.402 [DEBUG] [TxPool] ^[[31;1m@chain1^[[0m   txpool/tx_validator.go:26       validate tx success%!(EXTRA string=txId, string=2108e420fb3242e8a133621cd780fdba760f6427c3704de3a43f15669789a355)
+```
 
 ### 4.2 错误日志
 
 #### 4.2.1 交易签名错误
 
+```sh
 2021-02-03 19:33:53.712 [WARN]  [Access] ^[[31;1m@chain1^[[0m   idmgmt/organization.go:325      authentication failed, setup member failed, organization information in certificate and in input parameter do not match [certificate: wx-org6.chainmaker.org, parameter: wx-org1.chainmaker.org]
+```
 
 #### 4.2.2 权限错误
 
+```sh
 2021-02-03 19:40:05.102 [ERROR] [Core] ^[[31;1m@chain1^[[0m     proposer/tx_scheduler_impl.go:230       failed to run vm for tx id:3b2feb71081145eb9a062c1bc3b8ca456f52746aebb848dba1ab196805265bb6 during simulate with dag, tx result:code:INVALID_PARAMETER contract_result:<> , error:failed to verify endorsements for tx: 3b2feb71081145eb9a062c1bc3b8ca456f52746aebb848dba1ab196805265bb6, error: authentication fail: not enough partipants support this action
+```
 
 #### 4.2.3 合约执行失败
 
+```sh
 2021-02-03 16:21:46.599 [ERROR] [Core] ^[[31;1m@chain1^[[0m     proposer/tx_scheduler_impl.go:231       failed to run vm for tx id:da86bc1f88b34017b5d6ca56e52a7373d547efe28e18432abf346a43b31657ef during simulate with dag, tx result:code:CONTRACT_FAIL contract_result:<code:FAIL message:"[\"c5d7d472124c988175beacef2b482206910c94845777eb3689af33e240c67129\"] not registered" > , error:["c5d7d472124c988175beacef2b482206910c94845777eb3689af33e240c67129"] not registered
+```
 
 #### 4.2.4 合约安装失败
 
+```sh
 2021-02-03 16:15:19.064 [ERROR] [Core] ^[[31;1m@chain1^[[0m     proposer/tx_scheduler_impl.go:231       failed to run vm for tx id:2d7becc48eac4c2bb8b46ec3128f30351ee7acdf981e4c4fa9e566c654291128 during simulate with dag, tx result:code:FAILED_GET_FROM_TX_CONTEXT contract_result:<code:FAIL message:"verify fail, the contract already exists. contract:asset_new11, version:1.0" > , error:verify fail, the contract already exists. contract:asset_new11, version:1.0
+```
 
 #### 4.2.5 区块验证失败
 
@@ -279,11 +307,15 @@ tbft 进入precommit: 2021-01-08 02:47:39.651 [INFO] [Consensus] @chain1 tbft/co
 
 #### 4.3.1 启动错误
 
+```sh
 2021-02-03 16:50:54.267 [ERROR] [Cli]   cmd/cli_start.go:63     chainmaker server init failed, init blockchain[chain1] failed, PEM is nil
+```
 
 #### 4.3.2 节点无法建立连接
 
+```sh
 2021-02-03 16:52:40.150 [WARN]  [Net]   p2p/libp2p_connection_supervisor.go:93  [ConnSupervisor] try to connect to peer failed(peer:{QmQD1uNi8Fcyt69yJwwQYiRkN1etgwNzGG14Vg6Zx7Ym25: [/ip4/192.168.2.34/tcp/11307]}),dial backoff
+```
 
 ## 5 状态码说明
 
