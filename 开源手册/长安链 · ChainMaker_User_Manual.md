@@ -4,62 +4,6 @@ typora-root-url: ../开源手册
 
 # 长安链 · ChainMaker User Manual
 
-
-
-## 长安链简介
-
-### 什么是长安链
-
-长安链·ChainMaker区块链底层平台是新一代区块链开源底层软件平台，包含区块链核心框架、丰富的组件库和工具集，致力于为用户高效、精准地解决差异化区块链实现需求，构建高性能、高可信、高安全的新型数字基础设施。
-
-### 长安链主要特性
-
-**自主可控的底层平台**
-
-- 独创深度模块化、可装配、高性能并行执行的区块链底层技术架构；
-- 涵盖国产密码算法、基于国密证书的加密通讯和国产CA证书颁发认证机构。
-
-**灵活高效的装配模式**
-
-- 深度模块化，根据用户需求，择优选择不同模块组件快速组装定制化区块链系统；
-- 可插拔、可分离的自主可控核心框架，可快速接入优势底层模块/单一定制化开发模块。
-
-**国际领先的处理性能**
-
-- 交易处理最大程度并行化，单链峰值交易处理速度可达10万笔每秒；
-- 支持基于内存的数据系统，提升交易处理性能。
-
-**标准化下的开放生态**
-
-- 采用友好的开源协议，开放软件源代码；
-- 推动多项技术体系标准化，建立标准化下的开发生态。
-
-**完整便捷的配套工具**
-
-- 支持大屏、图表、界面交互多种形式的管理、监控和运维；
-- 支持Java、Golang、JavaScript块链SDK；
-- 支持定制化部署、BaaS等多种落地实施方式；
-- 友好、便捷的在线智能合约开发环境；
-- 支持丰富的区块、交易、订阅、事件监听等处理机制。
-
-### 使用长安链可以做什么
-
-**政务服务**
-
-基于长安链搭建政务数据共享平台，赋能政务数据跨区域、跨部门可信共享交换，实现业务高效协同。目前已落地海淀政务“一网通办”、海淀目录链、企业电子身份认证等场景。
-
-**食品追溯**
-
-基于长安链建设食品追溯监管体系，及时掌握食品流转信息，增强全流程透明度，提升安全风险评估与预警能力。目前已落地“北京冷链”、北京冬奥食品追溯等场景。
-
-**金融服务**
-
-基于长安链提供面向中小金融机构、中小企业的供应链金融服务，通过区块链线上确权，实现低成本互信，降低小微企业融资成本。目前已落地“北京市确权融资中心”、建行供应链金融平台等场景。
-
-**供应链管理**
-
-基于长安链构建融合区块链与人工智能技术的“可信供应商”供应链协作平台，增加供应商资质审核的真实性和便利性，提升供应链管理能力。目前已落地沃尔玛供应商管理等场景。
-
 ## 整体架构
 
 ### 逻辑架构
@@ -880,15 +824,13 @@ storage:
 
 #### RocksDB部署
 
-##### Rocksdb使用
-
 因为rocksdb本身是使用C++写的，而目前使用gorocksdb需要依赖rocksdb的库文件，因此直接编译会报错，针对该问题，目前采用了条件编译的方式。
 
-##### 1.1 未安装Rocksdb的环境下编译启动
+##### 未安装Rocksdb的环境下编译启动
 
 针对未安装Rocksdb的环境，可直接通过go build正常编译，但是要求必须使用levelDB，若配置为rocksDB会出现空指针错误。
 
-##### 1.2 使用RocksDB编译启动
+##### 使用RocksDB编译启动
 
 若要使用RocksDB则必须先本地安装RocksDB环境，安装方式包括两部分：
  + 1.RocksDB安装：https://github.com/facebook/rocksdb/blob/master/INSTALL.md
@@ -906,9 +848,9 @@ go build -tags=rocksdb
 go run -tags=rocksdb main.go {params}
 ```
 
-##### 2. Linux下Rocksdb环境安装
+##### Linux下Rocksdb环境安装
 
-##### 2.1 安装依赖
+###### 1 安装依赖
 
 安装gcc、zlib、snappy、lz4等依赖工具
 
@@ -920,7 +862,7 @@ yum -y install lrzsz git gcc gcc-c++ lz4-devel
 yum -y install snappy snappy-devel zlib zlib-devel bzip2 bzip2-devel lz4 lz4-devel zstd
 ```
 
-##### 2.2 安装cmake
+###### 2 安装cmake
 
 gflags-2.2.2对cmake版本有要求，所以需要指定版本的cmake
 
@@ -939,7 +881,7 @@ EOF
 source /etc/profile
 ```
 
-##### 2.3 安装gflags
+###### 3 安装gflags
 
 ```shell
 wget -O gflags-2.2.2.tar.gz https://github.com/gflags/gflags/archive/v2.2.2.tar.gz
@@ -958,7 +900,7 @@ EOF
 source /etc/profile
 ```
 
-##### 2.4 下载并安装rocksdb
+###### 4 下载并安装rocksdb
 
 ```shell
 wget -O rocksdb-5.18.3.tar.gz https://github.com/facebook/rocksdb/archive/v5.18.3.tar.gz
@@ -985,7 +927,7 @@ source /etc/profile
 
 ```
 
-##### 2.5 使用测试
+###### 5 使用测试
 
 ``` shell
 [root@VM-219-157-centos /opt/rocksdb-5.18.3/build]# cd tools/
@@ -1113,7 +1055,7 @@ total 920
 ```
 
 
-##### 2.6 安装zstd
+###### 6 安装zstd
 
 zstd是facebook为适配rocksdb开发的zstandard数据压缩工具，如果不安装该软件，会导致gorocksdb安装失败。
 
@@ -1127,7 +1069,7 @@ make
 make install
 ```
 
-##### 2.7 安装gorocksdb
+###### 7 安装gorocksdb
 
 通过4.1-4.6安装步骤后，rocksdb会被安装在 usr/local/rocksdb 这个目录下，我们使用go版本的rocksdb需要依赖于该路径。
 
@@ -2379,372 +2321,6 @@ log:
     show_color: true              # 是否打印颜色日志
 
 ```
-
-## 数据模型
-
-### 结构示意图
-
-
-
-<img src="images/pb-structure.png" alt="image-20210205154124447.png" style="zoom: 60%;" />
-
-### 区块
-
-#### 整体结构
-
-```go
-type Block struct {
-	Header         *BlockHeader    
-	Dag            *DAG            
-	Txs            []*Transaction  
-	AdditionalData *AdditionalData 
-}
-
-type AdditionalData struct {
-	ExtraData map[string][]byte 
-}
-
-type DAG struct {
-	Vertexes []*DAG_Neighbor
-}
-type DAG_Neighbor struct {
-	Neighbors []int32 
-}
-```
-
-* Header：区块头
-* Dag：块内交易的执行顺序，由Proposer生成
-* Txs：块内交易
-* AdditionalData：存储当前区块的投票信息，不参与区块的散列值计算
-
-#### 区块头
-
-```go
-type BlockHeader struct {
-	ChainId        string 
-	BlockHeight    int64  
-	PreBlockHash   []byte 
-	BlockHash      []byte 
-	PreConfHeight  int64 
-    BlockVersion   []byte 
-	DagHash        []byte 
-	RwSetRoot      []byte 
-	TxRoot         []byte 
-	BlockTimestamp int64 
-	Proposer       []byte
-	ConsensusArgs  []byte
-	TxCount        int64 
-	Signature      []byte
-}
-```
-
-* ChainId：链标识
-* BlockHeight：区块高度
-* PreBlockHash：上个区块的散列值
-* PreConfHeight：上一次修改链配置的区块高度
-* BlockVersion：区块版本
-* DagHash：当前区块Dag的散列值
-* RwSetRoot：区块读写集的Merkle Root
-* TxRoot：区块交易的Merkle Root
-* BlockTimestamp：区块的时间戳
-* Proposer：区块的生成者标识
-* ConsensusArgs：共识参数
-* TxCount：交易数量
-* Signature：区块生成者的签名
-
-
-
-### 交易结构
-
-```go
-type Transaction struct {
-	Header *TxHeader 
-	RequestPayload []byte 
-	RequestSignature []byte 
-	Result *Result 
-}
-```
-
-* Header：交易头
-* RequestPayload：交易的载荷数据
-* RequestSignature：交易发送者的签名
-* Result：交易结果，由Proposer生成区块时进行计算、赋值
-
-#### 交易头
-
-```go
-type TxHeader struct {
-	ChainId string 
-	Sender *SerializedMember 
-	TxType TxType 
-	TxId string 
-	Timestamp int64 
-	ExpirationTime int64 
-}
-
-type SerializedMember struct {
-	OrgId      string 
-	MemberInfo []byte 
-	IsFullCert bool   
-}
-```
-
-* ChainId：链标识
-* Sender：交易发送者信息
-* TxType：交易类型，有8种
-* TxId：交易ID，用做该交易的唯一性标识
-* Timestamp：生成交易的unix时间戳，当proposer从交易池获取交易时，用来检测该交易是否超时未上链；如果超时，该交易将从交易池删除
-* ExpirationTime：交易的到期的unix时间，单位秒，不为0时，交易必须在该时间戳之前被打包上链
-
-
-
-#### 交易结果
-
-```go
-type Result struct {
-   Code TxStatusCode
-   ContractResult *ContractResult 
-   RwSetHash []byte 
-}
-
-type ContractResult struct {
-	Code ContractResultCode 
-	Result []byte 
-	Message string
-	GasUsed int64 
-}
-
-type TxStatusCode int32
-type ContractResultCode int32
-```
-
-* Code：交易执行结果的状态
-* ContractResult：合约执行结果
-  * Code：合约执行结果的状态
-  * Result：合约执行结果
-  * Message：合约执行后的消息
-  * GasUsed：合约执行消耗的Gas数量
-* RwSetHash：交易执行结果的读写集哈希
-
-### 交易请求结构
-
-```go
-type TxRequest struct {
-   Header *TxHeader 
-   Payload []byte 
-   Signature []byte
-}
-```
-
-* Header：交易头，详解见上述描述
-* Payload：交易载荷数据
-* Signature：用户签名
-
-### 交易响应结构
-
-```go
-type TxResponse struct {
-   Code TxStatusCode 
-   Message string 
-   ContractResult *ContractResult 
-}
-```
-
-* Code：交易执行结果的状态
-* Message：交易执行后，合约输出的消息
-* ContractResult：合约执行结果
-
-
-
-## 周边工具
-
-### 命令行工具CMC@天乐
-
-cmc是一个命令行工具集，主要包括长安链节点管理（使用sdk和长安链之间通过rpc交互实现）、各类证书生成等功能，可以通过help来查看命令的用法。更多使用示例参考：《长安链 ChainMaker_Deploy_Manual》和《长安链 ChainMaker_Maintenance_Manual》
-
-### SDK@天乐、Jason
-
-请参考：《chainmaker-go-sdk 》《chainmaker-java-sdk》
-
-### cryptogen@Jason
-
-#### 工具说明
-
-`chainmaker-cryptogen`是基于配置文件生成`ChainMaker`节点和客户端证书的工具，方便在没有`CA`的情况下，进行开发和测试。
-
-#### 工具配置
-
-```yml
-crypto_config:
-  - domain: chainmaker.org
-    host_name: wx-org
-    count: 4                # 如果为1，直接使用host_name，否则添加递增编号
-    #pk_algo: ecc_p256
-    pk_algo: sm2
-    ski_hash: sha256
-    specs: &specs_ref
-      expire_year:  10
-      sans:
-        - chainmaker.org
-        - localhost
-        - 127.0.0.1
-    location: &location_ref
-      country:            CN
-      locality:           Beijing
-      province:           Beijing
-    # CA证书配置
-    ca:
-      location:
-        <<: *location_ref
-      specs:
-        <<: *specs_ref
-    # 节点证书配置
-    node:
-      - type: consensus
-        # 共识节点数量
-        count: 1
-        # 共识节点配置
-        location:
-          <<: *location_ref
-        specs:
-          <<: *specs_ref
-          expire_year:  5
-      - type: common
-        # 普通节点数量
-        count: 1
-        # 普通节点配置
-        location:
-          <<: *location_ref
-        specs:
-          <<: *specs_ref
-          expire_year:  5
-    user:
-      - type: admin
-        # 管理员证书数量
-        count: 1
-        # 管理员证书配置
-        location:
-          <<: *location_ref
-        expire_year:  5
-      - type: client
-        # 普通用户证书数量
-        count: 1
-        # 普通用户证书配置
-        location:
-          <<: *location_ref
-        expire_year:  5
-```
-
-#### 使用方法
-
-- 命令帮助
-
-```bash
-$ ./chainmaker-cryptogen -h
-Usage:
-  chainmaker-cryptogen [command]
-
-Available Commands:
-  extend      Extend existing network
-  generate    Generate key material
-  help        Help about any command
-  showconfig  Show config
-
-Flags:
-  -c, --config string   specify config file path (default "../config/crypto_config_template.yml")
-  -h, --help            help for chainmaker-cryptogen
-
-Use "chainmaker-cryptogen [command] --help" for more information about a command.
-```
-
-- 生成证书
-
-```bash
-$ ./chainmaker-cryptogen generate
-
-$ tree -L 3 crypto-config/
-crypto-config/
-├── wx-org1.chainmaker.org
-│   ├── ca
-│   │   ├── ca.crt
-│   │   └── ca.key
-│   ├── node
-│   │   ├── common1
-│   │   └── consensus1
-│   └── user
-│       ├── admin1
-│       └── client1
-├── wx-org2.chainmaker.org
-│   ├── ca
-│   │   ├── ca.crt
-│   │   └── ca.key
-│   ├── node
-│   │   ├── common1
-│   │   └── consensus1
-│   └── user
-│       ├── admin1
-│       └── client1
-├── wx-org3.chainmaker.org
-│   ├── ca
-│   │   ├── ca.crt
-│   │   └── ca.key
-│   ├── node
-│   │   ├── common1
-│   │   └── consensus1
-│   └── user
-│       ├── admin1
-│       └── client1
-└── wx-org4.chainmaker.org
-    ├── ca
-    │   ├── ca.crt
-    │   └── ca.key
-    ├── node
-    │   ├── common1
-    │   └── consensus1
-    └── user
-        ├── admin1
-        └── client1
-```
-
-- 证书目录结构
-
-![image-20210205145640521](/images/ca-structure.png)
-
-```
-$ tree crypto-config/wx-org1.chainmaker.org/
-crypto-config/wx-org1.chainmaker.org/
-├── ca
-│   ├── ca.crt
-│   └── ca.key
-├── node
-│   ├── common1
-│   │   ├── common1.nodeid
-│   │   ├── common1.sign.crt
-│   │   ├── common1.sign.key
-│   │   ├── common1.tls.crt
-│   │   └── common1.tls.key
-│   └── consensus1
-│       ├── consensus1.nodeid
-│       ├── consensus1.sign.crt
-│       ├── consensus1.sign.key
-│       ├── consensus1.tls.crt
-│       └── consensus1.tls.key
-└── user
-    ├── admin1
-    │   ├── admin1.sign.crt
-    │   ├── admin1.sign.key
-    │   ├── admin1.tls.crt
-    │   └── admin1.tls.key
-    └── client1
-        ├── client1.sign.crt
-        ├── client1.sign.key
-        ├── client1.tls.crt
-        └── client1.tls.key
-```
-
-### 在线IDE@振远
-
-
 
 
 
