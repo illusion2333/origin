@@ -1071,5 +1071,6 @@ docker run -it --name chainmaker-rust-contract -v <WORK_DIR>:/home chainmaker-ru
 
 - TinyGo对wasm的支持不太完善，对内存逃逸分析、GC等方面有不足之处，比较容易造成栈溢出。在开发合约时，应尽可能减少循环、内存申请等业务逻辑，使变量的栈内存地址在64K以内。
 
+- TinyGo对导入的包支持有限，请参考：https://tinygo.org/lang-support/stdlib/ 对列表中显示已支持的包，实际测试发现支持的并不完整，会发生一些错误，需要在实际开发过程中进行测试检验
 
 
