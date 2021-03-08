@@ -342,6 +342,49 @@ TBFT 的每轮共识可以分为5个步骤：
 流程图如下：
 <img src="images/tbft_diagram.png"/>
 
+##### 与PBFT的区别
+TBFT基于Tendermint算法，与PBFT的最大区别在于：PBFT有一个固定的leader节点打包交易，当leader节点故障的时候会
+使用view-change子协议更换leader；而在TBFT中，leader是轮换的，每提交n个块（可以配置）leader会轮换成下一个节点。
+因此，TBFT比PBFT有更好的公平性。
+
+##### 与msgbus交互流程
+
+```
+Core                     Msgbus                    TBFT
+  │                        │                        │
+  │                        │                        │
+  │      ProposaState      │      ProposaState      │
+  │◄───────────────────────│◄───────────────────────┤
+  │                        │                        │
+  │                        │                        │
+  │        Proposal        │        Proposal        │
+  ├───────────────────────►├───────────────────────►│
+  │                        │                        │
+  │                        │                        │
+  │        Verify          │        Verify          │
+  │◄───────────────────────│◄───────────────────────┤
+  │                        │                        │
+  │                        │                        │
+  │      VerifyResult      │      VerifyResult      │
+  ├───────────────────────►├───────────────────────►│
+  │                        │                        │
+  │                        │                        │
+  │         Commit         │         Commit         │
+  │◄───────────────────────│◄───────────────────────┤
+  │                        │                        │
+  │                        │                        │
+  │         BlockInfo      │         BlockInfo      │
+  ├───────────────────────►├───────────────────────►│
+  │                        │                        │
+```
+
+ProposaState: TBFT发送给核心引擎本节点在当前高度是否是leader节点，核心引擎判断是否需要打包区块 <br>
+Proposal: 核心引擎打包区块并发送给TBFT <br>
+Verify: 当本节点收到主节点发来的区块后，向核心引擎验证区块读写集等信息 <br>
+VerifyResult: 核心引擎返回给TBFT Verify的结果，当区块合法时，本节点将会投票给区块 <br>
+Commit: TBFT完成共识后，向核心引擎发送提交区块的信号，核心引擎提交区块到账本 <br>
+BlockInfo: 核心引擎告知TBFT已提交区块的高度等信息，TBFT进入下一个高度 <br>
+
 ##### 接口说明
 ```go
 type ConsensusEngine interface {      
