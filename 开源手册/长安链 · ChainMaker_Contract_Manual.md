@@ -12,6 +12,8 @@
 
 不同语言的SDK受限于语言本身特性和编译器的支撑能力，比如go语言支持函数同时返回多个数据，而tinygo编译器对垃圾回收支持存在缺陷，加上区块链系统本身为智能合约提供的运行内存大小受限、调用栈深度受限，用户编写合约时，需要注意这些特性。
 
+目前ChainMaker已经支持的智能合约开发SDK包括Rust、Go、C++。
+
 ## 智能合约生命周期管理
 
 >  交易发送参考： [使用GO SDK发送交易](../用户手册/sdk_doc/chainmaker-go-sdk.md#useContractInterface)   [使用JAVA SDK发送交易](../用户手册/sdk_doc/chainmaker-java-sdk.md#useContractInterface)  
@@ -254,7 +256,7 @@ public:
     // 查询
     void find_by_file_hash() {
         // 获取SDK 接口上下文
-    	  Context* ctx = context();
+    	Context* ctx = context();
 
 		    // 获取参数
         std::string file_hash;
@@ -280,7 +282,7 @@ WASM_EXPORT void init_contract() {
 // 在升级本合约时, 对于每一个升级的版本调用一次upgrade方法. ChainMaker不允许用户直接调用该方法.
 WASM_EXPORT void upgrade() {
     Counter counter;
-    counter.init();
+    counter.upgrade();
 }
 
 WASM_EXPORT void save() {

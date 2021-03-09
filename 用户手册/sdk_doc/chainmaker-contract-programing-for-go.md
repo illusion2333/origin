@@ -6,31 +6,90 @@
 
 ## 1 合约编写流程
 
-## 1.1 使用IDE进行合约开发
 
-请参考文档：[《ChainMaker IDE User Manual》](./chainmaker-ide-user-manual.md)
+ChainMaker官方已经将容器发布至GitHub
 
-### 1.2 框架描述
+拉取镜像
+```
+docker pull huzhenyuan/chainmaker-go-contract:1.0.0
+```
 
-使用IDE新建一个Go语言的项目之后，IDE会默认将Go SDK和一些工具代码加到项目中去，如下图：
+请指定你本机的工作目录$WORK_DIR，例如C:\tmp，挂载到docker容器中以方便后续进行必要的一些文件拷贝
 
-<img src="../images/go-frame.png" alt="go-frame.png" style="zoom:50%;" />
+```
+docker run -it --name chainmaker-go-contract -v $WORK_DIR:/home huzhenyuan/chainmaker-go-contract:1.0.0 bash
+```
 
-对IDE默认附带的框架文件描述如下：
+编译合约
 
-go
+```
+# cd /home/
+# tar xvf /data/contract_go_template.tar.gz
+# cd contract_go
+# sh build.sh
+```
 
-- chainmaker.go：主要的Go SDK文件，详细接口说明见[Go SDK API描述](#api)
-- cjson.go: json序列化工具类
-- encoder.go: json序列化工具类
-- main_fact.go: 存证合约示例
-- tokenizer.go: json序列化工具类
+生成合约的字节码文件在
 
+```
+/home/contract_go/main.wasm
+```
 
+通过本地模拟环境运行合约(首次编译运行合约可能需要10秒左右，下面以存证作为示例)
 
-### 1.3 示例代码说明
+```
+# gasm main.wasm save time 20210304 file_hash 12345678 file_name a.txt
+2021-03-09 03:53:46.307      [DEBUG] [Vm]    waci/waci.go:34 waci log>> [test-TxId] get val:{"txId":"","time":"20210304","fileHash":"12345678","fileName":"a.txt"}
+2021-03-09 03:53:46.329 [DEBUG] [Vm]    gasm/runtime.go:190     invoke gasm success, tx id:test-TxId, gas cost 18012689,[IGNORE: ret [], retTypes []]
+2021-03-09 03:53:46.331 [INFO]  [Vm] @chain01   main/main.go:27 contractResult :result:"{\"txId\":\"\",\"time\":\"20210304\",\"fileHash\":\"12345678\",\"fileName\":\"a.txt\"}" gas_used:18012689
+```
 
-**存证合约示例：main_fact.go <span id="fact"></span>** 实现功能
+其中该除法的合约方法定义为：
+
+```
+//export save
+func save() {
+        // 获取参数
+        txId, _ := GetTxId()
+        time, _ := Arg("time")
+        fileHash, _ := Arg("file_hash")
+        fileName, _ := Arg("file_name")
+
+        // 组装
+        stone := make(map[string]string, 4)
+        stone["txId"] = txId
+        stone["time"] = time
+        stone["fileHash"] = fileHash
+        stone["fileName"] = fileName
+
+        // 序列化为json bytes
+        bytes, err := Marshal(stone)
+        if err != nil {
+                LogMessage("marshal fail")
+                ErrorResult("save fail. marshal fail")
+                return
+        }
+
+        // 存储数据
+        PutStateByte("fact", fileHash, bytes)
+
+        if result, resultCode := GetState("fact", fileHash); resultCode != SUCCESS {
+                // 返回结果
+                ErrorResult("failed to call get_state, only 64 letters and numbers are allowed. got key:" + "fact" + ", field:" + fileHash)
+        } else {
+                // 记录日志
+                LogMessage("get val:" + string(result))
+                // 返回结果
+                SuccessResult(result)
+        }
+        // 返回结果
+        //SuccessResult("ok,put state: " + string(bytes))
+}
+```
+
+### 1.2 示例代码说明
+
+**存证合约示例**，实现功能
 
 1、存储文件哈希和文件名称和该交易的ID。
 
@@ -105,7 +164,7 @@ func main() {
 
 
 
-### 1.4 代码编写规则
+### 1.3 代码编写规则
 
 **代码入口**
 
@@ -115,8 +174,6 @@ func main() { // sdk代码中，有且仅有一个main()方法
 }
 
 ```
-
-
 
 **对链暴露方法写法为：**
 
@@ -151,7 +208,7 @@ func upgrade() {
 
 
 
-### 1.5 编译说明
+### 1.4 编译说明
 
 在ChainMaker IDE中集成了编译器，可以对合约进行编译。集成的编译器是 TinyGo。用户如果手工编译，需要将 SDK 和用户编写的智能合约放入同一个文件夹，并在此文件夹的当前路径执行如下编译命令：
 
@@ -163,30 +220,15 @@ tinygo build -no-debug -opt=s -o name.wasm -target wasm
 
 ## 2 合约发布过程
 
-请参考：[《chainmaker-go-sdk.md》](./chainmaker-go-sdk.md)4.1.5 发送创建合约请求，或者[《chainmaker-java-sdk.md》](./chainmaker-java-sdk.md)2.1.4 创建合约。
+请参考：[《chainmaker-go-sdk.md》](./chainmaker-go-sdk.md)发送创建合约请求部分，或者[《chainmaker-java-sdk.md》](./chainmaker-java-sdk.md)创建合约部分。
 
 ## 3 合约调用过程
 
-请参考：[《chainmaker-go-sdk.md》](./chainmaker-go-sdk.md)4.1.7 合约调用，或者[《chainmaker-java-sdk.md》](./chainmaker-java-sdk.md)2.1.7 执行合约。
+请参考：[《chainmaker-go-sdk.md》](./chainmaker-go-sdk.md)合约调用部分，或者[《chainmaker-java-sdk.md》](./chainmaker-java-sdk.md)执行合约部分。
 
 
 
-## 4 Go SDK API描述 <span id="api"></span>
-
-### 内置链交互接口
-
-用于链与SDK数据交互，用户无需关心。
-
-```go
-// 申请size大小内存，返回该内存的首地址
-func __allocate(size int32) uintptr {}
-// 释放该地址内存
-func __deallocate(size int32) {}
-// 获取SDK运行时环境
-func __runtimeType() int32 {}
-```
-
-
+## 4 Go SDK API描述 
 
 ### 用户与链交互接口
 
@@ -215,9 +257,9 @@ func GetStateFromKey(key string) (string, ResultCode) {}
 
 ```go
 // 写入合约账户信息。该接口可把类别 “key” 下属性名为 “filed” 的状态更新到链上。更新成功返回0，失败则返回1。
-// @param key: 需要存储的key值
-// @param field: 需要存储的key值下属性名为field
-// @param value: 需要存储的value值
+// @param key: 需要存储的key值，注意key长度不允许超过64，且只允许大小写字母、数字、下划线、减号、小数点符号
+// @param field: 需要存储的key值下属性名为field，注意field长度不允许超过64，且只允许大小写字母、数字、下划线、减号、小数点符号
+// @param value: 需要存储的value值，注意存储的value字节长度不能超过200
 // @return: 0: success, 1: failed
 func PutState(key string, field string, value string) ResultCode {}
 ```

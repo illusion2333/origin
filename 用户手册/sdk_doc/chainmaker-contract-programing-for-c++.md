@@ -8,19 +8,95 @@
 
 ## 1 合约编写流程
 
-## 1.1 使用IDE进行合约开发
+## 1.1 使用Docker镜像进行合约开发
 
-请参考文档：[《ChainMaker IDE User Manual》](./chainmaker-ide-user-manual.md)
+ChainMaker官方已经将容器发布至GitHub
+
+拉取镜像
+```
+docker pull huzhenyuan/chainmaker-cpp-contract:1.0.0
+```
+
+请指定你本机的工作目录$WORK_DIR，例如C:\tmp，挂载到docker容器中以方便后续进行必要的一些文件拷贝
+
+```
+docker run -it --name chainmaker-cpp-contract -v $WORK_DIR:/home huzhenyuan/chainmaker-cpp-contract:1.0.0 bash
+```
+
+编译合约
+
+```
+# cd /home/
+# tar xvf /data/contract_cpp_template.tar.gz
+# cd contract_cpp
+# emmake make
+```
+
+生成合约的字节码文件在
+
+```
+/home/contract_cpp/main.wasm
+```
+
+通过本地模拟环境运行合约(首次编译运行合约可能需要10秒左右，下面以两数相除作为示例)
+
+```
+# wxvm main.wasm divide num1 100 num2 8
+
+2021-03-09 03:36:46.864 [INFO]  [Vm] @chain01   wxvm/code_manager.go:81 compile wxvm code for contract test-contract,  time cost 4.6587203s
+2021-03-09 03:36:46.926 [DEBUG] [Vm]    wxvm/context_service.go:206     wxvm log >>[test-TxId] [1] call divide()
+2021-03-09 03:36:46.939 [DEBUG] [Vm]    wxvm/context_service.go:206     wxvm log >>[test-TxId] [1] num 1:100
+2021-03-09 03:36:46.940 [DEBUG] [Vm]    wxvm/context_service.go:206     wxvm log >>[test-TxId] [1] num 2:8
+2021-03-09 03:36:46.941 [DEBUG] [Vm]    wxvm/context_service.go:206     wxvm log >>[test-TxId] [1] divide result is 12
+2021-03-09 03:36:46.942 [INFO]  [Vm] @chain01   main/main.go:29 contractResult :result:"divide result is 12"
+```
+
+其中除法的合约方法定义为：
+
+```
+#include "chainmaker/chainmaker.h"
+
+using namespace chainmaker;
+
+class Counter : public Contract {
+public:
+	...
+	...
+    void divide() {
+        Context* ctx = context();
+        ctx->log("call divide()");
+
+        std::string num1_string;
+        std::string num2_string;
+
+        ctx->arg("num1", num1_string);
+        ctx->arg("num2", num2_string);
+
+        int num1 = atoi(num1_string.c_str());
+        int num2 = atoi(num2_string.c_str());
+        ctx->log("num 1:" + num1_string);
+        ctx->log("num 2:" + num2_string);
+        char buf[32];
+        snprintf(buf, 32, "divide result is %d", (int) (num1 / num2));
+        ctx->log(buf);
+
+        ctx->success(buf);
+    }
+    ...
+    ...
+}
+
+WASM_EXPORT void divide() {
+    Counter counter;
+    counter.divide();
+}
+```
+
+
 
 ### 1.2 框架描述
 
-使用IDE新建一个C++语言的合约项目之后，IDE会默认将C++ SDK和一些工具代码加到项目中去，如下图：
-
-<img src="../images/cpp-frame.png" alt="cpp-frame.png" style="zoom:50%;" />
-
-对IDE默认附带的框架文件描述如下：
-
-c++:
+解压缩contract_cpp_template.tar.gz后，文件描述如下：
 
 - chainmaker
   - basic_iterator.cc：  迭代器实现
@@ -29,9 +105,9 @@ c++:
   - context_impl.cc：  与链交互接口实现
   - context_impl.h：  与链交互头文件声明
   - contract.cc： 合约基础工具类
-  - error.h： 
+  - error.h： 异常处理类
   - exports.js：  编译合约导出函数
-  - safemath.h 
+  - safemath.h：  assert异常处理
   - syscall.cc： 与链交互入口
   - syscall.h：  与链交互头文件声明
 - pb
@@ -42,7 +118,7 @@ c++:
 
 ### 1.3 示例代码说明
 
-**存证合约示例：main.cc<span id="fact"></span>** 实现功能
+存证合约示例：main.cc，实现功能：
 
 1、存储文件哈希和文件名称和该交易的ID。
 
@@ -108,7 +184,7 @@ WASM_EXPORT void init_contract() {
 // 在升级本合约时, 对于每一个升级的版本调用一次upgrade方法. ChainMaker不允许用户直接调用该方法.
 WASM_EXPORT void upgrade() {
     Counter counter;
-    counter.init();
+    counter.upgrade();
 }
 
 WASM_EXPORT void save() {
@@ -166,24 +242,23 @@ WASM_EXPORT void upgrade() {
 Context* ctx = context();
 ```
 
-
 ### 1.5 编译说明
 
-在ChainMaker IDE中集成了编译器，可以对合约进行编译，集成的编译器是emcc 1.38.48版本，protobuf 使用3.7.1版本。用户如果手工编译需要先使用emcc 编译 protobuf ，编译之后执行emmake make即可。
+在ChainMaker提供的Docker容器中中集成了编译器，可以对合约进行编译，集成的编译器是emcc 1.38.48版本，protobuf 使用3.7.1版本。用户如果手工编译需要先使用emcc 编译 protobuf ，编译之后执行emmake make即可。
 
 ## 2 合约发布过程
 
-请参考：[《chainmaker-go-sdk.md》](./chainmaker-go-sdk.md)4.1.5 发送创建合约请求，或者[《chainmaker-java-sdk.md》](./chainmaker-java-sdk.md)2.1.4 创建合约。
+请参考：[《chainmaker-go-sdk.md》](./chainmaker-go-sdk.md)发送创建合约请求的部分，或者[《chainmaker-java-sdk.md》](./chainmaker-java-sdk.md)创建合约的部分。
 
 ## 3 合约调用过程
 
-请参考：[《chainmaker-go-sdk.md》](./chainmaker-go-sdk.md)4.1.7 合约调用，或者[《chainmaker-java-sdk.md》](./chainmaker-java-sdk.md)2.1.7 执行合约。
+请参考：[《chainmaker-go-sdk.md》合约调用的部分，或者[《chainmaker-java-sdk.md》](./chainmaker-java-sdk.md)执行合约的部分。
 
 
 
 ## 4 C++ SDK API描述 <span id="api"></span>
 
-### Arg
+### arg
 
 ```c++
 // 该接口可返回属性名为 “name” 的参数的属性值。
@@ -192,6 +267,8 @@ Context* ctx = context();
 // @return: 是否成功
 bool arg(const std::string& name, std::string& value){}
 ```
+
+需要注意的是通过arg接口返回的参数，全都都是字符串，合约开发者有必要将其他数据类型的参数与字符串做转换，包括atoi、itoa、自定义序列化方式等。
 
 ###  get_object
 
@@ -207,7 +284,7 @@ bool get_object(const std::string& key, std::string* value){}
 
 ```c++
 // 存储key为"key"的值
-// @param key: 存储的对象key
+// @param key: 存储的对象key，注意key长度不允许超过64，且只允许大小写字母、数字、下划线、减号、小数点符号
 // @param value: 存储的对象值
 // @return: 是否成功
 bool put_object(const std::string& key, const std::string& value){}
@@ -241,10 +318,10 @@ void error(const std::string& body) {}
 ### call
 
 ```c++
-// 调用合约
+// 跨合约调用
 // @param contract: 合约名称
 // @param method: 合约方法
-// @param args: 调用合约的参数
+// @param args: 调用合约的参数，调用参数仅仅接受字符串类型的key、value
 // @param response: 调用合约的响应
 // @return: 是否成功
 bool call(const std::string& contract,
@@ -260,3 +337,4 @@ bool call(const std::string& contract,
 // @param body: 事件信息
 void log(const std::string& body) {}
 ```
+

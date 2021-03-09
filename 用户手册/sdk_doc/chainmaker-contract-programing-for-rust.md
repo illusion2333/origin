@@ -4,19 +4,96 @@
 
 ## 1 合约编写流程
 
-## 1.1 使用IDE进行合约开发
 
-请参考文档：[《ChainMaker IDE User Manual》](./chainmaker-ide-user-manual.md)
+## 1.1 使用Docker镜像进行合约开发
+
+ChainMaker官方已经将容器发布至GitHub
+
+拉取镜像
+```
+docker pull huzhenyuan/chainmaker-rust-contract:1.0.0
+```
+
+请指定你本机的工作目录$WORK_DIR，例如C:\tmp，挂载到docker容器中以方便后续进行必要的一些文件拷贝
+
+```
+docker run -it --name chainmaker-rust-contract -v $WORK_DIR:/home huzhenyuan/chainmaker-rust-contract:1.0.0 bash
+```
+
+编译合约
+
+```
+# cd /home/
+# tar xvf /data/contract_rust_template.tar.gz
+# cd contract_rust
+# wasm-pack build
+```
+
+生成合约的字节码文件在
+
+```
+/home/contract_rust/main.wasm
+```
+
+通过本地模拟环境运行合约(首次编译运行合约可能需要10秒左右，下面以两数相除作为示例)
+
+```
+# wxvm main.wasm divide num1 100 num2 8
+
+2021-03-09 03:36:46.864 [INFO]  [Vm] @chain01   wxvm/code_manager.go:81 compile wxvm code for contract test-contract,  time cost 4.6587203s
+2021-03-09 03:36:46.926 [DEBUG] [Vm]    wxvm/context_service.go:206     wxvm log >>[test-TxId] [1] call divide()
+2021-03-09 03:36:46.939 [DEBUG] [Vm]    wxvm/context_service.go:206     wxvm log >>[test-TxId] [1] num 1:100
+2021-03-09 03:36:46.940 [DEBUG] [Vm]    wxvm/context_service.go:206     wxvm log >>[test-TxId] [1] num 2:8
+2021-03-09 03:36:46.941 [DEBUG] [Vm]    wxvm/context_service.go:206     wxvm log >>[test-TxId] [1] divide result is 12
+2021-03-09 03:36:46.942 [INFO]  [Vm] @chain01   main/main.go:29 contractResult :result:"divide result is 12"
+```
+
+其中除法的合约方法定义为：
+
+```
+#include "chainmaker/chainmaker.h"
+
+using namespace chainmaker;
+
+class Counter : public Contract {
+public:
+	...
+	...
+    void divide() {
+        Context* ctx = context();
+        ctx->log("call divide()");
+
+        std::string num1_string;
+        std::string num2_string;
+
+        ctx->arg("num1", num1_string);
+        ctx->arg("num2", num2_string);
+
+        int num1 = atoi(num1_string.c_str());
+        int num2 = atoi(num2_string.c_str());
+        ctx->log("num 1:" + num1_string);
+        ctx->log("num 2:" + num2_string);
+        char buf[32];
+        snprintf(buf, 32, "divide result is %d", (int) (num1 / num2));
+        ctx->log(buf);
+
+        ctx->success(buf);
+    }
+    ...
+    ...
+}
+
+WASM_EXPORT void divide() {
+    Counter counter;
+    counter.divide();
+}
+```
+
+
 
 ### 1.2 框架描述
 
-使用IDE新建一个Rust语言的项目之后，IDE会默认将Rust SDK和一些工具代码附加上去，如下图：
-
-<img src="../images/rust-frame.png" alt="rust-frame.png" style="zoom:50%;" />
-
-对IDE默认附带的框架文件描述如下：
-
-rust
+解压缩contract_rust_template.tar.gz后，文件描述如下：
 
 - Cargo.toml： 工程配置，参考：https://rustwasm.github.io/wasm-pack/book/cargo-toml-configuration.html
 - src： 源码目录
