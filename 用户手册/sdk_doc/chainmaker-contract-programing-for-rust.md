@@ -35,62 +35,6 @@ docker run -it --name chainmaker-rust-contract -v $WORK_DIR:/home huzhenyuan/cha
 /home/contract_rust/main.wasm
 ```
 
-通过本地模拟环境运行合约(首次编译运行合约可能需要10秒左右，下面以两数相除作为示例)
-
-```
-# wxvm main.wasm divide num1 100 num2 8
-
-2021-03-09 03:36:46.864 [INFO]  [Vm] @chain01   wxvm/code_manager.go:81 compile wxvm code for contract test-contract,  time cost 4.6587203s
-2021-03-09 03:36:46.926 [DEBUG] [Vm]    wxvm/context_service.go:206     wxvm log >>[test-TxId] [1] call divide()
-2021-03-09 03:36:46.939 [DEBUG] [Vm]    wxvm/context_service.go:206     wxvm log >>[test-TxId] [1] num 1:100
-2021-03-09 03:36:46.940 [DEBUG] [Vm]    wxvm/context_service.go:206     wxvm log >>[test-TxId] [1] num 2:8
-2021-03-09 03:36:46.941 [DEBUG] [Vm]    wxvm/context_service.go:206     wxvm log >>[test-TxId] [1] divide result is 12
-2021-03-09 03:36:46.942 [INFO]  [Vm] @chain01   main/main.go:29 contractResult :result:"divide result is 12"
-```
-
-其中除法的合约方法定义为：
-
-```
-#include "chainmaker/chainmaker.h"
-
-using namespace chainmaker;
-
-class Counter : public Contract {
-public:
-	...
-	...
-    void divide() {
-        Context* ctx = context();
-        ctx->log("call divide()");
-
-        std::string num1_string;
-        std::string num2_string;
-
-        ctx->arg("num1", num1_string);
-        ctx->arg("num2", num2_string);
-
-        int num1 = atoi(num1_string.c_str());
-        int num2 = atoi(num2_string.c_str());
-        ctx->log("num 1:" + num1_string);
-        ctx->log("num 2:" + num2_string);
-        char buf[32];
-        snprintf(buf, 32, "divide result is %d", (int) (num1 / num2));
-        ctx->log(buf);
-
-        ctx->success(buf);
-    }
-    ...
-    ...
-}
-
-WASM_EXPORT void divide() {
-    Counter counter;
-    counter.divide();
-}
-```
-
-
-
 ### 1.2 框架描述
 
 解压缩contract_rust_template.tar.gz后，文件描述如下：
