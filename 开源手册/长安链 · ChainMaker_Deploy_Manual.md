@@ -128,7 +128,10 @@ cd chainmaker-go/scripts
 ```sh
 cd chainmaker-go/tools/cmc
 go build
+tar zvxf ../../build/release/crypto-config-xxx.tar.gz(xxx代表最新时间)
 cp -r ../sdk/testdata ./ 
+rm -rf testdata/crypto-config
+mv ./crypto-config testdata/
 ./cmc client contract user create --admin-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.key --admin-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.crt  --org-id=wx-org1.chainmaker.org --chain-id=chain1 --client-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt --client-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key --byte-code-path=../../test/wasm/asset-rust-0.7.2.wasm --contract-name=asset_new24 --runtime-type=WASMER --sdk-conf-path=./testdata/sdk_config.yml --version=1.0 --sync-result=true --params="{\"issue_limit\":\"500000000\",\"total_supply\":\"1000000000\"}"
 ```
 
