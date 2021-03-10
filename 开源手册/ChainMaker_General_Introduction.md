@@ -2,7 +2,7 @@
 typora-root-url: ../开源手册
 ---
 
-# 长安链 · ChainMaker User Manual
+# 长安链 · ChainMaker General Introduction
 
 
 

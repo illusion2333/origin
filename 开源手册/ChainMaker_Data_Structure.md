@@ -2,7 +2,7 @@
 typora-root-url: ../开源手册
 ---
 
-# 长安链 · ChainMaker User Manual
+# 长安链 · ChainMaker Data Structure
 
 ## 数据模型
 
@@ -10,7 +10,7 @@ typora-root-url: ../开源手册
 
 
 
-<img src="images/pb-structure.png" alt="image-20210205154124447.png" style="zoom: 60%;" />
+<img src="images/pb-structure.png" style="zoom: 60%;" />
 
 ### 区块
 
