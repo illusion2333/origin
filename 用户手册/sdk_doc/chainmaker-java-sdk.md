@@ -89,7 +89,7 @@ public class ResponseInfo {
 }
 ```
 
-## 2 ChainClient类接口定义 <span href="useContractInterface"></span>
+## 2 ChainClient类接口定义
 
 ChainClient类描述了所有用户能够对链进行操作的接口
 
@@ -130,7 +130,7 @@ public byte[] createPayloadOfContractUpgrade(String contractName, String version
                                              Contract.RuntimeType runtimeType, Map<String, String> params,
                                              byte[] byteCodes) {
 ```
-#### 2.1.3 生成用于升级合约的待签名payload
+#### 2.1.3 生成用于冻结合约的待签名payload
  **参数说明**
 
   - contractName: 合约名
@@ -139,7 +139,7 @@ public byte[] createPayloadOfContractUpgrade(String contractName, String version
 ```java
 public byte[] createPayloadOfContractFreeze(String contractName) {}
 ```
-#### 2.1.4 生成用于冻结合约的待签名payload
+#### 2.1.4 生成用于解冻合约的待签名payload
  **参数说明**
 
   - contractName: 合约名
@@ -148,7 +148,7 @@ public byte[] createPayloadOfContractFreeze(String contractName) {}
 ```java
 public byte[] createPayloadOfContractUnfreeze(String contractName) {}
 ```
-#### 2.1.5 生成用于冻结合约的待签名payload
+#### 2.1.5 生成用于吊销合约的待签名payload
  **参数说明**
 
   - contractName: 合约名
@@ -177,7 +177,8 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
   - syncResultTimeout: 同步获取执行结果超时时间，小于等于0代表不等待执行结果，直接返回（返回信息里包含交易ID），单位：毫秒
 ```java
     public ResponseInfo createContract(byte[] payloadWithEndorsementsBytes, long rpcCallTimeout,
-                                       long syncResultTimeout) throws InvalidProtocolBufferException {
+                                       long syncResultTimeout) throws InvalidProtocolBufferException, 
+																				ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -190,7 +191,8 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
     直接返回（返回信息里包含交易ID），单位：毫秒
 ```java
     public ResponseInfo upgradeContract(byte[] payloadWithEndorsementsBytes, long rpcCallTimeout,
-                                        long syncResultTimeout) throws InvalidProtocolBufferException {
+                                        long syncResultTimeout) throws InvalidProtocolBufferException, 
+																				ChainMakerCryptoSuiteException {
     }
 ```
 #### 2.1.9 冻结合约
@@ -202,7 +204,8 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
     直接返回（返回信息里包含交易ID），单位：毫秒
 ```java
     public ResponseInfo freezeContract(byte[] payloadWithEndorsementsBytes, long rpcCallTimeout,
-                                        long syncResultTimeout) throws InvalidProtocolBufferException {}
+                                        long syncResultTimeout) throws InvalidProtocolBufferException, 
+																				ChainMakerCryptoSuiteException {}
 ```
 #### 2.1.10 解冻合约
 **参数说明**
@@ -213,7 +216,8 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
     直接返回（返回信息里包含交易ID），单位：毫秒
 ```java
     public ResponseInfo unfreezeContract(byte[] payloadWithEndorsementsBytes, long rpcCallTimeout,
-                                       long syncResultTimeout) throws InvalidProtocolBufferException {}
+                                       long syncResultTimeout) throws InvalidProtocolBufferException, 
+																				ChainMakerCryptoSuiteException {}
 ```
 #### 2.1.11 吊销合约
 **参数说明**
@@ -224,7 +228,8 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
     直接返回（返回信息里包含交易ID），单位：毫秒
 ```java
     public ResponseInfo revokeContract(byte[] payloadWithEndorsementsBytes, long rpcCallTimeout,
-                                       long syncResultTimeout) throws InvalidProtocolBufferException {
+                                       long syncResultTimeout) throws InvalidProtocolBufferException, 
+																				ChainMakerCryptoSuiteException {
 ```
 
 #### 2.1.12 执行合约
@@ -238,7 +243,8 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
 ```java
     public ResponseInfo invokeContract(String contractName, String method,
                                        Map<String, String> params, long rpcCallTimeout,
-                                       long syncResultTimeout) throws InvalidProtocolBufferException {
+                                       long syncResultTimeout) throws InvalidProtocolBufferException, 
+																				ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -250,7 +256,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
   - timeout: 执行超时时间，单位毫秒
 ```java
     public ResponseInfo queryContract(String contractName, String method,
-                                      Map<String, String> params, long timeout) {
+                                      Map<String, String> params, long timeout) throws ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -261,7 +267,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
   - timeout：超时时间，单位毫秒
 ```java
     public ChainmakerTransaction.TransactionInfo getTxByTxId(String txId, long timeout)
-            throws InvalidProtocolBufferException {
+            throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException  {
     }
 ```
 
@@ -272,7 +278,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
   - timeout：超时时间，单位毫秒
 ```java
     public ChainmakerBlock.BlockInfo getBlockByHeight(long blockHeight, boolean withRWSet, long timeout)
-            throws InvalidProtocolBufferException {
+            throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -283,7 +289,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
   - timeout：超时时间，单位毫秒
 ```java
     public ChainmakerBlock.BlockInfo getBlockByHash(String blockHash, boolean withRWSet, long timeout)
-            throws InvalidProtocolBufferException  {
+            throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -294,7 +300,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
   - timeout：超时时间，单位毫秒
 ```java
     public ChainmakerBlock.BlockInfo getBlockByTxId(String txId, boolean withRWSet, long timeout)
-            throws InvalidProtocolBufferException {
+            throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -304,22 +310,11 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
   - timeout：超时时间，单位毫秒
 ```java
     public ChainmakerBlock.BlockInfo getLastConfigBlock(boolean withRWSet, long timeout)
-            throws InvalidProtocolBufferException {
+            throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
-#### 2.2.6 查询节点已部署的所有合约信息
-
-**返回值说明**
-
-   - 包括：合约名、合约版本、运行环境、交易ID
-```java
-    public Contract.ContractInfo getContractInfo(long timeout)
-            throws InvalidProtocolBufferException {
-    }
-```
-
-#### 2.2.7 查询节点加入的链信息
+#### 2.2.6 查询节点加入的链信息
 
 **参数说明**
 
@@ -331,7 +326,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
 
 ```java
     public Discovery.ChainList getNodeChainList(long timeout)
-            throws InvalidProtocolBufferException {
+            throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -342,7 +337,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
   - 包括：当前链最新高度，链节点信息
 ```java
     public Discovery.ChainInfo getChainInfo(long timeout)
-            throws InvalidProtocolBufferException {
+            throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -362,6 +357,11 @@ message ChainConfig {
     ConsensusConfig                 consensus        = 8; // 共识配置
     repeated TrustRootConfig        trust_roots      = 9; // 联盟成员，联盟链配置初始成员；公链无需配置。key：节点标识；value：地址，节点公钥/CA证书
     repeated Permission             permissions      = 10; // 权限配置
+}
+
+message Permission{
+    string          resource_name   =1; // 方法名
+    Principle       principle       =2; // 权限
 }
 
 // crypto配置
@@ -391,12 +391,22 @@ message ConsensusConfig {
     repeated KeyValuePair   ext_config      = 3; // 扩展字段，记录难度、奖励等其他类共识算法配置
 }
 
+// 机构配置
+message OrgConfig {
+    string org_id = 1;
+    repeated string address =2;// 机构下的地址列表
+}
+
+message TrustRootConfig {
+    string org_id   = 1; // 组织名
+    string root     = 2; // root证书/公钥
+}
 ```
 
 #### 3.1 查询最新链配置
 ```java
     public ChainmakerConfig.ChainConfig getChainConfig(long timeout)
-            throws InvalidProtocolBufferException {
+            throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -404,7 +414,7 @@ message ConsensusConfig {
   - 如果当前区块就是配置块，直接返回当前区块的链配置
 ```java
     public ChainmakerConfig.ChainConfig getChainConfigByBlockHeight(int blockHeight, long timeout)
-            throws InvalidProtocolBufferException {
+            throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -412,7 +422,7 @@ message ConsensusConfig {
   - 用于链配置更新
 ```java
     public long getChainConfigSequence(long timeout)
-            throws TimeoutException, InvalidProtocolBufferException {
+            throws TimeoutException, InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -424,12 +434,13 @@ message ConsensusConfig {
 ```java
     public byte[] createPayloadOfChainConfigCoreUpdate(int txSchedulerTimeout, int txSchedulerValidateTimeout,
     																									 long timeout)
-            throws TimeoutException, InvalidProtocolBufferException {
+            throws TimeoutException, InvalidProtocolBufferException, ChainClientException, ChainMakerCryptoSuiteException {
     }
 ```
 
 #### 2.3.5 更新Core模块待签名payload生成
 **参数说明**
+
   - txTimestampVerify: 是否需要开启交易时间戳校验
   - (以下参数，若无需修改，请置为-1)
   - txTimeout: 交易时间戳的过期时间(秒)，其值范围为[600, +∞)
@@ -440,7 +451,7 @@ message ConsensusConfig {
     public byte[] createPayloadOfChainConfigBlockUpdate(boolean txTimestampVerify, int txTimeout, 
     																										int blockTxCapacity, int blockSize, int blockInterval,
                                                         long timeout)
-            throws TimeoutException, InvalidProtocolBufferException {
+            throws TimeoutException, InvalidProtocolBufferException, ChainClientException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -451,7 +462,7 @@ message ConsensusConfig {
 ```java
     public byte[] createPayloadOfChainConfigTrustRootAdd(String trustRootOrgId, String trustRootCrt, 
     																										 long timeout)
-            throws TimeoutException, InvalidProtocolBufferException {
+            throws TimeoutException, InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -462,7 +473,7 @@ message ConsensusConfig {
 ```java
     public byte[] createPayloadOfChainConfigTrustRootUpdate(String trustRootOrgId, String trustRootCrt, 
     																												long timeout)
-            throws TimeoutException, InvalidProtocolBufferException {
+            throws TimeoutException, InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -482,7 +493,7 @@ message ConsensusConfig {
 ```java
     public byte[] createPayloadOfChainConfigPermissionAdd(String permissionResourceName,
                                                           PrincipleOuterClass.Principle principal, long timeout)
-            throws TimeoutException, InvalidProtocolBufferException {
+            throws TimeoutException, InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -494,7 +505,7 @@ message ConsensusConfig {
     public byte[] createPayloadOfChainConfigPermissionUpdate(String permissionResourceName,
                                                              PrincipleOuterClass.Principle principal, 
                                                              long timeout)
-            throws TimeoutException, InvalidProtocolBufferException {
+            throws TimeoutException, InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -503,7 +514,7 @@ message ConsensusConfig {
   - permissionResourceName: 权限名
 ```java
     public byte[] createPayloadOfChainConfigPermissionDelete(String permissionResourceName, long timeout)
-            throws TimeoutException, InvalidProtocolBufferException {
+            throws TimeoutException, InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -514,7 +525,7 @@ message ConsensusConfig {
 ```java
     public byte[] createPayloadOfChainConfigConsensusNodeAddrAdd(String nodeOrgId, String[] nodeAddresses, 
     																														 long timeout)
-            throws TimeoutException, InvalidProtocolBufferException {
+            throws TimeoutException, InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -526,7 +537,7 @@ message ConsensusConfig {
 ```java
     public byte[] createPayloadOfChainConfigConsensusNodeAddrUpdate(String nodeOrgId, String nodeOldAddress,
                                                                     String nodeNewAddress, long timeout)
-            throws TimeoutException, InvalidProtocolBufferException {
+            throws TimeoutException, InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -537,7 +548,7 @@ message ConsensusConfig {
 ```java
     public byte[] createPayloadOfChainConfigConsensusNodeAddrDelete(String nodeOrgId, String nodeAddress, 
     																																long timeout)
-            throws TimeoutException, InvalidProtocolBufferException {
+            throws TimeoutException, InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -548,18 +559,19 @@ message ConsensusConfig {
 ```java
     public byte[] createPayloadOfChainConfigConsensusNodeOrgAdd(String nodeOrgId, String[] nodeAddresses, 
     																														long timeout)
-            throws TimeoutException, InvalidProtocolBufferException {
+            throws TimeoutException, InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
 #### 2.3.16 更新共识节点待签名payload生成
 **参数说明**
+
   - nodeOrgId: 节点组织Id
   - nodeAddresses: 节点地址
 ```java
     public byte[] createPayloadOfChainConfigConsensusNodeOrgUpdate(String nodeOrgId, String[] nodeAddresses, 
     																															 long timeout)
-            throws TimeoutException, InvalidProtocolBufferException {
+            throws TimeoutException, InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -568,7 +580,7 @@ message ConsensusConfig {
   - nodeOrgId: 节点组织Id
 ```java
     public byte[] createChainConfigConsensusNodeOrgDeletePayload(String nodeOrgId, long timeout)
-            throws TimeoutException, InvalidProtocolBufferException {
+            throws TimeoutException, InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -577,7 +589,7 @@ message ConsensusConfig {
   - params: Map<String, String>
 ```java
     public byte[] createPayloadOfChainConfigConsensusExtAdd(Map<String, String> params, long timeout)
-            throws TimeoutException, InvalidProtocolBufferException {
+            throws TimeoutException, InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -586,7 +598,7 @@ message ConsensusConfig {
   - params: Map<String, String>
 ```java
     public byte[] createPayloadOfChainConfigConsensusExtUpdatePayload(Map<String, String> params, long timeout)
-            throws TimeoutException, InvalidProtocolBufferException {
+            throws TimeoutException, InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -595,7 +607,7 @@ message ConsensusConfig {
   - keys: 待删除字段
 ```java
     public byte[] createPayloadOfChainConfigConsensusExtDelete(String[] keys, long timeout)
-            throws TimeoutException, InvalidProtocolBufferException {
+            throws TimeoutException, InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -607,7 +619,7 @@ message ConsensusConfig {
 
 #### 2.3.22 发送链配置更新请求
 ```java
-    public ResponseInfo updateChainConfig(byte[] payloadWithEndorsementsBytes, long rpcCallTimeout) {
+    public ResponseInfo updateChainConfig(byte[] payloadWithEndorsementsBytes, long rpcCallTimeout) throws ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -619,16 +631,17 @@ message ConsensusConfig {
   - syncResultTimeout: 同步交易结果的超时时间
 ```java
     public ResponseInfo addCert(long rpcCallTimeout, long syncResultTimeout) 
-      throws InvalidProtocolBufferException {
+      throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
 #### 2.4.2 用户证书删除
 **参数说明**
+
   - certHashes: 证书Hash列表
 ```java
     public ResponseInfo deleteCert(String[] certHashes, long rpcCallTimeout, long syncResultTimeout) 
-      throws InvalidProtocolBufferException {
+      throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -657,7 +670,7 @@ public byte[] createPayloadOfRevokeCerts(String certCrl) {}
   - syncResultTimeout: 同步交易结果的超时时间
 ```java
     public ResponseInfo freezeCerts(byte[] payload, long rpcCallTimeout, long syncResultTimeout) 
-      throws InvalidProtocolBufferException {}
+      throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {}
 ```
 #### 2.4.7 解冻证书
 **参数说明**
@@ -666,7 +679,7 @@ public byte[] createPayloadOfRevokeCerts(String certCrl) {}
   - syncResultTimeout: 同步交易结果的超时时间
 ```java
     public ResponseInfo unfreezeCerts(byte[] payload, long rpcCallTimeout, long syncResultTimeout) 
-            throws InvalidProtocolBufferException {}
+            throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {}
 ```
 #### 2.4.8 吊销证书
 **参数说明**
@@ -675,7 +688,7 @@ public byte[] createPayloadOfRevokeCerts(String certCrl) {}
   - syncResultTimeout: 同步交易结果的超时时间
 ```java
     public ResponseInfo revokeCerts(byte[] payload, long rpcCallTimeout, long syncResultTimeout) 
-            throws InvalidProtocolBufferException {}
+            throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {}
 ```
 #### 2.4.9 用户证书查询
 **参数说明**
@@ -685,7 +698,7 @@ public byte[] createPayloadOfRevokeCerts(String certCrl) {}
   - *pb.CertInfos: 包含证书Hash和证书内容的列表
 ```java
     public ChainmakerResult.CertInfos queryCert(String[] certHashes, long timeout)
-            throws InvalidProtocolBufferException {
+            throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 ### 2.5 多签接口
@@ -701,7 +714,8 @@ public byte[] createPayloadOfRevokeCerts(String certCrl) {}
 public ResponseInfo sendMultiSignRequest(Request.TxType txType, byte[] payload, 
                                          Request.EndorsementEntry endorsement,                                      
                                          long deadlineBlock, long rpcCallTimeout, 
-                                         long syncResultTimeout) throws InvalidProtocolBufferException {}
+                                         long syncResultTimeout) 
+  throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {}
 ```
 #### 2.5.1 发送多签交易投票
 **参数说明**
@@ -716,7 +730,8 @@ public ResponseInfo sendMultiSignRequest(Request.TxType txType, byte[] payload,
 public ResponseInfo sendMultiSignVote(MultSign.VoteStatus voteStatus, String multiSignReqTxId, 
                                       String payloadHash,
                                       Request.EndorsementEntry endorsement, long rpcCallTimeout,
-                                      long syncResultTimeout) throws InvalidProtocolBufferException {}
+                                      long syncResultTimeout) 
+  throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {}
 ```
 
 ### 2.6 消息订阅接口
@@ -761,7 +776,7 @@ public void stop() {}
 
 ```java
     public byte[] signPayloadOfContractMgmt(byte[] payload, boolean isEnabledCertHash) 
-            throws InvalidProtocolBufferException {
+            throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
@@ -775,7 +790,7 @@ public void stop() {}
 
 ```java
     public byte[] signPayloadOfSystemContract(byte[] payloadBytes, boolean isEnabledCertHash) 
-            throws InvalidProtocolBufferException {
+            throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 ### 3.3 生成用于多签交易的payload
@@ -787,7 +802,7 @@ public void stop() {}
   - 返回包含签名的EndorsementEntry
 
 ```java
-public Request.EndorsementEntry signPayloadOfMultiSign(byte[] payload, boolean isEnabledCertHash) {}
+public Request.EndorsementEntry signPayloadOfMultiSign(byte[] payload, boolean isEnabledCertHash) throws ChainMakerCryptoSuiteException {}
 ```
 ## 4 使用过程
 
