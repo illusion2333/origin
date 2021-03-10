@@ -64,7 +64,7 @@ cmc指令参数说明：
 - client-crt-file-paths  客户端key路径
 - client-key-file-paths  客户端证书路径
 - sdk-conf-path  sdk配置文件路径
-- sync-resul  同步结果
+- sync-result  同步结果
 
 正确输出如下：
 
