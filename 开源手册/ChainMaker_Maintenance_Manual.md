@@ -10,7 +10,7 @@
 
 ## 2 增加新链
 
-### 2.1 添加链创世块配置，参考《长安链 · ChainMaker_Operation_manual》
+### 2.1 添加链创世块配置，参考[《长安链 · ChainMaker_Operation_manual》](./ChainMaker_Operation_Manual.md)
 
 ### 2.2 修改chainmaker配置文件
 

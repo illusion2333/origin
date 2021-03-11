@@ -1,4 +1,4 @@
- # 长安链 · ChainMaker Contract Manual
+# 长安链 · ChainMaker Contract Manual
 
 [TOC]
 
@@ -33,14 +33,14 @@
 
 随后将调用执行合约的初始化方法：
 
-- 对于WASM而言，将调用**init_contract()**方法，用户必须提供导出的**init_contract()**方法
+- 对于WASM而言，将调用 **init_contract()** 方法，用户必须提供导出的 **init_contract()** 方法
 - 对于EVM而言，将调用构造方法
 
 ### 合约升级
 
 ChainMaker支持对基于WASM和EVM的字节码进行升级
 
-- 对于WASM而言，将调用**upgrade()**方法，用户必须提供导出的**upgrade()**方法
+- 对于WASM而言，将调用 **upgrade()** 方法，用户必须提供导出的 **upgrade()** 方法
 - 对于EVM而言，并不会调用任何方法，只是单纯更新字节码
 
 合约升级也同样需要校验参数，如果下列校验出错，将把执行的错误信息记录在交易的执行结果中：

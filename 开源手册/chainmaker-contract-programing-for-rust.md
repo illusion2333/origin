@@ -199,11 +199,11 @@ fn method_name() {
 
 ## 2 合约发布过程
 
-请参考：[《chainmaker-go-sdk.md》](./chainmaker-go-sdk.md)4.1.5 发送创建合约请求，或者[《chainmaker-java-sdk.md》](./chainmaker-java-sdk.md)2.1.4 创建合约。
+请参考：[《chainmaker-go-sdk》](./chainmaker-go-sdk.md)4.1.5 发送创建合约请求，或者[《chainmaker-java-sdk》](./chainmaker-java-sdk.md)2.1.4 创建合约。
 
 ## 3 合约调用过程
 
-请参考：[《chainmaker-go-sdk.md》](./chainmaker-go-sdk.md)4.1.7 合约调用，或者[《chainmaker-java-sdk.md》](./chainmaker-java-sdk.md)2.1.7 执行合约。
+请参考：[《chainmaker-go-sdk》](./chainmaker-go-sdk.md)4.1.7 合约调用，或者[《chainmaker-java-sdk》](./chainmaker-java-sdk.md)2.1.7 执行合约。
 
 
 ## 4 Rust SDK API描述 <span id="api"></span>
