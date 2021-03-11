@@ -1182,35 +1182,85 @@ CGO_LDFLAGS="-L/usr/local/rocksdb -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
    ```
 
-   
 
-### 身份、权限管理
+
+### 身份与权限管理
 
 #### 简介
 
-身份、权限管理分为两个部分：身份管理（Identity Management）和权限管理（Access Control）。
+身份与权限管理分两部分：
 
-Identity Management (idmgmt) 用于管理区块链的组织成员身份，是一个基于 PKI 体系的管理模块。
+- 身份模块（Identity Mode）
 
-- 私钥部分：模块管理本地节点或成员的私钥，本地节点或成员与链上其他节点交互时用这个私钥对消息签名。
+- 权限管理（Access Control)
 
-- 公钥部分：该模块从链配置中读取链上所有组织的公共信息，包括公钥、证书等，用于在交互式验证对端的合法性。
+身份模块是基于PKI实现的：
 
-Access Control (权限管理) 模块实现了链上资源与权限规则的匹配，并在链的参与者使用链上资源时验证其权限是否符合目标资源的权限规则。
+- 私钥部分：模块管理本地节点或者用户成员的私钥，本地节点或成员与链上其他节点交互用这个私钥对消息进行签名
+- 公钥部分：该模块从链配置中读取链上所有组织的公共信息，高阔公钥、证书等，用户在交互式验证对端的合法性。
+
+权限管理（Access Control）模块实现了链上资源与权限规则的匹配，并在链的参与者使用链上资源时验证其权限是否符合目标资源的权限规则：
 
 - 权限管理：解析默认配置、链配置中的权限配置，并维护一个资源-权限规则列表。
+- 鉴权：与身份模块（Identity Mode）一起，为链上成员与资源的权限规则提供验证能力。
 
-- 鉴权：与 IDMgmt (身份管理模块) 一起，为链上成员与资源的权限规则提供验证能力。
+#### 组织、成员身份模块
 
+身份模块由两部分组成等：
 
-#### 组织成员身份管理
+- Organization：组织模块用来管理公共验证信息和本组织的公共信息
+- Member：成员模块用来管理本地节点或者本地成员的私钥相关信息
 
-身份管理模块由两部分组成：组织和成员。组织模块管理全链公共验证信息和本组织的公共信息。成员模块管理本地节点或本地成员的私钥相关信息。
+##### 成员（Member）
 
-##### 成员及其签名能力
+###### **Member** 结构：
 
-成员接口和代表一个成员的签名接口如下：
 ```go
+type member struct {
+	// the identity of this member (SKI of its certificate)
+	id string
+
+	// organization identity who owns this member
+	orgId string
+
+	// cert contains the x.509 certificate that signs the public key of this instance
+	cert *bcx509.Certificate
+
+	// this is the public key or certificate of this instance
+	pk bccrypto.PublicKey
+
+	// role of this member
+	role []protocol.Role
+
+	// authentication type: x509 certificate or plain public key
+	identityType IdentityType
+
+	// hash type from chain configuration
+	hashType string
+}
+```
+
+字段说明：
+
+- `id`：用户的唯一标识。
+- `orgId`：所属组织，一个用户有且只有一个归属组织。
+- `role`：一个用户可以有几个属于它组织下的身份
+
+**role** 在 *protocol/access_control_interface.go* 里预定义了以下几种角色类型：
+
+```go
+RoleAdmin         Role = "ADMIN"
+RoleClient        Role = "CLIENT"
+RoleConsensusNode Role = "CONSENSUS"
+RoleCommonNode    Role = "COMMON"
+```
+
+成员作为用户时有管理员和普通用户两种角色类型，作为节点时有共识和普通两种角色类型。
+
+**Member** 接口定义及实现：
+
+```go
+// Member is the identity of a node or user.
 type Member interface {
 	// GetMemberId returns the identity of this member
 	GetMemberId() string
@@ -1235,29 +1285,272 @@ type Member interface {
 	Serialize(isFullCert bool) ([]byte, error)
 
 	// GetSerializedMember returns SerializedMember
-	GetSerializedMember(isFullCert bool) (*pb.SerializedMember, error)
+	GetSerializedMember(isFullCert bool) (*pbac.SerializedMember, error)
 }
+```
 
+###### 签名
+
+成员签名接口定义：
+
+```go
 type SigningMember interface {
-	// Extends Identity
+	// Extends Member interface
 	Member
 
-	// Sign the message
+	// Sign signs the message with the given hash type and returns signature bytes
 	Sign(hashType string, msg []byte) ([]byte, error)
 }
 ```
-Sign() 使用成员的私钥对入参数据生成一个签名。
 
-Verify() 验证一个入参签名、数据是否是由这个成员签发的。
 
-Serialize() 和 GetSerializeMember() 接口用于序列化成员。其中，GetSerializeMember() 接口将 Member 结构转化为 protobuf 中定义的可序列化结构，其中包含成员的关键信息：证书、组织、证书是否压缩。Serialize() 接口则是跳过转化为 protobuf 类的这一步，直接讲 Member 的关键信息以字符串形式表示。这两个接口根据需要，在包装请求报文时使用。私钥为不可序列化的部分，以防止错误地将私钥序列化后在网络中传输。原则上私钥不会离开本地。
 
-#### Access Control 模块组件
-Policy：链上成员所持有的身份。
-Principle：一个链上资源的权限规则。
-AccessControl：结构定义了权限管理对外的接口。
+##### 组织（Organization）
+
+###### **organization** 结构：
 
 ```go
+type organization struct {
+	// Name of this group
+	id string
+
+	// Trusted certificates or white list
+	trustedRootCerts map[string]*bcx509.Certificate
+
+	// Trusted intermediate certificates or white list
+	trustedIntermediateCerts map[string]*bcx509.Certificate
+}
+```
+
+##### 组织-成员对应关系图
+
+成员和组织之间的对应关系如下图所示：
+
+![组织-成员关系图](./images/organization-member.png)
+
+#### 权限管理模块
+
+##### 权限规则
+
+**Rule** 是规定了能够按照什么方式去做什么事，在 *protocol/access_control_interface.go* 中预定义了如下权限规则：
+
+```go
+const (
+	// ...
+
+	RuleMajority  Rule = "MAJORITY"
+	RuleAll       Rule = "ALL"
+	RuleAny       Rule = "ANY"
+	RuleSelf      Rule = "SELF"
+	RuleForbidden Rule = "FORBIDDEN"
+	RuleDelete    Rule = "DELETE"
+)
+```
+
+各个规则的具体作用在下节策略中详细介绍！
+
+##### 策略
+
+**Policy** （策略）policy 明确了哪些组织（orgList）下的哪些人（roleList）根据什么规则（rule）有权限去做某些事（请求资源）。
+
+结构如下：
+
+```go
+type policy struct {
+	rule     protocol.Rule
+	orgList  []string
+	roleList []protocol.Role
+}
+```
+
+字段说明：
+
+- `orgList`：用于存储一个组织名列表，如果一个签名者不属于列表中任何一个组织，那么他的签名在当前规则
+- `roleList`：用于存储一个身份名列表，如果一个签名者不具备列表中的任何一个身份，那么他的签名在当前规则中会被鉴定为不合法
+- `rule`：是权限类型
+
+`rule`规则详解：
+
+1. `"MAJORITY"`：要求半数以上的组织共同参与，每个组织至少一个管理员身份（admin）的成员提供签名
+
+   a. 只有 admin 身份被认为合法。默认 `roleList` 中只有 admin 。
+
+   b. 可以自定义 `orgList` 。
+
+   c. 这个类型是修改大部分链配置的默认权限类型。
+
+   d. 来自同一个组织的多个 admin 身份签名只会被统计一次。
+
+2. `SELF` 签名者必须与目标资源所属同一个组织
+
+   a. 这个规则只能用于与组织有所属关系的资源。该规则下，自定义 `orgList` 将不会生效。
+
+   b. 只接受 admin 身份的签名者签名，自定义 `roleList` 将不会生效。
+   c. 一个符合组织、身份要求的签名就足够满足本规则。
+   d. 目前，只有组织根证书、组织共识节点两项配置可以且应该使用此规则。
+
+3. "ANY". 签名者属于 `orgList` 中的任意一个组织，且签名者拥有 `roleList` 中的任意一个身份，则签名被视为有效：
+   a. `orgList` 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
+   b. `roleList` 可以随意配置任意身份集合，留空则代表所有身份都满足要求。
+   c. 这类规则目前主要用于宽泛的读写权限控制。
+
+4. "ALL". 要求 `orgList` 列表中所有组织参与，每个组织至少提供一个符合 `roleList` 要求身份的签名:
+   a. `orgList` 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
+   b. `roleList` 可以随意配置任意身份集合，留空则代表所有身份都满足要求。
+   c. 来自同一个组织的合法签名只会被统计一次。
+
+5. 一个以字符串形式表达的整数 (eg. "3") 作为阈值：
+   a. `orgList` 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
+   b. `roleList` 可以随意配置任意身份集合，留空则代表所有身份都满足要求。
+   c. 这是个用户自定义的规则，这个证书可以为1到组织总数间的任意一个数，包括1和组织总数。
+   d. 这条规则与 `ALL` 规则相似，但不要求 `orgList` 中的所有组织参与，而只要求大于或等于阈值数量的 `orgList` 中的不同组织参与即可。
+
+6. 一个以字符串形式表达的分数 (eg. "1/3") 作为比例：
+   a. `orgList` 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
+   b. `roleList` 可以随意配置任意身份集合，留空则代表所有身份都满足要求。
+   c. 这是个用户自定义的规则，可以配置 [0, 1] 间的任意分数。
+   d. 这条规则与 "ALL" 规则相似，但不要求 `orgList` 中的所有组织参与，而只要求大于或等于比例 `orgList` 中的不同组织参与即可。
+
+7. `FORBIDDEN`：这个类型的资源被禁用了。
+
+###### 策略配置使用说明：
+
+示例1：`MAJORITY`规则下的策略详解：
+
+```go
+policy{
+    orgList: []string{"org1", "org2", "org3"},
+	rule: protocol.RuleMajority,
+}
+```
+
+该规则下，只有 `ADMIN`身份被认可， `roleList` 默认为 `protocol.RoleAdmin` 即 `ADMIN`，此时，要求半数以上的组织参与（这里为至少有两个组织参与），并且每个组织管理员身份（`ADMIN`）的成员提供签名才会通过。
+
+当然除了默认指定`ADMIN`成员，你还可以自定义`roleList`字段来指定特定身份成员，如下：
+
+```go
+policy{
+    orgList: []string{"org1", "org2", "org3"},
+    roleList: []protocol.Role{protocol.RoleAdmin, protocol.RoleClient, protocol.RoleCommonNode},
+	rule: protocol.RuleMajority,
+}
+```
+
+注意，每个组织只能提供一个管理员（`ADMIN`）的签名，来自同一组织的多个管理员签名只会被统计一次。并且自定义中的其他身份成员（例如`CLIENT`）的签名是无效的，不被统计的。
+
+示例2：`SELF`规则下的策略详解：
+
+```go
+policy{
+    orgList: []string{"org1", "org2", "org3"},
+    roleList: []protocol.Role{protocol.RoleAdmin, protocol.RoleClient, protocol.RoleCommonNode},
+	rule: protocol.RuleSelf,
+}
+```
+
+该规则配置下，拥有一个所属组织的`ADMIN`成员签名即可。
+
+注意，该规则下自定义配置的`orgList`和`roleList`不会生效，例如上面的配置中是不会生效的，只接受所属组织的`ADMIN`成员签名。目前，只有组织根证书、组织共识节点两项配置可以且应该使用此规则。
+
+示例3：`ANY`规则下的策略详解：
+
+```go
+policy{
+    orgList: []string{"org1", "org2", "org3"},
+    roleList: []protocol.Role{protocol.RoleAdmin, protocol.RoleClient, protocol.RoleCommonNode},
+	rule: protocol.RuleAny,
+}
+```
+
+该规则配置下，拥有配置中的任一组织下的任一身份成员的签名（例如一个`org1`组织下的`CLIENT`身份成员的签名）就会通过。
+
+示例4：`ALL`规则下的策略详解：
+
+```go
+policy{
+    orgList: []string{"org1", "org2", "org3"},
+    roleList: []protocol.Role{protocol.RoleAdmin, protocol.RoleClient, protocol.RoleCommonNode}
+	rule: protocol.RuleAll,
+}
+```
+
+该规则配置下，要求有所有配置组织（这里是`org1`、`org2`、`org3`）下任一成员身份（这里是三个组织下的`ADMIN`或者`CLIENT`或者`COMMON`身份成员）的签名才能通过，所有组织都要参与。
+
+示例5：`字符串整数`规则下的策略详解：
+
+```go
+policy{
+    orgList: []string{"org1", "org2", "org3"},
+    roleList: []protocol.Role{protocol.RoleAdmin, protocol.RoleClient, protocol.RoleCommonNode},
+	rule: "2",
+}
+```
+
+该规则配置下：要求拥有不低于`2`个组织下的任一配置成员身份的签名才能通过。
+
+该规则下`orgList`和`roleList`配置可以为空，为空时分别代表链上所有组织和组织下所有身份都可以参与签名。
+
+示例6：`字符串分数`规则下的策略详解：
+
+```go
+policy{
+    orgList: []string{"org1", "org2", "org3"},
+    roleList: []protocol.Role{protocol.RoleAdmin, protocol.RoleClient, protocol.RoleCommonNode},
+	rule: "1/3",
+}
+```
+
+该规则配置下：要求大于等于配置比例（这里是`1/3`）的组织下的任一配置身份成员进行签名才能通过。
+
+用户可以自定义配置`[0,1]`区间内的任意数以字符串分数的形式表示，例如这里的`"1/3"`。
+
+##### 身份-权限策略对
+
+**principal** （身份-权限策略对）结构如下：
+
+```go
+type principal struct {
+	resourceName string
+	endorsement  []*common.EndorsementEntry
+	message      []byte
+
+	targetOrg string
+}
+```
+
+字段说明：
+
+- `resourceName`：被调用资源的ID，当前资源包括配置项的增、删、查、该，链上数据查询、写入等。
+- `endorsement`：背书列表，即（签名者, 签名）对的列表。
+- `message`：请求消息的主题。
+- `targetOrg`：可选字段，在 resourceId 字段所指示的资源是属于某个特定组织时被使用到。
+
+`resourceName`预定义了以下几种类型：
+
+```go
+	// fine-grained resource id for different policies
+	ResourceNameUnknown          = "UNKNOWN"
+	ResourceNameReadData         = "READ"
+	ResourceNameWriteData        = "WRITE"
+	ResourceNameP2p              = "P2P"
+	ResourceNameConsensusNode    = "CONSENSUS"
+	ResourceNameAdmin            = "ADMIN"
+	ResourceNameUpdateConfig     = "CONFIG"
+	ResourceNameUpdateSelfConfig = "SELF_CONFIG"
+	ResourceNameAllTest          = "ALL_TEST"
+
+	ResourceNameTxQuery    = "query"
+	ResourceNameTxTransact = "transaction"
+```
+
+
+
+##### AccessControl
+
+**AccessControl** 定义了权限管理对外的接口：
+
+```go
+// AccessControlProvider manages policies and principals.
 type AccessControlProvider interface {
 	MemberDeserializer
 
@@ -1265,20 +1558,20 @@ type AccessControlProvider interface {
 	GetHashAlg() string
 
 	// ValidateResourcePolicy checks whether the given resource policy is valid
-	ValidateResourcePolicy(resourcePolicy *pb.ResourcePolicy) bool
+	ValidateResourcePolicy(resourcePolicy *config.ResourcePolicy) bool
 
 	// LookUpResourceNameByTxType returns resource name corresponding to the tx type
-	LookUpResourceNameByTxType(txType pb.TxType) (string, error)
+	LookUpResourceNameByTxType(txType common.TxType) (string, error)
 
 	// CreatePrincipal creates a principal for one time authentication
-	CreatePrincipal(resourceName string, endorsements []*pb.EndorsementEntry, message []byte) (Principal, error)
+	CreatePrincipal(resourceName string, endorsements []*common.EndorsementEntry, message []byte) (Principal, error)
 
 	// CreatePrincipalForTargetOrg creates a principal for "SELF" type policy,
 	// which needs to convert SELF to a sepecific organization id in one authentication
-	CreatePrincipalForTargetOrg(resourceName string, endorsements []*pb.EndorsementEntry, message []byte, targetOrgId string) (Principal, error)
+	CreatePrincipalForTargetOrg(resourceName string, endorsements []*common.EndorsementEntry, message []byte, targetOrgId string) (Principal, error)
 
 	// GetValidEndorsements filters all endorsement entries and returns all valid ones
-	GetValidEndorsements(principal Principal) ([]*pb.EndorsementEntry, error)
+	GetValidEndorsements(principal Principal) ([]*common.EndorsementEntry, error)
 
 	// VerifyPrincipal verifies if the policy for the resource is met
 	VerifyPrincipal(principal Principal) (bool, error)
@@ -1299,7 +1592,7 @@ type AccessControlProvider interface {
 	NewMemberFromCertPem(orgId, certPEM string) (Member, error)
 
 	// NewMemberFromProto creates a member from SerializedMember
-	NewMemberFromProto(serializedMember *pb.SerializedMember) (Member, error)
+	NewMemberFromProto(serializedMember *pbac.SerializedMember) (Member, error)
 
 	// NewSigningMemberFromCertFile creates a signing member from private key and cert files
 	NewSigningMemberFromCertFile(orgId, prvKeyFile, password, certFile string) (SigningMember, error)
@@ -1307,120 +1600,46 @@ type AccessControlProvider interface {
 	// NewSigningMember creates a signing member from existing member
 	NewSigningMember(member Member, privateKeyPem, password string) (SigningMember, error)
 }
+
+// MemberDeserializer interface for members
+type MemberDeserializer interface {
+	// DeserializeMember converts bytes to Member
+	DeserializeMember(serializedMember []byte) (Member, error)
+}
 ```
-权限管理模块的核心接口是 CreatePrincipal(), CreatePrincipalForTargetOrg(), 和 VerifyPrincipal()。前两个接口用于根据请求者身份和所请求的资源构建一个被验证的身份-权限对，后一个接口用于验证这个身份-权限对中的身份是否满足权限要求，包括验证请求者的证书链、签名、身份权限信息。
 
-在其他接口中，CheckPrincipleValidity() 用于判断读自配置中的权限配置是否合理，主要用在链用户发起修改权限配置的请求时。
+权限管理模块的核心接口是 `NewPolicy()`、`NewSelfPolicy()`、`VerifyPolicy()`.
 
-#### 权限规则
-权限规则的结构如下：
-```go
-message Policy {
-    string          rule         = 1; // 规则（ANY，MAJORITY...，全部大写）
-    repeated string org_list     = 2; // 组织名称（组织名称）
-    repeated string role_list    = 3; // 角色名称（role，全部小写）
-}
-
-type policy struct {
-	rule     protocol.Rule
-	orgList  []string
-	roleList []protocol.Role
-}
-
-func NewPrinciple(rule protocol.RuleKeyword, orgList []string, roleList []protocol.Role) protocol.Principle
-```
-1. orgList 用于存储一个组织名列表，如果一个签名者不属于列表中的任何一个组织，那么他的签名在当前规则中会被鉴定为不合法。
-2. roleList 用于储存一个身份名列表，如果一个签名者不具备列表中的任何一个身份，那么他的签名在当前规则中会被鉴定为不合法。
-3. "rule" 是权限类型，有以下几种类型：
-	1. "MAJORITY". 要求半数以上组织共同参与，每个组织至少一个管理员身份 (admin) 的成员提供签名。
-		a. 只有 “admin" 身份被认为合法。默认 roleList 中只有 "admin"。
-		b. 可以自定义 orgList。
-		c. 这个类型是修改大部分链配置的默认权限类型。
-		d. 来自同一个组织的多个 "admin" 身份签名只会被统计一次。
-	2. "SELF". 签名者必须与目标资源所属同一个组织：
-	
-		a. 这个规则只能用于与组织有所属关系的资源。该规则下，自定义 orgList 将不会生效。
-		b. 只接受 "admin" 身份的签名者签名，自定义 roleList 将不会生效。
-		c. 一个符合组织、身份要求的签名就足够满足本规则。
-		d. 目前，只有组织根证书、组织共识节点两项配置可以且应该使用此规则。
-	3. "ANY". 签名者属于 orgList 中的任意一个组织，且签名者拥有 roleList 中的任意一个身份，则签名被视为有效：
-	
-		a. orgList 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
-		b. roleList可以随意配置任意身份集合，留空则代表所有身份都满足要求。
-		c. 这类规则目前主要用于宽泛的读写权限控制。
-	4. "ALL". 要求 orgList 列表中所有组织参与，每个组织至少提供一个符合 roleList 要求身份的签名:
-	
-		a. orgList 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
-		b. roleList可以随意配置任意身份集合，留空则代表所有身份都满足要求。
-		c. 来自同一个组织的合法签名只会被统计一次。
-	5. 一个以字符串形式表达的整数 (eg. "3") 作为阈值：
-	
-		a. orgList 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
-		b. roleList可以随意配置任意身份集合，留空则代表所有身份都满足要求。
-		c. 这是个用户自定义的规则，这个证书可以为1到组织总数间的任意一个数，包括1和组织总数。
-		d. 这条规则与 "ALL" 规则相似，但不要求 orgList 中的所有组织参与，而只要求大于或等于阈值数量的 orgList 中的不同组织参与即可。
-	6. 一个以字符串形式表达的分数 (eg. "1/3") 作为比例：
-	
-		a. orgList 可以随意配置组织名称，留空则代表链上所有组织都满足要求。
-		b. roleList可以随意配置任意身份集合，留空则代表所有身份都满足要求。
-		c. 这是个用户自定义的规则，可以配置 [0, 1] 间的任意分数。
-		d. 这条规则与 "ALL" 规则相似，但不要求 orgList 中的所有组织参与，而只要求大于或等于比例 orgList 中的不同组织参与即可。
-	7. "FORBIDDEN"：这个类型的资源被禁用了。
-
-
-#### 身份、权利策略对
-身份、权利策略对的结构：
-```go
-type Principal interface {
-	// GetResourceName returns resource name of the verification
-	GetResourceName() string
-
-	// GetEndorsement returns all endorsements (signatures) of the verification
-	GetEndorsement() []*pb.EndorsementEntry
-
-	// GetMessage returns signing data of the verification
-	GetMessage() []byte
-
-	// GetTargetOrgId returns target organization id of the verification if the verification is for a specific organization
-	GetTargetOrgId() string
-}
-
-type principal struct {
-	resourceName string
-	endorsement  []*pb.EndorsementEntry
-	message      []byte
-
-	targetOrg string
-}
-
-func (ac *accessControl) CreatePrincipalForTargetOrg(resourceName string, endorsements []*pb.EndorsementEntry, message []byte, targetOrgId string) (protocol.Principal, error)
-func (ac *accessControl) CreatePrincipal(resourceName string, endorsements []*pb.EndorsementEntry, message []byte) (protocol.Principal, error)
-```
-1. resourceName 字段是被调用资源的ID。当前资源包括配置项的增、删、查、改，链上数据查询、写入等。
-2. endorsements 字段存有一个 (签名者，签名) 对的列表。
-3. message 字段是请求的消息体。
-4. targetOrgId 是可选字段。这个字段仅在 resourceId 字段所指示的资源是属于某个特定组织时被使用到。可以参看 "SELF" 规则的说明。
+前两个接口用于根据请求者身份和所请求的资源构建一个被验证的身份身份-策略对，后一个用于验证这个身份-策略后
 
 #### 接口使用说明
 
 ##### 验证权限
+
 首先，构建身份策略 (Policy) 用于判断某一组签名者是否满足目标资源的权限规则：
+
 ```go
 principle, err := ac.CreatePrincipal(Target_Resource_ID, Endorsement_List, Request_Message)
 ```
+
 若资源属于特定组织，则用以下方式：
+
 ```go
 principle, err := ac.CreatePrincipalForTargetOrg(Target_Resource_ID, Endorsement_List, Request_Message, Target_Organization)
 ```
+
 最后调用以下接口来验证身份策略与权限规则是否匹配：
+
 ```go
 ok, err := ac.VerifyPrincipal(principle)
 ```
 
 ##### 新增资源
+
 首选，为新资源添加一个ID。(可参考系统合约 CREATE_USER_CONTRACT 创建用户合约接口，他的资源ID是 TxType_CREATE_USER_CONTRACT)。
 
 然后，把新资源ID添加到默认权限配置列表中，为他赋予一个默认外层权限。
+
 ```go
 var txTypeToResourceNameMap = map[pb.TxType]protocol.ResourceId{
 	pb.TxType_QUERY_USER_CONTRACT:   protocol.RESOURCE_CATEGORY_READ_DATA,
@@ -1434,7 +1653,9 @@ var txTypeToResourceNameMap = map[pb.TxType]protocol.ResourceId{
 	pb.TxType_SYSTEM_CONTRACT:       protocol.RESOURCE_CATEGORY_WRITE_DATA,
 }
 ```
+
 这个 map 被定义在 chainmaker-go/module/access/access_control.go 中. 为新资源ID配置一个下表中的默认权限。
+
 ```go
 const (
 	RESOURCE_UNKNOWN ResourceId = "UNKNOWN"
@@ -1455,10 +1676,13 @@ const (
 	RESOURCE_CATEGORY_ALL ResourceId = "ALL_TEST"
 )
 ```
+
 如果需要配置自定义权限，可以在链配置中设置 (可参考 bc1.yml 文件的 permissions 部分)。
 
 ##### 注意
+
 当新增一个系统合约接口时，必须要为该合约接口配置一个默认的权限，或者在链配置里为他添加一个配置项，否则将无法调用这个合约接口。添加链配置可以用 UPDATE_CHAIN_CONFIG 合约来实现。
+
 
 
 ### 配置模块
