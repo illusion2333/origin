@@ -12,7 +12,7 @@
 
 - [ChainMaker - 概述](./ChainMaker_General_Introduction.md)
 
-快速使用：
+快速上手：
 
 - [ChainMaker - Quick Start](./ChainMaker_Quick_Start.md)
 
@@ -27,9 +27,9 @@
 智能合约：
 
 - [ChainMaker - 智能合约手册](./ChainMaker_Contract_Manual.md)
-- [ChainMaker智能合约 - Go开发手册](./chainmaker-contract-programing-for-go.md)
-- [ChainMaker智能合约 - C++开发手册](./chainmaker-contract-programing-for-c++.md)
-- [ChainMaker智能合约 - Rust开发手册](./chainmaker-contract-programing-for-rust.md)
+- [ChainMaker - 智能合约 - Go开发手册](./chainmaker-contract-programing-for-go.md)
+- [ChainMaker - 智能合约 - C++开发手册](./chainmaker-contract-programing-for-c++.md)
+- [ChainMaker - 智能合约 - Rust开发手册](./chainmaker-contract-programing-for-rust.md)
 - [ChainMaker - 智能合约预编译依赖](./ChainMaker_Contract_Compile_Dependence.md)
 
 运维类：
@@ -37,7 +37,7 @@
 - [ChainMaker - 部署手册](./ChainMaker_Deploy_Manual.md)
 - [ChainMaker - 操作手册](./ChainMaker_Operation_Manual.md)
 - [ChainMaker - 运维手册](./ChainMaker_Maintenance_Manual.md)
-- [ChainMaker - pprof性能分析插件](./ChainMaker_pprof_Manual.md)
+- [ChainMaker - pprof性能分析工具](./ChainMaker_pprof_Manual.md)
 
 管理平台：
 

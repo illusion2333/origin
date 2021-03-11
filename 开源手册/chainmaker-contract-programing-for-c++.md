@@ -1,5 +1,3 @@
-
-
 # ChainMaker Contract Programing for C++
 
 [TOC]

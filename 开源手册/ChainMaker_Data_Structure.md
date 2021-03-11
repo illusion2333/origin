@@ -1,7 +1,3 @@
----
-typora-root-url: ../开源手册
----
-
 # 长安链 · ChainMaker Data Structure
 
 ## 数据模型
