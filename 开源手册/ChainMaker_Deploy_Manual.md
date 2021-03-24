@@ -65,8 +65,18 @@ cd chainmaker/bin
 cd chainmaker-go/tools/cmc
 go build
 cp -r ../sdk/testdata ./ 
-./cmc client contract user create --admin-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.key --admin-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.crt  --org-id=wx-org1.chainmaker.org --chain-id=chain1 --client-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt --client-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key --byte-code-path=../../test/wasm/asset-rust-0.7.2_v1.1.0.wasm --contract-name=asset_new24 --runtime-type=WASMER --sdk-conf-path=./testdata/sdk_config.yml --version=1.0 --sync-result=true --params="{\"issue_limit\":\"500000000\",\"total_supply\":\"1000000000\"}"
+./cmc client contract user create --admin-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.key --admin-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.crt  --org-id=wx-org1.chainmaker.org --chain-id=chain1 --client-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt --client-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key --byte-code-path=../../test/wasm/rust-asset-management-1.0.0.wasm --contract-name=asset_new001 --runtime-type=WASMER --sdk-conf-path=./testdata/sdk_config.yml --version=1.0 --sync-result=true --params="{\"issue_limit\":\"500000000\",\"total_supply\":\"1000000000\"}"
 ```
+
+使用cmc工具查询刚创建的合约的total_supply值
+
+```sh
+./cmc client contract user get \
+    --sdk-conf-path ./testdata/sdk_config.yml \
+    --contract-name asset_new001 --method total_supply
+```
+
+
 
 ## 4 快速部署（4节点TBFT共识）
 
@@ -136,12 +146,20 @@ tar zvxf ../../build/release/crypto-config-xxx.tar.gz(xxx代表最新时间)
 cp -r ../sdk/testdata ./ 
 rm -rf testdata/crypto-config
 mv ./crypto-config testdata/
-./cmc client contract user create --admin-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.key --admin-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.crt  --org-id=wx-org1.chainmaker.org --chain-id=chain1 --client-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt --client-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key --byte-code-path=../../test/wasm/asset-rust-0.7.2_v1.1.0.wasm --contract-name=asset_new24 --runtime-type=WASMER --sdk-conf-path=./testdata/sdk_config.yml --version=1.0 --sync-result=true --params="{\"issue_limit\":\"500000000\",\"total_supply\":\"1000000000\"}"
+./cmc client contract user create --admin-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.key --admin-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.crt  --org-id=wx-org1.chainmaker.org --chain-id=chain1 --client-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt --client-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key --byte-code-path=../../test/wasm/rust-asset-management-1.0.0.wasm --contract-name=asset_new001 --runtime-type=WASMER --sdk-conf-path=./testdata/sdk_config.yml --version=1.0 --sync-result=true --params="{\"issue_limit\":\"500000000\",\"total_supply\":\"1000000000\"}"
 ```
 
+使用cmc工具查询刚创建的合约的total_supply值
 
+```sh
+./cmc client contract user get \
+    --sdk-conf-path ./testdata/sdk_config.yml \
+    --contract-name asset_new001 --method total_supply
+```
 
+返回如下日志表示验证成功：
 
+> QUERY contract resp: message:"SUCCESS" contract_result:<result:"1000000000" gas_used:12844566 >
 
 
 
