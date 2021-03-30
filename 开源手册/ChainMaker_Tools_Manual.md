@@ -79,7 +79,7 @@ crypto_config:
         expire_year:  5
 ```
 
-#### 使用方法
+#### 使用方法<span id="cryptoUsed"></span>
 
 - 命令帮助
 
