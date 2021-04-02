@@ -33,6 +33,7 @@
   * [1、智能合约](./docs/dev/1、智能合约.md)
   * [2、SDK](./docs/dev/2、SDK.md)
   * [3、命令行工具](./docs/dev/3、命令行工具.md)
+  * [4、证书生成工具](./docs/dev/4、证书生成工具.md)
 
 * 5、进阶开发
   * [1、多机部署](./docs/operation/1、多机部署.md)
