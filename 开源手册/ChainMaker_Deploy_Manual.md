@@ -53,6 +53,10 @@ cd chainmaker/bin
 ./chainmaker -c ../config/wx-org1/chainmaker.yml start
 ```
 
+> 注：若出现错误`./chainmaker: /lib64/libc.so.6: version `GLIBC_2.18' not found (required by /root/git-code/chainmaker-go/module/vm/wasmer/wasmer-go/libwasmer.so)`
+> 在linux下可进入chainmaker/scripts/3rd目录安装glibc-2.18.tar.gz依赖
+
+
 ### 3.5 交易验证
 
 使用cmc工具创建一个合约进行测试，命令如下：

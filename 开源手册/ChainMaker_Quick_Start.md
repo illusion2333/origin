@@ -31,7 +31,7 @@ cmc指令参数说明：
 - sdk-conf-path  sdk配置文件路径
 - version  版本
 - sync-resul  同步结果
-- params  执行所需要参数，详见《ChainMaker_Contract_Manual》合约文档
+- params  执行所需要参数，详见[《ChainMaker_Contract_Manual》](./ChainMaker_Contract_Manual.md)合约文档
 
 正确输出如下：
 

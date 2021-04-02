@@ -220,11 +220,11 @@ tinygo build -no-debug -opt=s -o name.wasm -target wasm
 
 ## 2 合约发布过程
 
-请参考：[《chainmaker-go-sdk.md》](./chainmaker-go-sdk.md)发送创建合约请求部分，或者[《chainmaker-java-sdk.md》](./chainmaker-java-sdk.md)创建合约部分。
+请参考：[《chainmaker-go-sdk》](./chainmaker-go-sdk.md)发送创建合约请求部分，或者[《chainmaker-java-sdk》](./chainmaker-java-sdk.md)创建合约部分。
 
 ## 3 合约调用过程
 
-请参考：[《chainmaker-go-sdk.md》](./chainmaker-go-sdk.md)合约调用部分，或者[《chainmaker-java-sdk.md》](./chainmaker-java-sdk.md)执行合约部分。
+请参考：[《chainmaker-go-sdk》](./chainmaker-go-sdk.md)合约调用部分，或者[《chainmaker-java-sdk》](./chainmaker-java-sdk.md)执行合约部分。
 
 
 

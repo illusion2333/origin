@@ -246,11 +246,11 @@ Context* ctx = context();
 
 ## 2 合约发布过程
 
-请参考：[《chainmaker-go-sdk.md》](./chainmaker-go-sdk.md)发送创建合约请求的部分，或者[《chainmaker-java-sdk.md》](./chainmaker-java-sdk.md)创建合约的部分。
+请参考：[《chainmaker-go-sdk》](./chainmaker-go-sdk.md)发送创建合约请求的部分，或者[《chainmaker-java-sdk》](./chainmaker-java-sdk.md)创建合约的部分。
 
 ## 3 合约调用过程
 
-请参考：[《chainmaker-go-sdk.md》合约调用的部分，或者[《chainmaker-java-sdk.md》](./chainmaker-java-sdk.md)执行合约的部分。
+请参考：[《chainmaker-go-sdk》](./chainmaker-go-sdk.md)合约调用的部分，或者[《chainmaker-java-sdk》](./chainmaker-java-sdk.md)执行合约的部分。
 
 
 

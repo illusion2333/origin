@@ -1197,7 +1197,7 @@ CGO_LDFLAGS="-L/usr/local/rocksdb -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz
 身份模块是基于PKI实现的：
 
 - 私钥部分：模块管理本地节点或者用户成员的私钥，本地节点或成员与链上其他节点交互用这个私钥对消息进行签名
-- 公钥部分：该模块从链配置中读取链上所有组织的公共信息，高阔公钥、证书等，用户在交互式验证对端的合法性。
+- 公钥部分：该模块从链配置中读取链上所有组织的公共信息，包括公钥、证书等，用户在交互时验证对端的合法性。
 
 权限管理（Access Control）模块实现了链上资源与权限规则的匹配，并在链的参与者使用链上资源时验证其权限是否符合目标资源的权限规则：
 
@@ -1525,23 +1525,21 @@ type principal struct {
 - `message`：请求消息的主题。
 - `targetOrg`：可选字段，在 resourceId 字段所指示的资源是属于某个特定组织时被使用到。
 
-`resourceName`预定义了以下几种类型：
+`resourceName`预定义了几种类型，不同策略的细粒度资源ID：
 
-```go
-	// fine-grained resource id for different policies
-	ResourceNameUnknown          = "UNKNOWN"
-	ResourceNameReadData         = "READ"
-	ResourceNameWriteData        = "WRITE"
-	ResourceNameP2p              = "P2P"
-	ResourceNameConsensusNode    = "CONSENSUS"
-	ResourceNameAdmin            = "ADMIN"
-	ResourceNameUpdateConfig     = "CONFIG"
-	ResourceNameUpdateSelfConfig = "SELF_CONFIG"
-	ResourceNameAllTest          = "ALL_TEST"
-
-	ResourceNameTxQuery    = "query"
-	ResourceNameTxTransact = "transaction"
-```
+| 资源名称                     | 含义        |
+| ---------------------------- | ----------- |
+| ResourceNameUnknown          | UNKNOWN     |
+| ResourceNameReadData         | READ        |
+| ResourceNameWriteData        | WRITE       |
+| ResourceNameP2p              | P2P         |
+| ResourceNameConsensusNode    | CONSENSUS   |
+| ResourceNameAdmin            | ADMIN       |
+| ResourceNameUpdateConfig     | CONFIG      |
+| ResourceNameUpdateSelfConfig | SELF_CONFIG |
+| ResourceNameAllTest          | ALL_TEST    |
+| ResourceNameTxQuery          | query       |
+| ResourceNameTxTransact       | transaction |
 
 
 
