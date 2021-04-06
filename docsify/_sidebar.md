@@ -19,7 +19,7 @@
   * [1、整体架构](./docs/tech/1、整体架构.md)
   * [2、核心流程](./docs/tech/2、核心流程.md)
   * [3、数据结构](./docs/tech/3、数据结构.md)
-  * [4、智能合约-虚拟机](./docs/tech/4、智能合约-虚拟机.md)
+  * [4、智能合约](./docs/tech/4、智能合约.md)
   * [5、共识算法](./docs/tech/5、共识算法.md)
   * [6、P2P网络](./docs/tech/6、P2P网络.md)
   * [7、RPC服务](./docs/tech/7、RPC服务.md)
