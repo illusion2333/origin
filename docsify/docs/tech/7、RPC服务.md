@@ -10,10 +10,13 @@
 
 ```yml
 rpc:
+  # 模式，当前仅支持grpc方式
   provider: grpc
+  # 监听端口
   port: 12301
   # 检查链配置TrustRoots证书变化时间间隔，实现自动刷新，单位：s，最小值为10s
   check_chain_conf_trust_roots_change_interval: 60
+  # 流量控制配置，采用令牌桶限流
   ratelimit:
     # 每秒补充令牌数，取值：-1-不受限；0-默认值（10000）
     token_per_second: -1
@@ -59,7 +62,13 @@ service RpcNode {
 
 ## 关键逻辑
 
-- **消息订阅（事件通知）**
+### 交易请求结构说明
+
+交易请求（`TxRequest`）包含交易头（`TxHeader`）、`Payload`和签名（`Signature`），`Payload`是字节数组，根据不同的`TxType`可以解码成各种类型的`Payload`。
+
+![image-20210407204935793](../images/rpc-交易请求结构说明.png)
+
+### 消息订阅（事件通知）实现原理
 
 ![image-20210205110331710](../images/rpc-subscribe.png)
 
