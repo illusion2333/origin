@@ -207,7 +207,7 @@ func createUserContract(client *ChainClient, admin1, admin2, admin3, admin4 *Cha
 	return resp, nil
 ```
 
-##### （4）调用合约
+##### （5）调用合约
 
 > `sdk_user_contract_claim_test.go`
 
@@ -324,7 +324,7 @@ if (chainClient == null) {
 
 ```
 
-##### （4）创建合约
+##### （3）创建合约
 
 > 更多内容请参看：`TestUserContract`
 
@@ -349,7 +349,7 @@ if (chainClient == null) {
    }
 ```
 
-##### （4）调用合约
+##### （5）调用合约
 
 > 更多内容请参看：`TestUserContract`
 
