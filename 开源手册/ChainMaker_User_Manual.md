@@ -2199,7 +2199,7 @@ type txPoolConfig struct {
 
 
 
-### 加密算法
+### 密码算法
 
 #### 简介
 
