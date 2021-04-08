@@ -207,7 +207,7 @@ func createUserContract(client *ChainClient, admin1, admin2, admin3, admin4 *Cha
 	return resp, nil
 ```
 
-##### （4）调用合约
+##### （5）调用合约
 
 > `sdk_user_contract_claim_test.go`
 
@@ -270,3 +270,113 @@ func invokeUserContract(client *ChainClient, contractName, method, txId string, 
 
 ### Java SDK
 
+#### 环境依赖
+
+**java**
+
+> openjdk 1.8.x
+
+下载地址：https://www.oracle.com/java/technologies/javase/javase-jdk8-downloads.html
+
+若已安装，请通过命令查看版本：
+
+```bash
+$ java -version
+java version "1.8.0_281"
+```
+
+#### 下载安装
+
+```bash
+$ git clone https://git.code.tencent.com/ChainMaker/chainmaker-sdk-java.git
+```
+
+#### 示例代码
+
+##### （1）创建节点
+
+> 更多内容请参看：`TestBase`
+
+```java
+// 创建节点
+Node node = Node.builder()
+                .clientKeyBytes(keyBytes)
+                .clientCertBytes(certBytes)
+                .tlsCertBytes(tlsCertBytes)
+                .hostname(TLS_HOST_NAME1)
+                .grpcUrl(NODE_GRPC_URL1)
+                .sslProvider(OPENSSL_PROVIDER)
+                .negotiationType(TLS_NEGOTIATION).build();
+```
+
+##### （2）创建ChainClient
+
+> 更多内容请参看：`TestBase`
+
+```java
+// 创建ChainClient
+chainManager = ChainManager.getInstance();
+chainClient = chainManager.getChainClient(CHAIN_ID);
+if (chainClient == null) {
+  chainClient = chainManager.createChainClient(CHAIN_ID, ORG_ID, FileUtils.getResourceFileBytes(USER_KEY_PATH),
+  FileUtils.getResourceFileBytes(USER_CERT_PATH), chainNode);
+}
+
+```
+
+##### （3）创建合约
+
+> 更多内容请参看：`TestUserContract`
+
+```java
+   public void testCreateContract() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+       byte[] byteCode = FileUtils.getResourceFileBytes(CONTRACT_FILE_PATH);
+   
+       // 1. create payload
+       byte[] payload = chainClient.createPayloadOfContractCreation(CONTRACT_NAME,
+               "1", Contract.RuntimeType.WASMER_RUST, null, byteCode);
+   
+       // 2. create payloads with endorsement
+       byte[] payloadWithEndorsement1 = chainClient.signPayloadOfContractMgmt(payload);
+   
+       // 3. merge endorsements using payloadsWithEndorsement
+       byte[][] payloadsWithEndorsement = new byte[1][];
+       payloadsWithEndorsement[0] = payloadWithEndorsement1;
+       byte[] payloadWithEndorsement = chainClient.mergeSignedPayloadsOfContractMgmt(payloadsWithEndorsement);
+   
+       // 4. create contract
+       ResponseInfo responseInfo = chainClient.createContract(payloadWithEndorsement, 5000, 5000);
+   }
+```
+
+##### （4）调用合约
+
+> 更多内容请参看：`TestUserContract`
+
+```java
+   public void testInvokeContract() throws Exception {
+
+       Map<String, String> params = new HashMap<>();
+       params.put("time", System.currentTimeMillis()+"");
+       params.put("file_hash", UUID.randomUUID().toString());
+       params.put("file_name", UUID.randomUUID().toString()+System.currentTimeMillis());
+       ResponseInfo responseInfo = chainClient.invokeContract(QUERY_CONTRACT_NAME, QUERY_CONTRACT_METHOD, params, 5000, 5000);
+   }
+```
+
+##### （5）更多示例和用法
+
+> 更多示例和用法，请参看单元测试用例
+
+| 功能     | 单测代码                      |
+| -------- | ----------------------------- |
+| 基础配置 | `TestBase`   |
+| 用户合约 | `TestUserContract`   |
+| 系统合约 | `TestSystemContract` |
+| 链配置   | `TestChainConfig`    |
+| 证书管理 | `TestBaseCertManage`     |
+| 消息订阅 | `TestSubscribe`       |
+
+#### 接口说明
+
+请参看：`chainmaker-sdk-java.md`
