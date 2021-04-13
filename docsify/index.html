@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Document</title>
@@ -9,6 +10,7 @@
   <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
   <!-- <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify/themes/dark.css"> -->
 </head>
+
 <body>
   <div id="app"></div>
   <script>
@@ -20,7 +22,7 @@
       loadSidebar: true,
       loadNavbar: true,
       maxLevel: 0,
-      subMaxLevel: 0,
+      subMaxLevel: 1,
       search: {
         maxAge: 600000,// 过期时间，设置为10分钟
         noData: {
@@ -34,44 +36,45 @@
         depth: 3,
         hideOtherSidebarContent: false
       },
-      
-       count: {
-          countable:true,
-          fontsize:'0.9em',
-          color:'rgb(90,90,90)',
-          language:'chinese',
-          isExpected: false // 是否显示需要阅读的分钟数
 
-       },
-       
-      copyCode: {
-        buttonText: {'/' : '点击复制'},
-        errorText: {'/' : '错误'},
-        successText: {'/' : '已复制'}
+      count: {
+        countable: true,
+        fontsize: '0.9em',
+        color: 'rgb(90,90,90)',
+        language: 'chinese',
+        isExpected: false // 是否显示需要阅读的分钟数
+
       },
-      
-      plugins: [
-          function (hook, vm) {                 
-                          
-          var footer = [
-              '<hr/>',
-              '<footer>',
-              '<span>ChainMaker.org&copy;2021.</span>',
-              '</footer>'
-            ].join('');
 
-            hook.afterEach(function(html) {
-              return html + footer;
-            });
-          }                 
+      copyCode: {
+        buttonText: { '/': '点击复制' },
+        errorText: { '/': '错误' },
+        successText: { '/': '已复制' }
+      },
+
+      plugins: [
+        function (hook, vm) {
+
+          var footer = [
+            '<hr/>',
+            '<footer>',
+            '<span>ChainMaker.org&copy;2021.</span>',
+            '</footer>'
+          ].join('');
+
+          hook.afterEach(function (html) {
+            return html + footer;
+          });
+        }
       ],
     }
-    
+
   </script>
   <!-- Docsify v4 -->
-  <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>  
+  <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
   <script src="//unpkg.com/docsify/lib/plugins/search.min.js"></script>
-  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/zoom-image.min.js"></script>
+  <!-- <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/zoom-image.min.js"></script> -->
   <script src="//cdn.jsdelivr.net/npm/docsify-copy-code"></script>
 </body>
+
 </html>
