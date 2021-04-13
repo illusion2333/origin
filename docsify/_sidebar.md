@@ -40,9 +40,8 @@
   * [4、配置变更](./docs/operation/4、配置变更.md)
 
 * 6、应用场景
-  * [1、政务场景](./docs/usecase/1、政务场景.md)
-  * [2、金融场景](./docs/usecase/2、金融场景.md)
-  * [3、社会场景](./docs/usecase/3、社会场景.md)
-  * [4、商业场景](./docs/usecase/4、商业场景.md)
+  * [1、供应链金融](./docs/usecase/1、供应链金融.md)
+  * [2、碳交易](./docs/usecase/2、碳交易.md)
+  * [3、冷链溯源](./docs/usecase/3、冷链溯源.md)
 * [7、关于作者/组织及交流方式等信息](./docs/author/1、关于作者.md)
 * [8、鸣谢](./docs/thanks/1、鸣谢.md)
