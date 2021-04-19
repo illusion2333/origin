@@ -33,10 +33,10 @@
   * [3、命令行工具](./docs/dev/3、命令行工具.md)
   * [4、证书生成工具](./docs/dev/4、证书生成工具.md)
 
-* 5、进阶开发
+* 5、进阶使用
   * [1、多机部署](./docs/operation/1、多机部署.md)
   * [2、监控运维](./docs/operation/2、监控运维.md)
-  * [3、宕机恢复](./docs/operation/3、宕机恢复.md)
+  * [3、自拉起服务](./docs/operation/3、自拉起服务.md)
   * [4、配置变更](./docs/operation/4、配置变更.md)
 
 * 6、应用场景
