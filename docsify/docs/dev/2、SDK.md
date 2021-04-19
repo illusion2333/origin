@@ -264,7 +264,7 @@ func invokeUserContract(client *ChainClient, contractName, method, txId string, 
 
 #### 接口说明
 
-请参看：`chainmaker-sdk-go/sdk_interface.md`
+请参看：[`chainmaker-sdk-go/sdk_interface.md`](https://git.chainmaker.org.cn/chainmaker/chainmaker-sdk-go/-/blob/master/sdk_interface.md)
 
 ### Java SDK
 
@@ -377,4 +377,4 @@ if (chainClient == null) {
 
 #### 接口说明
 
-请参看：`chainmaker-sdk-java.md`
+请参看：[`chainmaker-sdk-java.md`](https://git.chainmaker.org.cn/chainmaker/chainmaker-sdk-java/-/blob/master/chainmaker-sdk-java.md)
