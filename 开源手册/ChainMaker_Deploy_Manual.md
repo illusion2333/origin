@@ -173,13 +173,66 @@ mv ./crypto-config testdata/
 
 
 
+## 5 goland启动
+
+### 5.1 下载安装goland
+
+略
+
+### 5.2 下载安装go
+
+#### 5.2.1 安装go
+
+略
+
+#### 5.2.2 设置代理
+
+打开终端执行
+
+```sh
+go env -w  GOPROXY=https://goproxy.io,direct
+```
 
 
 
+### 5.3 下载源码
+
+```sh
+git clone --recurse-submodules git@git.code.tencent.com:ChainMaker/chainmaker-go.git
+```
 
 
 
+## 5.4 启动goland
+
+#### 5.4.1 导入chainmaker-go
+
+略
+
+#### 5.4.2 配置goland
+
+Ctrl+Alt+S 或者 File->Settings...
+
+Go-->Go Modules --> 勾上Enable Go Modules integration
+
+Go-->GOROOT-->添加安装的go
+
+<img src="./images/goland-mod.jpg">
 
 
 
+#### 5.4.3 启动项目
 
+找到文件 chainmaker-go/main/main.go 直接运行，然后点击停止，修改启动参数为`start -c ../config/wx-org1/chainmaker.yml`再次点击运行即可。
+
+<img src="./images/run-main.jpg">
+
+
+
+<img src="./images/run-main-arg.jpg">
+
+
+
+#### 5.4.4 测试
+
+找到文件`chainmaker-go/test/send_proposal_request_solo/main.go`直接运行main即可
