@@ -4,7 +4,7 @@
 
 
 
-## 快速上手、文档和开发人员指南
+## 用户手册、开发手册、快速指南、运维手册等
 
 点击连接访问长安链的文档，获取详细的入门、开发、部署、运维管理等信息：
 
@@ -12,7 +12,7 @@
 
 - [ChainMaker - 概述](./ChainMaker_General_Introduction.md)
 
-快速上手：
+快速指南：
 
 - [ChainMaker - Quick Start](./ChainMaker_Quick_Start.md)
 
@@ -39,7 +39,5 @@
 - [ChainMaker - 运维手册](./ChainMaker_Maintenance_Manual.md)
 - [ChainMaker - pprof性能分析工具](./ChainMaker_pprof_Manual.md)
 
-管理平台：
 
-- [ChainMaker - 管理手册](./ChainMaker_Management_Manual.md)
 

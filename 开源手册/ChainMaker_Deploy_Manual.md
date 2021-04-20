@@ -63,6 +63,7 @@ cd chainmaker/bin
 
 ```sh
 cd chainmaker-go/tools/cmc
+go mod download
 go build
 cp -r ../sdk/testdata ./ 
 ./cmc client contract user create --admin-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.key --admin-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.crt  --org-id=wx-org1.chainmaker.org --chain-id=chain1 --client-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt --client-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key --byte-code-path=../../test/wasm/rust-asset-management-1.0.0.wasm --contract-name=asset_new001 --runtime-type=WASMER --sdk-conf-path=./testdata/sdk_config.yml --version=1.0 --sync-result=true --params="{\"issue_limit\":\"500000000\",\"total_supply\":\"1000000000\"}"
@@ -151,6 +152,7 @@ cd chainmaker-go/scripts
 
 ```sh
 cd chainmaker-go/tools/cmc
+go mod download
 go build
 tar zvxf ../../build/release/crypto-config-xxx.tar.gz(xxx代表最新时间)
 cp -r ../sdk/testdata ./ 
@@ -215,15 +217,25 @@ Ctrl+Alt+S 或者 File->Settings...
 
 Go-->Go Modules --> 勾上Enable Go Modules integration
 
-Go-->GOROOT-->添加安装的go
+Go-->GOROOT-->添加已安装的go
 
 <img src="./images/goland-mod.jpg">
 
 
 
-#### 5.4.3 启动项目
+#### 5.4.3 启动项目（SOLO模式）
+
+- 修改配置文件
+
+chainmaker-go/config/wx-org1/chainconfig/bc1.yml将 consensus.type修改为0：启用solo共识
+
+chainmaker-go/config/wx-org1/log.yml将 log_in_console修改为true：在控制台输入日志
+
+- 启动
 
 找到文件 chainmaker-go/main/main.go 直接运行，然后点击停止，修改启动参数为`start -c ../config/wx-org1/chainmaker.yml`再次点击运行即可。
+
+在控制台输入日志：
 
 <img src="./images/run-main.jpg">
 
