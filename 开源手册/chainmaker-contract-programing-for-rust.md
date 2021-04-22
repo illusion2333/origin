@@ -44,34 +44,40 @@ docker run -it --name chainmaker-rust-contract -v $WORK_DIR:/home huzhenyuan/cha
   - lib.rs： SDK入口
   - sim_context.rs：主要SDK工具类，详情接口见下方[Rust SDK API](#api)描述
   - vec_box.rs： 内存管理工具类
-  - [fact.rs](#fact)：存证示例代码
-  - counter.rs： 计数器示例代码
+  - easycodec.rs:  序列化工具类
+  - [contract_fact.rs](#fact)：存证示例代码
+  - contract_counter.rs： 计数器示例代码
 
 ### 1.3 示例代码说明
 
-**存证合约示例：fact.rs <span id="fact"></span>** 实现功能
+**存证合约示例：contract_fact.rs <span id="fact"></span>** 实现功能
 
 1、存储文件哈希和文件名称和该交易的ID。
 
 2、通过文件哈希查询该条记录
 
 ```rust
+use crate::easycodec::*;
 use crate::sim_context;
+use sim_context::SUCCESS_CODE;
+
 // 安装合约时会执行此方法，必须
 #[no_mangle]
 pub extern "C" fn init_contract() {
-    sim_context::log("init_contract");
     // 安装时的业务逻辑，可为空
+    sim_context::log("init_contract");
 }
 
 // 升级合约时会执行此方法，必须
 #[no_mangle]
 pub extern "C" fn upgrade() {
-    sim_context::log("upgrade");
     // 升级时的业务逻辑，可为空
+    sim_context::log("upgrade success");
+    let ctx = &mut sim_context::get_sim_context();
+    ctx.ok("upgrade ok".as_bytes());
 }
 
-// 保存
+// save 保存存证数据
 #[no_mangle]
 pub extern "C" fn save() {
     // 获取上下文
@@ -80,35 +86,37 @@ pub extern "C" fn save() {
     // 获取传入参数
     let file_hash = ctx.arg_default_blank("file_hash");
     let file_name = ctx.arg_default_blank("file_name");
+    let time = ctx.arg_default_blank("time");
 
-    // 构建json object
-    let object = object! {
-        file_hash: file_hash.clone(),
-        file_name: file_name,
-    };
-    // 存储
-    ctx.put_state("fact", &file_hash, object.to_string().as_bytes());
+    let mut ec = EasyCodec::new();
+    ec.put_string("file_hash", file_hash.as_str());
+    ec.put_string("file_name", file_name.as_str());
+    ec.put_string("time", time.as_str());
+
+    // 序列化后存储
+    // go json string 存储
+    ctx.put_state("fact", &file_hash, ec.to_json().as_bytes());
 }
 
-// 查询
+// find_by_file_hash 根据file_hash查询存证数据
 #[no_mangle]
 pub extern "C" fn find_by_file_hash() {
     // 获取上下文
     let ctx = &mut sim_context::get_sim_context();
-    
+
     // 获取传入参数
     let file_hash = ctx.arg_default_blank("file_hash");
-    
+
     // 校验参数
     if file_hash.len() == 0 {
         ctx.log("file_hash is null");
-        ctx.ok("");
+        ctx.ok("".as_bytes());
         return;
     }
 
     // 查询
     let (fact_vec, code) = ctx.get_state("fact", &file_hash);
-    
+
     // 校验返回结果
     if code != SUCCESS_CODE {
         ctx.log("get_state fail");
@@ -117,17 +125,18 @@ pub extern "C" fn find_by_file_hash() {
     }
     if fact_vec.len() == 0 {
         ctx.log("None");
-        ctx.ok("");
+        ctx.ok("".as_bytes());
         return;
     }
-    
-    // 序列化
+
+    // 转换为字符串
     let fact_str = std::str::from_utf8(&fact_vec).unwrap();
 
     // 打印日志
+    ctx.log("get fact_json data: ");
     ctx.log(fact_str);
     // 返回查询结果
-    ctx.ok(fact_str);
+    ctx.ok(fact_str.as_bytes());
 }
 
 ```
@@ -199,11 +208,11 @@ fn method_name() {
 
 ## 2 合约发布过程
 
-请参考：[《chainmaker-go-sdk》](./chainmaker-go-sdk.md)4.1.5 发送创建合约请求，或者[《chainmaker-java-sdk》](./chainmaker-java-sdk.md)2.1.4 创建合约。
+请参考：[《chainmaker-go-sdk》](ChainMaker_SDK_Go_Manual.md)发送创建合约请求的部分，或者[《chainmaker-java-sdk》](ChainMaker_SDK_Java_Manual.md)创建合约的部分。
 
 ## 3 合约调用过程
 
-请参考：[《chainmaker-go-sdk》](./chainmaker-go-sdk.md)4.1.7 合约调用，或者[《chainmaker-java-sdk》](./chainmaker-java-sdk.md)2.1.7 执行合约。
+请参考：[《chainmaker-go-sdk》](./chainmaker-go-sdk.md)合约调用的部分，或者[《chainmaker-java-sdk》](ChainMaker_SDK_Java_Manual.md)执行合约的部分。
 
 
 ## 4 Rust SDK API描述 <span id="api"></span>
@@ -289,9 +298,8 @@ pub fn delete_state_from_key(&mut self, key: &str) -> result_code {}
 #### args
 
 ```rust
-// 该接口将用户传入的参数以json对象的形式全量返回
-// @return: JsonValue，json用法参考：https://docs.rs/json/0.12.4/json/
-pub fn args(&self) -> &JsonValue {}
+// @return: EasyCodec
+pub fn args(&self) -> &EasyCodec {}
 ```
 
 #### arg
@@ -317,7 +325,7 @@ pub fn arg_default_blank(&self, key: &str) -> String {}
 ```rust
 // 该接口可记录用户操作成功的信息，并将操作结果记录到链上。
 // @param body: 成功返回的信息
-pub fn ok(&mut self, body: &str) -> result_code {}
+pub fn ok(&mut self, value: &[u8]) -> result_code }
 ```
 
 #### error

@@ -22,7 +22,7 @@
 - [ChainMaker - 数据结构](./ChainMaker_Data_Structure.md)
 - [ChainMaker - Go-SDK](./chainmaker-go-sdk.md)
 - [ChainMaker - Java-SDK](./chainmaker-java-sdk.md)
-- [ChainMaker - 工具链](./ChainMaker_Tools_Manual.md)
+- [ChainMaker - 工具链](./ChainMaker_Tools_Manual.md#cryptoUsed)
 
 智能合约：
 
