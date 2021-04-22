@@ -1,6 +1,6 @@
-# SDK
 
-## 概述
+
+## 1概述
 
 长安链`SDK`是业务模块与长安链交互的桥梁，支持双向`TLS`认证，提供安全可靠的加密通信信道。
 
@@ -8,17 +8,17 @@
 
 提供的`SDK`接口，覆盖合约管理、链配置管理、证书管理、多签收集、各类查询操作、事件订阅等场景，满足了不同的业务场景需要。
 
-## 约定概念
+## 2约定概念
 
 - **`Node`（节点）**：代表一个链节点的基本信息，包括：节点地址、连接数、是否启用`TLS`认证等信息
 - **`ChainClient`（链客户端）**：所有客户端对链节点的操作接口都来自`ChainClient`
 - **压缩证书**：可以为`ChainClient`开启证书压缩功能，开启后可以减小交易包大小，提升处理性能
 
-## 开发指南
+## 3开发指南
 
-### Go SDK
+### 3.1Go SDK
 
-#### 环境依赖
+#### 3.1.1环境依赖
 
 **golang**
 
@@ -33,15 +33,15 @@ $ go version
 go version go1.15 linux/amd64
 ```
 
-#### 下载安装
+#### 3.1.2下载安装
 
 ```bash
 $ git clone --recursive https://git.chainmaker.org.cn/chainmaker/chainmaker-sdk-go.git
 ```
 
-#### 示例代码
+#### 3.1.3示例代码
 
-##### （1）创建节点
+##### 创建节点
 
 ```go
 // 创建节点
@@ -63,7 +63,7 @@ func createNode(nodeAddr string, connCnt int) *NodeConfig {
 }
 ```
 
-##### （2）以参数形式创建ChainClient
+##### 以参数形式创建ChainClient
 
 > 更多内容请参看：`sdk_client_test.go`
 >
@@ -113,7 +113,7 @@ func createClient() (*ChainClient, error) {
 }
 ```
 
-##### （3）以配置文件形式创建ChainClient
+##### 以配置文件形式创建ChainClient
 
 > 注：参数形式和配置文件形式两个可以同时使用，同时配置时，以参数传入为准
 
@@ -138,7 +138,7 @@ func createClientWithConfig() (*ChainClient, error) {
 }
 ```
 
-##### （4）创建合约
+##### 创建合约
 
 > `sdk_user_contract_claim_test.go`
 
@@ -205,7 +205,7 @@ func createUserContract(client *ChainClient, admin1, admin2, admin3, admin4 *Cha
 	return resp, nil
 ```
 
-##### （5）调用合约
+##### 调用合约
 
 > `sdk_user_contract_claim_test.go`
 
@@ -250,7 +250,7 @@ func invokeUserContract(client *ChainClient, contractName, method, txId string, 
 }
 ```
 
-##### （6）更多示例和用法
+##### 更多示例和用法
 
 > 更多示例和用法，请参看单元测试用例
 
@@ -262,13 +262,13 @@ func invokeUserContract(client *ChainClient, contractName, method, txId string, 
 | 证书管理 | `sdk_cert_manage_test.go`     |
 | 消息订阅 | `sdk_subscribe_test.go`       |
 
-#### 接口说明
+#### 3.1.4接口说明
 
-请参看：[`chainmaker-sdk-go/sdk_interface.md`](https://git.chainmaker.org.cn/chainmaker/chainmaker-sdk-go/-/blob/master/sdk_interface.md)
+请参看：`chainmaker-sdk-go/sdk_interface.md`
 
-### Java SDK
+### 3.2Java SDK
 
-#### 环境依赖
+#### 3.2.1环境依赖
 
 **java**
 
@@ -283,15 +283,15 @@ $ java -version
 java version "1.8.0_281"
 ```
 
-#### 下载安装
+#### 3.2.2下载安装
 
 ```bash
 $ git clone https://git.code.tencent.com/ChainMaker/chainmaker-sdk-java.git
 ```
 
-#### 示例代码
+#### 3.2.3示例代码
 
-##### （1）创建节点
+##### 创建节点
 
 > 更多内容请参看：`TestBase`
 
@@ -307,7 +307,7 @@ Node node = Node.builder()
                 .negotiationType(TLS_NEGOTIATION).build();
 ```
 
-##### （2）创建ChainClient
+##### 创建ChainClient
 
 > 更多内容请参看：`TestBase`
 
@@ -322,7 +322,7 @@ if (chainClient == null) {
 
 ```
 
-##### （3）创建合约
+##### 创建合约
 
 > 更多内容请参看：`TestUserContract`
 
@@ -347,7 +347,7 @@ if (chainClient == null) {
    }
 ```
 
-##### （4）调用合约
+##### 调用合约
 
 > 更多内容请参看：`TestUserContract`
 
@@ -362,7 +362,7 @@ if (chainClient == null) {
    }
 ```
 
-##### （5）更多示例和用法
+##### 更多示例和用法
 
 > 更多示例和用法，请参看单元测试用例
 
@@ -375,6 +375,6 @@ if (chainClient == null) {
 | 证书管理 | `TestBaseCertManage`     |
 | 消息订阅 | `TestSubscribe`       |
 
-#### 接口说明
+#### 3.2.4接口说明
 
-请参看：[`chainmaker-sdk-java.md`](https://git.chainmaker.org.cn/chainmaker/chainmaker-sdk-java/-/blob/master/chainmaker-sdk-java.md)
+请参看：[《chainmaker-java-sdk》](/docs/dev/chainmaker-java-sdk.md)
