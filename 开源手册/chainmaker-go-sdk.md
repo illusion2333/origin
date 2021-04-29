@@ -491,3 +491,88 @@ Stop() error
 ```
 
 
+
+### 4.8 HIBE 身份分层加密接口
+
+#### 4.8.1 HIBE系统参数上链payloadPair生成
+
+**参数说明**
+
+- `contractName`：合约名
+- `orgId`：组织`Id`
+- `hibeParamsFilePath`：`hibe.Params`存储文件位置
+
+```go
+CreateHibeInitParamsTransactionPayloadParams(contractName, orgId string, hibeParamsFilePath string) (map[string]string, error)
+```
+
+
+
+#### 4.8.2 查询链上HIBE系统参数 payloadParams 生成
+
+**参数说明**
+
+- `plaintext`: 待加密交易消息明文
+- `receiverIds`: 消息接收者对应的加密参数，需和`paramsList` 一一对应
+- `paramsBytesList`: 消息接收者对应的加密参数，需和 `receiverIds` 一一对应
+- `txId`: 交易 Id 作为链上存储 hibeMsg 的 Key, 如果不提供存储的信息可能被覆盖
+- `keyType`: 对明文进行对称加密的方法，请传入 `common` 项目中 `crypto` 包提供的方法，目前提供`AES`和`SM4`f两种方法
+
+```go
+CreateHibeTxPayloadParamsWithHibeParams(plaintext []byte, receiverIds []string, paramsBytesList [][]byte, txId string, keyType crypto.KeyType) (map[string]string, error)
+```
+
+
+
+#### 4.8.3 根据 HibeParams 生成加密交易 payloadParams
+
+**参数说明**
+
+- `contractName`: 合约名
+- `queryParamsMethod`: 查询链上`hibe.Params`合约方法名
+- `plaintext`: 交易信息
+- `receiverIds`: 消息接收者对应的加密参数，需和`paramsList` 一一对应
+- `paramsList`: 消息接收者对应的加密参数，需和 `receiverIds` 一一对应
+- `receiverOrgIds`: 链上查询 hibe Params 的 Key 列表，需要和 `receiverIds` 一一对应
+- `txId`: 交易 Id 作为链上存储 hibeMsg 的 Key, 如果不提供存储的信息可能被覆盖
+- `keyType`: 对明文进行对称加密的方法，请传入 `common` 项目中 `crypto` 包提供的方法，目前提供`AES`和`SM4`两种方法
+- `timeout`：（内部查询 `hibe.Params` 的）超时时间，单位：s，若传入-1，将使用默认超时时间：10s
+
+```go
+CreateHibeTxPayloadParamsWithoutHibeParams(contractName, queryParamsMethod string, plaintext []byte, receiverIds []string, receiverOrgIds []string, txId string, keyType crypto.KeyType, timeout int64) (map[string]string, error)
+```
+
+
+
+#### 4.8.4 根据 HibeParams 查询标识生成加密交易payloadParams
+
+**参数说明**
+
+- `contractName`: 合约名
+- `queryParamsMethod`: 查询链上`hibe.Params`合约方法名
+- `plaintext`: 交易信息
+- `receiverIds`: 消息接收者对应的加密参数，需和`paramsList` 一一对应
+- `paramsList`: 消息接收者对应的加密参数，需和 `receiverIds` 一一对应
+- `receiverOrgIds`: 链上查询 hibe Params 的 Key 列表，需要和 `receiverIds` 一一对应
+- `txId`: 交易 Id 作为链上存储 hibeMsg 的 Key, 如果不提供存储的信息可能被覆盖
+- `keyType`: 对明文进行对称加密的方法，请传入 `common` 项目中 `crypto` 包提供的方法，目前提供`AES`和`SM4`两种方法
+- `timeout`：（内部查询 `hibe.Params` 的）超时时间，单位：s，若传入-1，将使用默认超时时间：10s
+
+```go
+CreateHibeTxPayloadParamsWithoutHibeParams(contractName, queryParamsMethod string, plaintext []byte, receiverIds []string, receiverOrgIds []string, txId string, keyType crypto.KeyType, timeout int64) (map[string]string, error)
+```
+
+
+#### 4.8.5 根据TxId,私钥，获取并解密HIBE交易密文信息
+
+**参数说明**
+
+- `contractName`：合约名
+- `method`：合约查询方法
+- `orgId`: 参与方 `id`
+- `timeout`: 超时时间，单位：`s`，若传入`-1`，将使用默认超时时间：`10s`
+
+
+```go
+QueryHibeParamsWithOrgId(contractName, method, orgId string, timeout int64) ([]byte, error)
+```

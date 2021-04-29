@@ -26,6 +26,8 @@
   * [10、加密算法](./docs/tech/10、加密算法.md)
   * [11、交易缓存](./docs/tech/11、交易缓存.md)
   * [12、并行调度](./docs/tech/12、并行调度.md)
+  * [13、RocksDB安装部署](./docs/tech/13、RocksDB安装部署.md)
+  * [14、ChainMaker身份分层加密方案介绍](./docs/tech/14、ChainMaker身份分层加密方案介绍.md)
 
 * 4、开发指南
   * [1、智能合约](./docs/dev/1、智能合约.md)
@@ -38,6 +40,7 @@
   * [2、监控运维](./docs/operation/2、监控运维.md)
   * [3、自拉起服务](./docs/operation/3、自拉起服务.md)
   * [4、配置变更](./docs/operation/4、配置变更.md)
+  * [5、HIBE接口、工具介绍及用例](./docs/operation/5、HIBE接口、工具介绍及用例.md)
 
 * 6、应用场景
   * [1、供应链金融](./docs/usecase/1、供应链金融.md)
