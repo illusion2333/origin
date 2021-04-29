@@ -456,7 +456,19 @@ SubscribeBlock(ctx context.Context, startBlock, endBlock int64, withRwSet bool) 
 SubscribeTx(ctx context.Context, startBlock, endBlock int64, txType pb.TxType, txIds []string) (<-chan interface{}, error)
 ```
 
-#### 4.5.3 多合一订阅
+#### 4.5.3 合约事件订阅
+
+**参数说明**
+
++ topic ：指定订阅主题
++ contractName ：指定订阅的合约名称
+
+```go
+SubscribeContractEvent(ctx context.Context, topic string, contractName string) (<-chan interface{}, error) 
+```
+
+#### 4.5.4 多合一订阅
+
 **参数说明**
   - txType: 订阅交易类型，目前已支持：区块消息订阅(pb.TxType_SUBSCRIBE_BLOCK_INFO)、交易消息订阅(pb.TxType_SUBSCRIBE_TX_INFO)
   - payloadBytes: 消息订阅参数payload
@@ -489,5 +501,4 @@ DisableCertHash() error
 ```go
 Stop() error
 ```
-
 
