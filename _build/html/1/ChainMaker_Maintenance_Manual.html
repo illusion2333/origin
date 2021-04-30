@@ -1,0 +1,307 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>长安链 · ChainMaker Maintenance Manual &mdash; chainmaker-docs 0.7.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pprof使用" href="ChainMaker_PPROF_Manual.html" />
+    <link rel="prev" title="长安链 · ChainMaker Operation Manual" href="ChainMaker_Operation_Manual.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> chainmaker-docs
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.7.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">目录</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ChainMaker_General_Introduction.html">长安链 · ChainMaker General Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ChainMaker_Quick_Start.html">长安链· ChainMaker Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ChainMaker_User_Manual.html">长安链 · ChainMaker User Manual</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ChainMaker_Data_Structure.html">长安链 · ChainMaker Data Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ChainMaker_SDK_Go_Manual.html">ChainMaker Go SDK README</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ChainMaker_SDK_Java_Manual.html">ChainMaker Java SDK README</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ChainMaker_Tools_Manual.html">长安链 · ChainMaker Tools Manual</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ChainMaker_Deploy_Manual.html">长安链 · ChainMaker Deploy Manual</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ChainMaker_Operation_Manual.html">长安链 · ChainMaker Operation Manual</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">长安链 · ChainMaker Maintenance Manual</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">1 链上配置变更</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">2 增加新链</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#chainmaker-operation-manual">2.1 添加链创世块配置，参考《长安链 · ChainMaker_Operation_manual》</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#chainmaker">2.2 修改chainmaker配置文件</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id3">2.3 触发chainmaker初始化新链</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#id4">3 添加共识节点</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#ca">3.1 添加CA证书</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id5">3.2 添加共识节点</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#id6">4 移除共识节点</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id7">5 添加同步节点</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id8">6 移除同步节点</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ChainMaker_PPROF_Manual.html">pprof使用</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../2/index.html">长安链</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">chainmaker-docs</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">目录</a> &raquo;</li>
+        
+      <li>长安链 · ChainMaker Maintenance Manual</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/1/ChainMaker_Maintenance_Manual.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="chainmaker-maintenance-manual">
+<h1>长安链 · ChainMaker Maintenance Manual<a class="headerlink" href="#chainmaker-maintenance-manual" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="id1">
+<h2>1 链上配置变更<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>链上配置更新当前可以通过cmc工具进行，更新出块间隔示例如下：</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>./cmc client chainconfig block updateblockinterval --org-id<span class="o">=</span>wx-org1.chainmaker.org --client-crt-file-paths<span class="o">=</span>../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt --client-key-file-paths<span class="o">=</span>../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key --sdk-conf-path<span class="o">=</span>../sdk/testdata/sdk_config.yml --admin-crt-file-paths<span class="o">=</span>../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.crt --admin-key-file-paths<span class="o">=</span>../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.key --block-interval <span class="m">1000</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id2">
+<h2>2 增加新链<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="chainmaker-operation-manual">
+<h3>2.1 添加链创世块配置，参考《长安链 · ChainMaker_Operation_manual》<a class="headerlink" href="#chainmaker-operation-manual" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="chainmaker">
+<h3>2.2 修改chainmaker配置文件<a class="headerlink" href="#chainmaker" title="Permalink to this headline">¶</a></h3>
+<p>在chainmaker.yml的头部将新链的Id和创世块配置添加进去，如下：</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">blockchain</span><span class="p">:</span>
+  <span class="p p-Indicator">-</span> <span class="nt">chainId</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">chain1</span>
+      <span class="l l-Scalar l-Scalar-Plain">genesis</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">chainconfig/bc1.yml</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h3>2.3 触发chainmaker初始化新链<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<p>使用cmc工具触发chainmaker初始化新链，命令如下：</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>./cmc client blockchains checknew --sdk-conf-path<span class="o">=</span>../sdk/testdata/sdk_config.yml
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>3 添加共识节点<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<p>新增共识节点时，如果节点组织的根证书已经配置在链上，则可以直接执行3.2添加证书，否则需要先执行3.1添加组织的CA证书。</p>
+<div class="section" id="ca">
+<h3>3.1 添加CA证书<a class="headerlink" href="#ca" title="Permalink to this headline">¶</a></h3>
+<p>使用cmc工具添加CA证书，命令如下：</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>./cmc client chainconfig trustroot add --admin-key-file-paths<span class="o">=</span>../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.key --admin-crt-file-paths<span class="o">=</span>../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.crt  --org-id<span class="o">=</span>wx-org1.chainmaker.org --client-crt-file-paths<span class="o">=</span>../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt --client-key-file-paths<span class="o">=</span>../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key --sdk-conf-path<span class="o">=</span>../sdk/testdata/sdk_config.yml --trust-root-org-id<span class="o">=</span>wx-org6.chainmaker.org --trust-root-path<span class="o">=</span>../sdk/testdata/crypto-config/wx-org6.chainmaker.org/ca/ca.crt
+</pre></div>
+</div>
+</div>
+<div class="section" id="id5">
+<h3>3.2 添加共识节点<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
+<p>使用cmc工具添加共识节点，命令如下：</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>./cmc client chainconfig consensusnode add --admin-key-file-paths<span class="o">=</span>../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.key --admin-crt-file-paths<span class="o">=</span>../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.crt  --org-id<span class="o">=</span>wx-org1.chainmaker.org --client-crt-file-paths<span class="o">=</span>../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt --client-key-file-paths<span class="o">=</span>../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key --sdk-conf-path<span class="o">=</span>../sdk/testdata/sdk_config.yml --node-org-id<span class="o">=</span>wx-org6.chainmaker.org --node-address<span class="o">=</span>/ip4/192.168.2.33/tcp/11306/p2p/QmaidqyzfPv6y97JF9ZcrG7q3mgU9ALaQmMDUTajiCeXHe
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="id6">
+<h2>4 移除共识节点<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<p>使用cmc工具移除共识节点，命令如下：</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>./cmc client chainconfig consensusnode remove --admin-key-file-paths<span class="o">=</span>../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.key --admin-crt-file-paths<span class="o">=</span>../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.crt  --org-id<span class="o">=</span>wx-org1.chainmaker.org --client-crt-file-paths<span class="o">=</span>../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt --client-key-file-paths<span class="o">=</span>../sdk/testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key --sdk-conf-path<span class="o">=</span>../sdk/testdata/sdk_config.yml --node-org-id<span class="o">=</span>wx-org6.chainmaker.org --node-address<span class="o">=</span>/ip4/192.168.2.33/tcp/11306/p2p/QmaidqyzfPv6y97JF9ZcrG7q3mgU9ALaQmMDUTajiCeXHe
+</pre></div>
+</div>
+</div>
+<div class="section" id="id7">
+<h2>5 添加同步节点<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
+<p>添加新同步节点只需将组织的CA证书添加到链上即可，参考3.1</p>
+</div>
+<div class="section" id="id8">
+<h2>6 移除同步节点<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h2>
+<p>移除同步节点，直接将共识节点停止即可，无需链上操作</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="ChainMaker_PPROF_Manual.html" class="btn btn-neutral float-right" title="pprof使用" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="ChainMaker_Operation_Manual.html" class="btn btn-neutral float-left" title="长安链 · ChainMaker Operation Manual" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021,test1.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

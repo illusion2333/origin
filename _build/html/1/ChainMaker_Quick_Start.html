@@ -1,0 +1,437 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>长安链· ChainMaker Quick Start &mdash; chainmaker-docs 0.7.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="长安链 · ChainMaker User Manual" href="ChainMaker_User_Manual.html" />
+    <link rel="prev" title="长安链 · ChainMaker General Introduction" href="ChainMaker_General_Introduction.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> chainmaker-docs
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.7.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">目录</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ChainMaker_General_Introduction.html">长安链 · ChainMaker General Introduction</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">长安链· ChainMaker Quick Start</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">1 快速部署</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">2 合约相关</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id3">2.1 创建合约</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id4">2.2 调用合约</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id5">2.3 查询合约</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#id6">3 链相关</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id7">3.1 查询链信息</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id8">3.2 查询区块信息（根据高度）</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id">3.3 查询交易信息（根据交易id）</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ChainMaker_User_Manual.html">长安链 · ChainMaker User Manual</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ChainMaker_Data_Structure.html">长安链 · ChainMaker Data Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ChainMaker_SDK_Go_Manual.html">ChainMaker Go SDK README</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ChainMaker_SDK_Java_Manual.html">ChainMaker Java SDK README</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ChainMaker_Tools_Manual.html">长安链 · ChainMaker Tools Manual</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ChainMaker_Deploy_Manual.html">长安链 · ChainMaker Deploy Manual</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ChainMaker_Operation_Manual.html">长安链 · ChainMaker Operation Manual</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ChainMaker_Maintenance_Manual.html">长安链 · ChainMaker Maintenance Manual</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ChainMaker_PPROF_Manual.html">pprof使用</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../2/index.html">长安链</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">chainmaker-docs</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">目录</a> &raquo;</li>
+        
+      <li>长安链· ChainMaker Quick Start</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/1/ChainMaker_Quick_Start.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="chainmaker-quick-start">
+<h1>长安链· ChainMaker Quick Start<a class="headerlink" href="#chainmaker-quick-start" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="id1">
+<h2>1 快速部署<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>参考 <a class="reference internal" href="ChainMaker_Deploy_Manual.html"><span class="doc">《ChainMaker Deploy Manual》</span></a> 进行单节点、4节点快速部署</p>
+</div>
+<div class="section" id="id2">
+<h2>2 合约相关<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>本部署的实例参照了 <a class="reference external" href="./ChainMaker_Contract_Manual">《ChainMaker Contract Manual》</a> 中“智能合约Sample”中RUST版转账合约。后续的方法调用和参数与该合约源代码对应。</p>
+<div class="section" id="id3">
+<h3>2.1 创建合约<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<p>使用cmc工具创建一个合约，采用 chainmaker-go/test/wasm 的 asset-rust-0.7.2_v1.1.0.wasm 进行创建（该文件为已编译的智能合约字节码文件，前期合约开发、编译步骤可参见 <a class="reference external" href="./ChainMaker_Contract_Manual">《ChainMaker Contract Manual》</a> ，此处省略），命令如下：</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>./cmc client contract user create <span class="se">\</span>
+      --admin-key-file-paths<span class="o">=</span>./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.key  <span class="se">\</span>
+      --admin-crt-file-paths<span class="o">=</span>./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.crt  <span class="se">\</span>
+      --org-id<span class="o">=</span>wx-org1.chainmaker.org <span class="se">\</span>
+      --chain-id<span class="o">=</span>chain1  <span class="se">\</span>
+      --client-crt-file-paths<span class="o">=</span>./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt <span class="se">\</span>
+      --client-key-file-paths<span class="o">=</span>./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key <span class="se">\</span>
+      --byte-code-path<span class="o">=</span>../../test/wasm/asset-rust-0.7.2_v1.1.0.wasm <span class="se">\</span>
+      --contract-name<span class="o">=</span>asset_new24 <span class="se">\</span>
+      --runtime-type<span class="o">=</span>WASMER <span class="se">\</span>
+      --sdk-conf-path<span class="o">=</span>./testdata/sdk_config.yml <span class="se">\</span>
+      --version<span class="o">=</span><span class="m">1</span>.0 <span class="se">\</span>
+      --sync-result<span class="o">=</span><span class="nb">true</span> <span class="se">\</span>
+      --params<span class="o">=</span><span class="s2">&quot;{\&quot;issue_limit\&quot;:\&quot;500000000\&quot;,\&quot;total_supply\&quot;:\&quot;1000000000\&quot;}&quot;</span>
+</pre></div>
+</div>
+<p>cmc指令参数说明：</p>
+<ul class="simple">
+<li><p>create  创建合约</p></li>
+<li><p>admin-key-file-paths  管理员密钥路径</p></li>
+<li><p>admin-crt-file-paths  管理员证书路径</p></li>
+<li><p>org-id  组织id</p></li>
+<li><p>chain-id  节点id</p></li>
+<li><p>client-key-file-paths  客户端密钥路径</p></li>
+<li><p>client-crt-file-paths  客户端证书路径</p></li>
+<li><p>byte-code-path  合约字节码路径</p></li>
+<li><p>contract-name  合约名字</p></li>
+<li><p>runtime-type  合约运行时类型</p></li>
+<li><p>sdk-conf-path  sdk配置文件路径</p></li>
+<li><p>version  版本</p></li>
+<li><p>sync-resul  同步结果</p></li>
+<li><p>params  执行所需要参数，详见《ChainMaker_Contract_Manual》合约文档</p></li>
+</ul>
+<p>正确输出如下：</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>create contract resp: message:<span class="s2">&quot;OK&quot;</span> 
+contract_result:&lt;result:<span class="s2">&quot;c8c088cd9e333950f47cd5f5e3d6ebdadf522459553da90c138ca8ce16549480&quot;</span> &gt; 
+</pre></div>
+</div>
+<p>注意：</p>
+<ol class="simple">
+<li><p>cmc 在 chainmaker-go/tools/cmc 下</p></li>
+<li><p>cmc 目录下如果没有cmc可执行文件，执行 go build</p></li>
+<li><p>cmc 目录下如果没有 testdata 目录，执行：cp -r ../sdk/testdata ./</p></li>
+</ol>
+</div>
+<div class="section" id="id4">
+<h3>2.2 调用合约<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<p>调用 contract-name=asset_new24 的合约中的  total_supply 方法，查看当前合约总金额，命令如下：</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>./cmc client contract user invoke <span class="se">\</span>
+			--contract-name<span class="o">=</span>asset_new24 <span class="se">\</span>
+			--method<span class="o">=</span>total_supply <span class="se">\</span>
+			--org-id<span class="o">=</span>wx-org1.chainmaker.org <span class="se">\</span>
+			--client-crt-file-paths<span class="o">=</span>./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt <span class="se">\</span>
+			--client-key-file-paths<span class="o">=</span>./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key <span class="se">\</span>
+			--sdk-conf-path<span class="o">=</span>./testdata/sdk_config.yml <span class="se">\</span>
+			--sync-result<span class="o">=</span><span class="nb">true</span>
+</pre></div>
+</div>
+<p>cmc指令参数说明：</p>
+<ul class="simple">
+<li><p>invoke  合约调用</p></li>
+<li><p>contract-name  合约名字</p></li>
+<li><p>method  执行方法</p></li>
+<li><p>org-id  组织id</p></li>
+<li><p>client-crt-file-paths  客户端key路径</p></li>
+<li><p>client-key-file-paths  客户端证书路径</p></li>
+<li><p>sdk-conf-path  sdk配置文件路径</p></li>
+<li><p>sync-result  同步结果</p></li>
+</ul>
+<p>正确输出如下：</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>INVOKE contract resp, <span class="o">[</span>code:0<span class="o">]</span>/<span class="o">[</span>msg:OK<span class="o">]</span>/<span class="o">[</span>contractResult:result:<span class="s2">&quot;1000000000&quot;</span> <span class="o">]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id5">
+<h3>2.3 查询合约<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
+<p>查询 contract-name=asset_new24 的合约下自己的钱包地址，命令如下：</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>./cmc client contract user get <span class="se">\</span>
+			--contract-name<span class="o">=</span>asset_new24 <span class="se">\</span>
+			--method<span class="o">=</span>query_address <span class="se">\</span>
+			--sdk-conf-path<span class="o">=</span>./testdata/sdk_config.yml <span class="se">\</span>
+			--org-id<span class="o">=</span>wx-org1.chainmaker.org <span class="se">\</span>
+			--client-crt-file-paths<span class="o">=</span>./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt <span class="se">\</span>
+			--client-key-file-paths<span class="o">=</span>./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key
+</pre></div>
+</div>
+<p>cmc指令参数说明：</p>
+<ul class="simple">
+<li><p>get  查询合约</p></li>
+<li><p>contract-name  合约名字</p></li>
+<li><p>method  执行方法</p></li>
+<li><p>sdk-conf-path  sdk配置文件路径</p></li>
+<li><p>org-id  组织id</p></li>
+<li><p>client-crt-file-paths  客户端key路径</p></li>
+<li><p>client-key-file-paths  客户端证书路径</p></li>
+</ul>
+<p>正确输出如下：</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>QUERY contract resp: message:<span class="s2">&quot;SUCCESS&quot;</span> contract_result
+&lt;result:<span class="s2">&quot;c8c088cd9e333950f47cd5f5e3d6ebdadf522459553da90c138ca8ce16549480&quot;</span> &gt;
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="id6">
+<h2>3 链相关<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id7">
+<h3>3.1 查询链信息<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h3>
+<p>查询区块链信息，命令如下：</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>./cmc client contract system getchaininfo <span class="se">\</span>
+			--org-id<span class="o">=</span>wx-org1.chainmaker.org <span class="se">\</span>
+			--client-crt-file-paths<span class="o">=</span>./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt <span class="se">\</span>
+			--client-key-file-paths<span class="o">=</span>./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key <span class="se">\</span>
+			--sdk-conf-path<span class="o">=</span>./testdata/sdk_config.yml
+</pre></div>
+</div>
+<p>cmc指令参数说明：</p>
+<ul class="simple">
+<li><p>getchaininfo  查询链信息</p></li>
+<li><p>org-id  组织id</p></li>
+<li><p>client-crt-file-paths  客户端key路径</p></li>
+<li><p>client-key-file-paths  客户端证书路径</p></li>
+<li><p>sdk-conf-path  sdk配置文件路径</p></li>
+</ul>
+<p>正确输出如下：</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>get chain info resp: block_height:30 node_list:&lt;node_id:<span class="s2">&quot;QmRZBFSKT6SRkdkVo3Hbaz9gcBLHP5XFgBHdEhXkasjZjH&quot;</span>
+node_address:<span class="s2">&quot;/ip4/192.168.1.95/tcp/11301,/ip4/127.0.0.1/tcp/11301&quot;</span> 
+node_tls_cert:<span class="s2">&quot;0\202\003\0260\202\002\273\240\003\002\001\002\002\003\004,30\n\006\010*\201\034\317U\001\203u0\201\2121\0130\t\006\003U\004\006\023\002CN1\0200\016\006\003U\004\010\023\007Beijing1\0200\016\006\003U\004\007\023\007Beijing1\0370\035\006\003U\004\n\023\026wx-org1.chainmaker.org1\0220\020\006\003U\004\013\023\troot-cert1\&quot;0 \006\003U\004\003\023\031ca.wx-org1.chainmaker.org0\036\027\r210309063236Z\027\r260308063236Z0\201\2261\0130\t\006\003U\004\006\023\002CN1\0200\016\006\003U\004\010\023\007Beijing1\0200\016\006\003U\004\007\023\007Beijing1\0370\035\006\003U\004\n\023\026wx-org1.chainmaker.org1\0220\020\006\003U\004\013\023\tconsensus1.0,\006\003U\004\003\023%consensus1.tls.wx-org1.chainmaker.org0Y0\023\006\007*\206H\316=\002\001\006\010*\201\034\317U\001\202-\003B\000\004\017Vt:</span>$<span class="s2">\277\375\023\354\231\223\352\025\251/m\223\355\223\037\266\2244m)O\022\230\t=\320&amp;\234\272J\372\364M\330B\201:\262w;\355\316\265\027\326#_\3265\223\243\022\315\261-z\017\251\032\243\202\001\0000\201\3750\016\006\003U\035\017\001\001\377\004\004\003\002\001\2460\017\006\003U\035%\004\0100\006\006\004U\035%\0000)\006\003U\035\016\004\&quot;\004 A\347\202\003hy\363\302\234\277nM\365\265^\325f\356Z\270\365px\\\200\0077\363\331\203\222P0+\006\003U\035#\004</span><span class="nv">$0</span><span class="s2">\&quot;\200 \364Gw@\274\376\223\033oe\261:\&quot;\304:\3256 /\266\355\\\003x!B\rF\003\315\215\3530Q\006\003U\035\021\004J0H\202\016chainmaker.org\202\tlocalhost\202%consensus1.tls.wx-org1.chainmaker.org\207\004\177\000\000\0010/\006\013\201&#39;X\217d\013\036\217d\013\004\004 12f607859a4f4ada84dfca2f8c563e6b0\n\006\010*\201\034\317U\001\203u\003I\0000F\002!\000\357:\244\017-\006\232=\376)\232\324[5(\330\353\013\201\375\344]\245}\235\371\256nB\324,\305\002!\000\222\037]`I\350Fe`\306V}q\204\264\025\201\007\272o\376\357I\251\n\302\236\270\216\342\\F&quot;</span> &gt;
+</pre></div>
+</div>
+<p>注意：</p>
+<ol class="simple">
+<li><p>单节点没有启动网络模块，所以会出现以下错误</p></li>
+</ol>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>Error: get chain info failed, QUERY_SYSTEM_CONTRACT failed, <span class="m">4</span>, <span class="m">1</span>, 
+get ChainNodesInfoProvider error: chainNodesInfoProvider <span class="k">for</span> tx sim context is nil
+</pre></div>
+</div>
+</div>
+<div class="section" id="id8">
+<h3>3.2 查询区块信息（根据高度）<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h3>
+<p>查询区块高度为 1 的区块，命令如下：</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>./cmc client contract system block <span class="se">\</span>
+    --sdk-conf-path ./testdata/sdk_config.yml <span class="se">\</span>
+    --block-height <span class="m">1</span> <span class="se">\</span>
+    --with-rw-set <span class="nb">true</span>
+</pre></div>
+</div>
+<p>cmc指令参数说明：</p>
+<ul class="simple">
+<li><p>block  获取区块信息</p></li>
+<li><p>block-height  区块高度</p></li>
+<li><p>sdk-conf-path  sdk配置文件路径</p></li>
+</ul>
+<p>正确输出如下：</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>get block by height resp: block:&lt;header:&lt;chain_id:<span class="s2">&quot;chain1&quot;</span> block_height:1 
+pre_block_hash:<span class="s2">&quot;\334\341\302j\300\010\022X\343\206\21055r\0003\221awl!\030\003\016[i\&quot;\324G2Z+&quot;</span> 
+block_hash:<span class="s2">&quot;\257\030lj\371\317DF?\020\375U\313=\\\367\357\220\225\032\276e\027v\250\354\0059%|\ro&quot;</span> block_version:<span class="s2">&quot;v1.0.0&quot;</span> 
+dag_hash:<span class="s2">&quot;\010\332|E\313 Cw\347\344\&quot;I\315\245q?\250e\021m\333\264\313Z\031I\262\345\2648\246\253&quot;</span> 
+rw_set_root:<span class="s2">&quot;f\300\276\316\346\355\350\200\033\351P\&quot;dy\373\261\345\333=\261\034\272E\270\367:\235\251\261\025\177O&quot;</span> 
+tx_root:<span class="s2">&quot;n\005D\033\305q\003[(\315K0\276u\345\255\013\316\005\004\357\271\231\305\310\203T\211\305\023\340\230&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id">
+<h3>3.3 查询交易信息（根据交易id）<a class="headerlink" href="#id" title="Permalink to this headline">¶</a></h3>
+<p>查询 交易id 为 61cef77f82df47fd9278d365c6261f5707a69b99b45e437bb611627ef2144ed7 的交易，命令如下：</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>./cmc client contract system tx <span class="se">\</span>
+    --sdk-conf-path ./testdata/sdk_config.yml <span class="se">\</span>
+    --tx-id 61cef77f82df47fd9278d365c6261f5707a69b99b45e437bb611627ef2144ed7
+</pre></div>
+</div>
+<p>cmc指令参数说明：</p>
+<ul class="simple">
+<li><p>tx  获取交易信息</p></li>
+<li><p>sdk-conf-path  sdk配置文件路径</p></li>
+<li><p>tx-id  交易id</p></li>
+</ul>
+<p>正确输出如下：</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>result:&lt;contract_result:&lt;result:<span class="s2">&quot;c8c088cd9e333950f47cd5f5e3d6ebdadf522459553da90c138ca8ce16549480&quot;</span> &gt; 
+rw_set_hash:<span class="s2">&quot;\253\265\334{\035h\370xp\231\255M\216\203M\037tt\331_\224y\350\334\177J%\262\rZ\375\333&quot;</span> &gt; &gt; block_height:13
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="ChainMaker_User_Manual.html" class="btn btn-neutral float-right" title="长安链 · ChainMaker User Manual" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="ChainMaker_General_Introduction.html" class="btn btn-neutral float-left" title="长安链 · ChainMaker General Introduction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021,test1.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
