@@ -1,7 +1,5 @@
 # ChainMaker Go SDK README
 
-[TOC]
-
 ## 1 基本概念
 
 - **Node（节点）**：代表一个链节点的基本信息，包括：节点地址、连接数、是否启用`TLS`认证等信息
@@ -695,3 +693,4 @@ func createClient() (*ChainClient, error) {
 ```go
 	GetChainMakerServerVersion() (string, error)
 ```
+

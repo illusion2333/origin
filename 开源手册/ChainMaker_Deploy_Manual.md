@@ -66,8 +66,28 @@ cd chainmaker-go/tools/cmc
 go mod download
 go build
 cp -r ../sdk/testdata ./ 
-./cmc client contract user create --admin-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.key --admin-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.crt  --org-id=wx-org1.chainmaker.org --chain-id=chain1 --client-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt --client-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key --byte-code-path=../../test/wasm/rust-asset-management-1.0.0.wasm --contract-name=asset_new24 --runtime-type=WASMER --sdk-conf-path=./testdata/sdk_config.yml --version=1.0 --sync-result=true --params="{\"issue_limit\":\"500000000\",\"total_supply\":\"1000000000\"}"
+./cmc client contract user create --admin-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.key --admin-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.crt  --org-id=wx-org1.chainmaker.org --chain-id=chain1 --client-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt --client-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key --byte-code-path=../../test/wasm/rust-asset-management-1.0.0.wasm --contract-name=asset_new001 --runtime-type=WASMER --sdk-conf-path=./testdata/sdk_config.yml --version=1.0 --sync-result=true --params="{\"issue_limit\":\"500000000\",\"total_supply\":\"1000000000\"}"
 ```
+使用cmc工具查询刚创建的合约的total_supply值
+
+```sh
+./cmc client contract user get \
+    --sdk-conf-path ./testdata/sdk_config.yml \
+    --contract-name asset_new001 --method total_supply
+```
+
+返回如下日志表示验证成功：
+
+> QUERY contract resp: message:"SUCCESS" contract_result:<result:"1000000000" gas_used:12844566 >
+
+
+
+
+
+
+
+
+
 
 ## 4 快速部署（4节点TBFT共识）
 
@@ -138,22 +158,93 @@ tar zvxf ../../build/release/crypto-config-xxx.tar.gz(xxx代表最新时间)
 cp -r ../sdk/testdata ./ 
 rm -rf testdata/crypto-config
 mv ./crypto-config testdata/
-./cmc client contract user create --admin-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.key --admin-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.crt  --org-id=wx-org1.chainmaker.org --chain-id=chain1 --client-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt --client-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key --byte-code-path=../../test/wasm/rust-asset-management-1.0.0.wasm --contract-name=asset_new24 --runtime-type=WASMER --sdk-conf-path=./testdata/sdk_config.yml --version=1.0 --sync-result=true --params="{\"issue_limit\":\"500000000\",\"total_supply\":\"1000000000\"}"
+./cmc client contract user create --admin-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.key --admin-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/admin1/admin1.tls.crt  --org-id=wx-org1.chainmaker.org --chain-id=chain1 --client-crt-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.crt --client-key-file-paths=./testdata/crypto-config/wx-org1.chainmaker.org/user/client1/client1.tls.key --byte-code-path=../../test/wasm/rust-asset-management-1.0.0.wasm --contract-name=asset_new001 --runtime-type=WASMER --sdk-conf-path=./testdata/sdk_config.yml --version=1.0 --sync-result=true --params="{\"issue_limit\":\"500000000\",\"total_supply\":\"1000000000\"}"
+```
+
+使用cmc工具查询刚创建的合约的total_supply值
+
+```sh
+./cmc client contract user get \
+    --sdk-conf-path ./testdata/sdk_config.yml \
+    --contract-name asset_new001 --method total_supply
+```
+
+返回如下日志表示验证成功：
+
+> QUERY contract resp: message:"SUCCESS" contract_result:<result:"1000000000" gas_used:12844566 >
+
+
+
+## 5 goland启动
+
+### 5.1 下载安装goland
+
+略
+
+### 5.2 下载安装go
+
+#### 5.2.1 安装go
+
+略
+
+#### 5.2.2 设置代理
+
+打开终端执行
+
+```sh
+go env -w  GOPROXY=https://goproxy.io,direct
 ```
 
 
 
+### 5.3 下载源码
+
+```sh
+git clone --recurse-submodules git@git.code.tencent.com:ChainMaker/chainmaker-go.git
+```
 
 
 
+## 5.4 启动goland
+
+#### 5.4.1 导入chainmaker-go
+
+略
+
+#### 5.4.2 配置goland
+
+Ctrl+Alt+S 或者 File->Settings...
+
+Go-->Go Modules --> 勾上Enable Go Modules integration
+
+Go-->GOROOT-->添加已安装的go
+
+<img src="./images/goland-mod.jpg">
 
 
 
+#### 5.4.3 启动项目（SOLO模式）
+
+- 修改配置文件
+
+chainmaker-go/config/wx-org1/chainconfig/bc1.yml将 consensus.type修改为0：启用solo共识
+
+chainmaker-go/config/wx-org1/log.yml将 log_in_console修改为true：在控制台输入日志
+
+- 启动
+
+找到文件 chainmaker-go/main/main.go 直接运行，然后点击停止，修改启动参数为`start -c ../config/wx-org1/chainmaker.yml`再次点击运行即可。
+
+在控制台输入日志：
+
+<img src="./images/run-main.jpg">
 
 
 
+<img src="./images/run-main-arg.jpg">
 
 
 
+#### 5.4.4 测试
 
-
+找到文件`chainmaker-go/test/send_proposal_request_solo/main.go`直接运行main即可
