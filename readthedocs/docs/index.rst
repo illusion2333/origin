@@ -1,7 +1,6 @@
 .. toctree::
     :maxdepth: 2
-    :caption: 目录:
-    :numbered:
+    :glob:
     
     intro/index
     tutorial/index
