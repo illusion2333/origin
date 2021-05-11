@@ -1,3 +1,4 @@
+# 13. RocksDB安装部署
 RocksDB是使用C++开发的开源嵌入式数据库，长安链采用golang开发，为了集成RocksDB，目前长安链使用了gorocksdb第三方开源的golang库，gorocksdb需要依赖RocksDB的库文件，因此如果选用RocksDB作为存储数据库，需要在本地安装RocksDB的环境，并使用条件编译来集成RocksDB。过程如下：
 
 - 1.RocksDB安装：https://github.com/facebook/rocksdb/blob/master/INSTALL.md
