@@ -15,7 +15,6 @@ chainmaker文档
    intro/1、项目名称
    intro/2、背景
    intro/3、基础术语
-   intro/4、官网地址
    intro/5、编写语言
    intro/6、项目优势
    intro/7、版本迭代
