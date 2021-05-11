@@ -21,11 +21,5 @@
     14、ChainMaker身份分层加密方案介绍
 
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 
 

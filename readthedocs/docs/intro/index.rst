@@ -13,12 +13,3 @@
     6、项目优势
     7、版本迭代
 
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
-

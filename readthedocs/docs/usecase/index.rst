@@ -13,11 +13,3 @@
     2、碳交易
     3、冷链溯源
 
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-

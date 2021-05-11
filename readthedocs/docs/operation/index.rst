@@ -11,12 +11,3 @@
     4、配置变更
     5、HIBE接口、工具介绍及用例
 
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
-
