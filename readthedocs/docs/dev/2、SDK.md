@@ -1,4 +1,4 @@
-
+# 2. SDK
 
 ## 1概述
 
@@ -266,7 +266,7 @@ func invokeUserContract(client *ChainClient, contractName, method, txId string, 
 
 请参看：[《chainmaker-go-sdk》](/docs/dev/chainmaker-go-sdk.md)
 
-### 3.2Java SDK
+### 3.2 Java SDK
 
 #### 3.2.1环境依赖
 
