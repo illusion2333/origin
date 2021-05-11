@@ -1,8 +1,9 @@
+8、鸣谢
 ===========================================
 
 .. toctree::
     :maxdepth: 2
-    :glob:
+    :caption: Contents:
     
 	1、鸣谢
 

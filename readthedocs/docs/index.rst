@@ -5,14 +5,14 @@
     :maxdepth: 2
     :glob:
     
-    author/index
     intro/index
-    tech/index
     tutorial/index
+    tech/index
 	dev/index
 	operation/index
-	thanks/index
 	usecase/index
+	author/index
+	thanks/index
 
 
 

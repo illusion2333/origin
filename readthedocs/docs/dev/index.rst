@@ -1,8 +1,9 @@
+4、开发指南
 ===========================================
 
 .. toctree::
     :maxdepth: 2
-    :glob:
+    :caption: Contents:
     
 	1、智能合约
 	2、SDK
