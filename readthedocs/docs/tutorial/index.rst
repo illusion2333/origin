@@ -5,7 +5,7 @@
     :maxdepth: 2
     :caption: Contents:
     
-	1、快速入门
+    1、快速入门
 
 
 Indices and tables

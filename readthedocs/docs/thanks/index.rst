@@ -5,7 +5,7 @@
     :maxdepth: 2
     :caption: Contents:
     
-	1、鸣谢
+    1、鸣谢
 
 
 Indices and tables
