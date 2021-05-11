@@ -1,7 +1,6 @@
 .. toctree::
     :maxdepth: 2
     :caption: 3、技术设计文档
-    :numbered:
     
     1、整体架构
     2、核心流程

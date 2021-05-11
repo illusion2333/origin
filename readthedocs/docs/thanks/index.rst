@@ -1,9 +1,6 @@
-8、鸣谢
-===========================================
-
 .. toctree::
     :maxdepth: 2
-    :caption: Contents:
+    :caption: 8、鸣谢
     
     1、鸣谢
 
