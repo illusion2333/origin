@@ -132,7 +132,7 @@
 
 ### 14.3.2方案描述
 
-![长安链HIBE方案流程](../docs/images/加密算法-HIBE-方案流程.png)
+![长安链HIBE方案流程](../images/加密算法-HIBE-方案流程.png)
 
 
 
