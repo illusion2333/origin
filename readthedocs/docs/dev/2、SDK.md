@@ -1,6 +1,6 @@
-# 2. SDK
+# SDK
 
-## 1概述
+## 概述
 
 长安链`SDK`是业务模块与长安链交互的桥梁，支持双向`TLS`认证，提供安全可靠的加密通信信道。
 
@@ -8,17 +8,17 @@
 
 提供的`SDK`接口，覆盖合约管理、链配置管理、证书管理、多签收集、各类查询操作、事件订阅等场景，满足了不同的业务场景需要。
 
-## 2约定概念
+## 约定概念
 
 - **`Node`（节点）**：代表一个链节点的基本信息，包括：节点地址、连接数、是否启用`TLS`认证等信息
 - **`ChainClient`（链客户端）**：所有客户端对链节点的操作接口都来自`ChainClient`
 - **压缩证书**：可以为`ChainClient`开启证书压缩功能，开启后可以减小交易包大小，提升处理性能
 
-## 3开发指南
+## 开发指南
 
-### 3.1Go SDK
+### Go SDK
 
-#### 3.1.1环境依赖
+#### 环境依赖
 
 **golang**
 
@@ -33,13 +33,13 @@ $ go version
 go version go1.15 linux/amd64
 ```
 
-#### 3.1.2下载安装
+#### 下载安装
 
 ```bash
 $ git clone --recursive https://git.chainmaker.org.cn/chainmaker/chainmaker-sdk-go.git
 ```
 
-#### 3.1.3示例代码
+#### 示例代码
 
 ##### 创建节点
 
@@ -262,13 +262,13 @@ func invokeUserContract(client *ChainClient, contractName, method, txId string, 
 | 证书管理 | `sdk_cert_manage_test.go`     |
 | 消息订阅 | `sdk_subscribe_test.go`       |
 
-#### 3.1.4接口说明
+#### 接口说明
 
 请参看：[《chainmaker-go-sdk》](/docs/dev/chainmaker-go-sdk.md)
 
-### 3.2 Java SDK
+###  Java SDK
 
-#### 3.2.1环境依赖
+#### 环境依赖
 
 **java**
 
@@ -283,13 +283,13 @@ $ java -version
 java version "1.8.0_281"
 ```
 
-#### 3.2.2下载安装
+#### 下载安装
 
 ```bash
 $ git clone https://git.code.tencent.com/ChainMaker/chainmaker-sdk-java.git
 ```
 
-#### 3.2.3示例代码
+#### 示例代码
 
 ##### 创建节点
 
@@ -375,6 +375,6 @@ if (chainClient == null) {
 | 证书管理 | `TestBaseCertManage`     |
 | 消息订阅 | `TestSubscribe`       |
 
-#### 3.2.4接口说明
+#### 接口说明
 
 请参看：[《chainmaker-java-sdk》](/docs/dev/chainmaker-java-sdk.md)
