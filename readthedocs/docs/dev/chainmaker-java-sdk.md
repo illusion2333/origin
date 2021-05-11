@@ -2,7 +2,7 @@
 
 [TOC]
 
-## 1 基本概念定义
+## 基本概念定义
 
 Java SDK定义了User、Node、ChainClient、ChainManager和ResponseInfo几个类，分别介绍如下：
 
@@ -89,12 +89,12 @@ public class ResponseInfo {
 }
 ```
 
-## 2 ChainClient类接口定义
+## ChainClient类接口定义
 
 ChainClient类描述了所有用户能够对链进行操作的接口
 
-### 2.1 用户合约接口
-#### 2.1.1 生成用于创建合约的待签名payload
+### 用户合约接口
+#### 生成用于创建合约的待签名payload
 **参数说明**
 
   - contractName: 合约名
@@ -113,7 +113,7 @@ ChainClient类描述了所有用户能够对链进行操作的接口
     }
 ```
 
-#### 2.1.2 生成用于升级合约的待签名payload
+#### 生成用于升级合约的待签名payload
  **参数说明**
 
   - contractName: 合约名
@@ -130,35 +130,35 @@ public byte[] createPayloadOfContractUpgrade(String contractName, String version
                                              Contract.RuntimeType runtimeType, Map<String, String> params,
                                              byte[] byteCodes) {
 ```
-#### 2.1.3 生成用于冻结合约的待签名payload
+#### 生成用于冻结合约的待签名payload
  **参数说明**
 
   - contractName: 合约名
-**返回值说明**
+    **返回值说明**
     返回payload字节数组
 ```java
 public byte[] createPayloadOfContractFreeze(String contractName) {}
 ```
-#### 2.1.4 生成用于解冻合约的待签名payload
+#### 生成用于解冻合约的待签名payload
  **参数说明**
 
   - contractName: 合约名
-**返回值说明**
+    **返回值说明**
     返回payload字节数组
 ```java
 public byte[] createPayloadOfContractUnfreeze(String contractName) {}
 ```
-#### 2.1.5 生成用于吊销合约的待签名payload
+#### 生成用于吊销合约的待签名payload
  **参数说明**
 
   - contractName: 合约名
-**返回值说明**
+    **返回值说明**
     返回payload字节数组
 ```java
 public byte[] createPayloadOfContractRevoke(String contractName) {}
 ```
 
-#### 2.1.6 将多个带签名后的payload合并成一个带多个签名的payload，所有签名都放在一个payload后面
+#### 将多个带签名后的payload合并成一个带多个签名的payload，所有签名都放在一个payload后面
 
 **参数说明**
   - payloads: 多个带签名的payload
@@ -170,7 +170,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
     }
 ```
 
-#### 2.1.7 创建合约
+####  创建合约
 **参数说明**
   - payloadWithEndorsementsBytes: 带签名的合约内容
   - rpcCallTimeout: 调用rcp接口超时时间, 单位：毫秒
@@ -182,7 +182,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
     }
 ```
 
-#### 2.1.8 升级合约
+#### 升级合约
 **参数说明**
 
   - payloadWithEndorsementsBytes: 带签名的合约内容
@@ -195,7 +195,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
 																				ChainMakerCryptoSuiteException {
     }
 ```
-#### 2.1.9 冻结合约
+#### 冻结合约
 **参数说明**
 
   - payloadWithEndorsementsBytes: 带签名的合约内容
@@ -207,7 +207,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
                                         long syncResultTimeout) throws InvalidProtocolBufferException, 
 																				ChainMakerCryptoSuiteException {}
 ```
-#### 2.1.10 解冻合约
+#### 解冻合约
 **参数说明**
 
   - payloadWithEndorsementsBytes: 带签名的合约内容
@@ -219,7 +219,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
                                        long syncResultTimeout) throws InvalidProtocolBufferException, 
 																				ChainMakerCryptoSuiteException {}
 ```
-#### 2.1.11 吊销合约
+#### 吊销合约
 **参数说明**
 
   - payloadWithEndorsementsBytes: 带签名的合约内容
@@ -232,7 +232,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
 																				ChainMakerCryptoSuiteException {
 ```
 
-#### 2.1.12 执行合约
+#### 执行合约
 
 **参数说明**
   - contractName: 合约名
@@ -248,7 +248,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
     }
 ```
 
-#### 2.1.13 查询合约接口
+#### 查询合约接口
 **参数说明**
   - contractName: 合约名
   - method: 方法名
@@ -260,8 +260,8 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
     }
 ```
 
-### 2.2 系统合约接口
-#### 2.2.1 根据交易Id查询交易
+### 系统合约接口
+#### 根据交易Id查询交易
 **参数说明**
   - txId: 交易ID
   - timeout：超时时间，单位毫秒
@@ -271,7 +271,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
     }
 ```
 
-#### 2.2.2 根据区块高度查询区块
+#### 根据区块高度查询区块
 **参数说明**
   - blockHeight: 区块高度
   - withRWSet: 是否返回读写集
@@ -282,7 +282,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
     }
 ```
 
-#### 2.2.3 根据区块哈希查询区块
+#### 根据区块哈希查询区块
 **参数说明**
   - blockHash: 区块高度
   - withRWSet: 是否返回读写集
@@ -293,7 +293,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
     }
 ```
 
-#### 2.2.4 根据交易Id查询区块
+#### 根据交易Id查询区块
 **参数说明**
   - txId: 交易Id
   - withRWSet: 是否返回读写集
@@ -304,7 +304,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
     }
 ```
 
-#### 2.2.5 查询上一个配置块
+#### 查询上一个配置块
 **参数说明**
   - withRWSet: 是否返回读写集
   - timeout：超时时间，单位毫秒
@@ -314,7 +314,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
     }
 ```
 
-#### 2.2.6 查询节点加入的链信息
+#### 查询节点加入的链信息
 
 **参数说明**
 
@@ -330,7 +330,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
     }
 ```
 
-#### 2.2.8 查询链信息
+#### 查询链信息
 
 **返回值说明**
 
@@ -341,7 +341,7 @@ public byte[] createPayloadOfContractRevoke(String contractName) {}
     }
 ```
 
-### 2.3 链配置接口
+### 链配置接口
 
 链配置信息定义如下：
 
@@ -403,14 +403,14 @@ message TrustRootConfig {
 }
 ```
 
-#### 3.1 查询最新链配置
+#### 查询最新链配置
 ```java
     public ChainmakerConfig.ChainConfig getChainConfig(long timeout)
             throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
 
-#### 2.3.2 根据指定区块高度查询最近链配置
+#### 根据指定区块高度查询最近链配置
   - 如果当前区块就是配置块，直接返回当前区块的链配置
 ```java
     public ChainmakerConfig.ChainConfig getChainConfigByBlockHeight(int blockHeight, long timeout)
@@ -418,7 +418,7 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.3.3 查询最新链配置序号Sequence
+#### 查询最新链配置序号Sequence
   - 用于链配置更新
 ```java
     public long getChainConfigSequence(long timeout)
@@ -426,7 +426,7 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.3.4 更新Core模块待签名payload生成
+#### 更新Core模块待签名payload生成
 **参数说明**
   - txSchedulerTimeout: 交易调度器从交易池拿到交易后, 进行调度的时间，其值范围为[0, 60]，若无需修改，请置为-1
   - txSchedulerValidateTimeout: 交易调度器从区块中拿到交易后, 进行验证的超时时间，其值范围为[0, 60]，
@@ -438,7 +438,7 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.3.5 更新Core模块待签名payload生成
+#### 更新Core模块待签名payload生成
 **参数说明**
 
   - txTimestampVerify: 是否需要开启交易时间戳校验
@@ -455,7 +455,7 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.3.6 添加信任组织根证书待签名payload生成
+#### 添加信任组织根证书待签名payload生成
 **参数说明**
   - trustRootOrgId: 组织Id
   - trustRootCrt: 根证书
@@ -466,7 +466,7 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.3.7 更新信任组织根证书待签名payload生成
+#### 更新信任组织根证书待签名payload生成
 **参数说明**
   - trustRootOrgId: 组织Id
   - trustRootCrt: 根证书
@@ -477,7 +477,7 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.3.8 删除信任组织根证书待签名payload生成
+####  删除信任组织根证书待签名payload生成
 **参数说明**
   - trustRootOrgId: 组织Id
 ```java
@@ -486,7 +486,7 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.3.9 添加权限配置待签名payload生成
+#### 添加权限配置待签名payload生成
 **参数说明**
   - permissionResourceName: 权限名
   - principle: 权限规则
@@ -497,7 +497,7 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.3.10 更新权限配置待签名payload生成
+#### 更新权限配置待签名payload生成
 **参数说明**
   - permissionResourceName: 权限名
   - principle: 权限规则
@@ -509,7 +509,7 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.3.11 删除权限配置待签名payload生成
+#### 删除权限配置待签名payload生成
 **参数说明**
   - permissionResourceName: 权限名
 ```java
@@ -518,7 +518,7 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.3.12 添加共识节点地址待签名payload生成
+#### 添加共识节点地址待签名payload生成
 **参数说明**
   - nodeOrgId: 节点组织Id
   - nodeAddresses: 节点地址
@@ -529,7 +529,7 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.3.13 更新共识节点地址待签名payload生成
+#### 更新共识节点地址待签名payload生成
 **参数说明**
   - nodeOrgId: 节点组织Id
   - nodeOldAddress: 节点原地址
@@ -541,7 +541,7 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.3.14 删除共识节点地址待签名payload生成
+#### 删除共识节点地址待签名payload生成
 **参数说明**
   - nodeOrgId: 节点组织Id
   - nodeAddress: 节点地址
@@ -552,7 +552,7 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.3.15 添加共识节点待签名payload生成
+#### 添加共识节点待签名payload生成
 **参数说明**
   - nodeOrgId: 节点组织Id
   - nodeAddresses: 节点地址
@@ -563,7 +563,7 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.3.16 更新共识节点待签名payload生成
+####  更新共识节点待签名payload生成
 **参数说明**
 
   - nodeOrgId: 节点组织Id
@@ -575,7 +575,7 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.3.17 删除共识节点待签名payload生成
+#### 删除共识节点待签名payload生成
 **参数说明**
   - nodeOrgId: 节点组织Id
 ```java
@@ -584,7 +584,7 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.3.18 添加共识扩展字段待签名payload生成
+#### 添加共识扩展字段待签名payload生成
 **参数说明**
   - params: Map<String, String>
 ```java
@@ -593,7 +593,7 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.3.19 添加共识扩展字段待签名payload生成
+#### 添加共识扩展字段待签名payload生成
 **参数说明**
   - params: Map<String, String>
 ```java
@@ -602,7 +602,7 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.3.20 添加共识扩展字段待签名payload生成
+#### 添加共识扩展字段待签名payload生成
 **参数说明**
   - keys: 待删除字段
 ```java
@@ -611,21 +611,21 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.3.21 链配置更新Payload签名收集&合并
+#### 链配置更新Payload签名收集&合并
 ```java
     public byte[] mergeSignedPayloadsOfChainConfig(byte[][] payloads) throws InvalidProtocolBufferException {
     }
 ```
 
-#### 2.3.22 发送链配置更新请求
+#### 发送链配置更新请求
 ```java
     public ResponseInfo updateChainConfig(byte[] payloadWithEndorsementsBytes, long rpcCallTimeout) throws ChainMakerCryptoSuiteException {
     }
 ```
 
 
-### 2.4 证书管理接口
-#### 2.4.1 用户证书添加
+### 证书管理接口
+#### 用户证书添加
 **参数说明**
   - rpcCallTimeout: 发送rpc请求的超时时间
   - syncResultTimeout: 同步交易结果的超时时间
@@ -635,7 +635,7 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.4.2 用户证书删除
+#### 用户证书删除
 **参数说明**
 
   - certHashes: 证书Hash列表
@@ -645,25 +645,25 @@ message TrustRootConfig {
     }
 ```
 
-#### 2.4.3 生成用户证书冻结的待签名payload
+#### 生成用户证书冻结的待签名payload
 **参数说明**
   - certHashes: 冻结的证书内容列表
 ```java
    public byte[] createPayloadOfFreezeCerts(String[] certs) {}
 ```
-#### 2.4.4 生成用户证书解冻的待签名payload
+#### 生成用户证书解冻的待签名payload
 **参数说明**
   - certHashes: 解冻的证书内容列表
 ```java
    public byte[] createPayloadOfFreezeCerts(String[] certs) {}
 ```
-#### 2.4.5 生成用户证书吊销的待签名payload
+#### 生成用户证书吊销的待签名payload
 **参数说明**
   - certCrl: 吊销证书列表
 ```java
 public byte[] createPayloadOfRevokeCerts(String certCrl) {}
 ```
-#### 2.4.6 冻结证书
+#### 冻结证书
 **参数说明**
   - payload: 冻结证书交易的payload
   - rpcCallTimeout: 发送rpc请求的超时时间
@@ -672,7 +672,7 @@ public byte[] createPayloadOfRevokeCerts(String certCrl) {}
     public ResponseInfo freezeCerts(byte[] payload, long rpcCallTimeout, long syncResultTimeout) 
       throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {}
 ```
-#### 2.4.7 解冻证书
+#### 解冻证书
 **参数说明**
   - payload: 解冻证书交易的payload
   - rpcCallTimeout: 发送rpc请求的超时时间
@@ -681,7 +681,7 @@ public byte[] createPayloadOfRevokeCerts(String certCrl) {}
     public ResponseInfo unfreezeCerts(byte[] payload, long rpcCallTimeout, long syncResultTimeout) 
             throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {}
 ```
-#### 2.4.8 吊销证书
+#### 吊销证书
 **参数说明**
   - payload: 解冻证书交易的payload
   - rpcCallTimeout: 发送rpc请求的超时时间
@@ -690,7 +690,7 @@ public byte[] createPayloadOfRevokeCerts(String certCrl) {}
     public ResponseInfo revokeCerts(byte[] payload, long rpcCallTimeout, long syncResultTimeout) 
             throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {}
 ```
-#### 2.4.9 用户证书查询
+#### 用户证书查询
 **参数说明**
   - certHashes: 证书Hash列表
 
@@ -701,8 +701,8 @@ public byte[] createPayloadOfRevokeCerts(String certCrl) {}
             throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
-### 2.5 多签接口
-#### 2.5.1 发送多签交易请求
+### 多签接口
+#### 发送多签交易请求
 **参数说明**
   - txType: 交易类型
   - payload: 多签交易（未签名）的payload
@@ -717,7 +717,7 @@ public ResponseInfo sendMultiSignRequest(Request.TxType txType, byte[] payload,
                                          long syncResultTimeout) 
   throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {}
 ```
-#### 2.5.1 发送多签交易投票
+#### 发送多签交易投票
 **参数说明**
   - voteStatus: 投票状态
   - multiSignReqTxId: 投票交易的交易Id
@@ -734,8 +734,8 @@ public ResponseInfo sendMultiSignVote(MultSign.VoteStatus voteStatus, String mul
   throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {}
 ```
 
-### 2.6 消息订阅接口
-#### 2.6.1 区块订阅
+### 消息订阅接口
+#### 区块订阅
 **参数说明**
   - startBlock: 订阅起始区块高度，若为-1，表示订阅实时最新区块
   - endBlock: 订阅结束区块高度，若为-1，表示订阅实时最新区块
@@ -746,7 +746,7 @@ public ResponseInfo sendMultiSignVote(MultSign.VoteStatus voteStatus, String mul
     }
 ```
 
-#### 2.6.2 交易订阅
+#### 交易订阅
 **参数说明**
   - startBlock: 订阅起始区块高度，若为-1，表示订阅实时最新区块
   - endBlock: 订阅结束区块高度，若为-1，表示订阅实时最新区块
@@ -758,15 +758,15 @@ public ResponseInfo sendMultiSignVote(MultSign.VoteStatus voteStatus, String mul
     }
 ```
 
-### 2.7 管理类接口
-#### 2.7.1 SDK停止接口：关闭连接池连接，释放资源
+### 管理类接口
+#### SDK停止接口：关闭连接池连接，释放资源
 ```java
 public void stop() {}
 ```
 
-## 3 User类接口
+## User类接口
 
-### 3.1 生成用于管理合约交易的签名后的payload
+### 生成用于管理合约交易的签名后的payload
 
 **参数说明**
   - payload: 签名前的payload
@@ -780,7 +780,7 @@ public void stop() {}
     }
 ```
 
-### 3.2 生成用于系统合约调用的签名后的payload
+### 生成用于系统合约调用的签名后的payload
 
 **参数说明**
   - payload: 签名前的payload
@@ -793,7 +793,7 @@ public void stop() {}
             throws InvalidProtocolBufferException, ChainMakerCryptoSuiteException {
     }
 ```
-### 3.3 生成用于多签交易的payload
+### 生成用于多签交易的payload
 
 **参数说明**
   - payload: 签名前的payload
@@ -804,7 +804,7 @@ public void stop() {}
 ```java
 public Request.EndorsementEntry signPayloadOfMultiSign(byte[] payload, boolean isEnabledCertHash) throws ChainMakerCryptoSuiteException {}
 ```
-## 4 使用过程
+## 使用过程
 
 客户端使用SDK的过程如下：
 
@@ -814,7 +814,7 @@ public Request.EndorsementEntry signPayloadOfMultiSign(byte[] payload, boolean i
 3. 使用ChainManager获取或创建链对象，创建ChainClient时需要将ChainNode对象作为参数传入
 4. 调用ChainClient对象的接口进行操作
 
-## 5 使用示例
+## 使用示例
 
 1. 初始化，创建ChainClient
 
@@ -874,9 +874,9 @@ public Request.EndorsementEntry signPayloadOfMultiSign(byte[] payload, boolean i
    }
 ```
 
-## 6 SDK Jar包引用方式
+## SDK Jar包引用方式
 
-### 6.1 编译
+### 编译
 
 ```
 git clone https://git.code.tencent.com/ChainMaker/chainmaker-sdk-java.git
@@ -885,7 +885,7 @@ cd chainamker-sdk-java
 ./gradle build
 ```
 
-### 6.2 使用
+### 使用
 
 1. 导入Jar包，这里使用IntelliJ为示例引用Jar包，将编译好的jar包拷贝到需要使用sdk的项目下（一般可以在项目下建一个libs目录），然后打开IntelliJ IDEA->File->Project Structures，如下图点击“+”号，选择JARs or Directories，选中Jar包点击open即可。
 
