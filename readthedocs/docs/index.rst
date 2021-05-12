@@ -16,7 +16,6 @@ chainmaker文档
    intro/2、背景
    intro/3、基础术语
    intro/5、编写语言
-   intro/6、项目优势
    intro/7、版本迭代
    
 
@@ -44,8 +43,6 @@ chainmaker文档
     tech/10、加密算法
     tech/11、交易缓存
     tech/12、并行调度
-    tech/13、RocksDB安装部署
-    tech/14、ChainMaker身份分层加密方案介绍
 
 .. toctree::
     :maxdepth: 2
@@ -56,8 +53,6 @@ chainmaker文档
     dev/2、SDK
     dev/3、命令行工具
     dev/4、证书生成工具
-    dev/chainmaker-go-sdk
-    dev/chainmaker-java-sdk
 
 .. toctree::
     :maxdepth: 2
