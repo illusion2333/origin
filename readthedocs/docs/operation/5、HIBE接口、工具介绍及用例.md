@@ -248,9 +248,9 @@ DecryptHibeTxByTxId(localId string, hibeParams []byte, hibePrvKey []byte, txId s
 
 ## 用例
 
-### 1.使用 cmc hibe 进行初始化工作
+### 使用 cmc hibe 进行初始化工作
 
-#### 1.1初始化组织分层架构
+#### 初始化组织分层架构
 
 打印文件存储信息，文件存储在指定目录，并根据组织名进行管理：
 
@@ -274,7 +274,7 @@ DecryptHibeTxByTxId(localId string, hibeParams []byte, hibePrvKey []byte, txId s
 │       └── wx-org1.chainmaker.org.params
 ```
 
-#### 1.2根据根路径和Orgid查看生成的 hibeParams 具体存储路径
+#### 根据根路径和Orgid查看生成的 hibeParams 具体存储路径
 
 ```
 ./cmc hibe getParams -o wx-org1.chainmaker.org -p ./hibe-data
@@ -284,7 +284,7 @@ DecryptHibeTxByTxId(localId string, hibeParams []byte, hibePrvKey []byte, txId s
 55153595869182115492300723746636577085717766168705040101215917962024994307961)] Pairing:<nil>}
 ```
 
-#### 1.3根据MasterKey生成私钥
+#### 根据MasterKey生成私钥
 
 ```
 ./cmc hibe genPrvKey \
@@ -351,7 +351,7 @@ DecryptHibeTxByTxId(localId string, hibeParams []byte, hibePrvKey []byte, txId s
 
 
 
-#### 1.4 私钥文件分发到下属，各自保管，我们在这里把自己的私钥放在在SDK如下路径：
+#### 私钥文件分发到下属，各自保管，我们在这里把自己的私钥放在在SDK如下路径：
 
 ```
 ├── testdata
@@ -368,9 +368,9 @@ DecryptHibeTxByTxId(localId string, hibeParams []byte, hibePrvKey []byte, txId s
 
 
 
-### 2. 编写智能合约
+### 编写智能合约
 
-#### 2.1 使用 go 编写测试的智能合约
+#### 使用 go 编写测试的智能合约
 
 智能合约的编写要提供针对`hibe.Params`和`hibe.Msg`存储、查询的方法，建议按照如下格式编写，或内部形成约定，指定好查询两个信息的id(标识)，即存储的Key：
 
@@ -453,7 +453,7 @@ func main() {
 }
 ```
 
-#### 2.2 编译字节码文件放到项目中
+#### 编译字节码文件放到项目中
 
 使用`tinygo build -no-debug -opt=s -o contract-hibe-1.0.0.wasm -target wasm`生成合约字节码文件，放入到SDK下，本例放到如下路径（使用的时候要在 SDK 中指定配置位置）：
 
@@ -463,7 +463,7 @@ func main() {
 │   │   ├── contract-hibe-1.0.0.wasm
 ```
 
-### 3. 使用SDK和密钥文件对信息加密上链并从链上获取和加密
+### 使用SDK和密钥文件对信息加密上链并从链上获取和加密
 
 #### HIBE相关消息Key规定
 
@@ -549,7 +549,7 @@ const (
 )
 ```
 
-#### 3.1 初始化客户端，进行测试
+#### 初始化客户端，进行测试
 
 ```go
 func TestHibeContractCounterGo(t *testing.T) {
@@ -587,7 +587,7 @@ func TestHibeContractCounterGo(t *testing.T) {
 }
 ```
 
-#### 3.2 创建合约
+#### 创建合约
 
 ```go
 // 创建Hibe合约
@@ -658,7 +658,7 @@ func createUserHibeContract(client *ChainClient, admin1, admin2, admin3, admin4 
 
 
 
-#### 3.3 本地 params 上链
+#### 本地 params 上链
 
 ```go
 // 调用Hibe合约
@@ -700,7 +700,7 @@ func invokeUserHibeContractParams(t *testing.T, client *ChainClient, contractNam
 
 
 
-#### 3.4 根据组织Id链上查询其公司Params
+#### 根据组织Id链上查询其公司Params
 
 ```go
 // params 查询
@@ -714,7 +714,7 @@ func testUserHibeContractParamsGoQuery(t *testing.T, client *ChainClient,
 
 
 
-#### 3.5 hibe加密信息上链
+#### hibe加密信息上链
 
 ```go
 // 加密数据上链
@@ -782,7 +782,7 @@ func invokeUserHibeContractMsg(t *testing.T, client *ChainClient, contractName, 
 }
 ```
 
-#### 3.6 获取链上的 `hibeMsg` 并解密：
+#### 获取链上的 `hibeMsg` 并解密：
 
 解密时需要注意，解密的时候指定的算法要和加密时候的算法相同！
 
@@ -838,7 +838,7 @@ func testUserHibeContractMsgGoQuery(t *testing.T, client *ChainClient) {
 }
 ```
 
-#### 3. 7 执行测试：
+#### 执行测试：
 
 ```
 ====================== 创建合约（异步）======================
