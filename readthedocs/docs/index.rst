@@ -64,6 +64,7 @@ chainmaker文档
     operation/3、自拉起服务
     operation/4、配置变更
     operation/5、HIBE接口、工具介绍及用例
+    operation/6、版本升级操作指南
 
 .. toctree::
     :maxdepth: 2
