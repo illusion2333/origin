@@ -128,11 +128,11 @@
 
 ### 整体架构
 
-![整体架构](../images/加密算法-HIBE-方案架构.png)
+<img src="../images/加密算法-HIBE-方案架构.png" style="zoom:50%;" />
 
 ### 方案描述
 
-![长安链HIBE方案流程](../images/加密算法-HIBE-方案流程.png)
+<img src="../images/加密算法-HIBE-方案流程.png" style="zoom:50%;" />
 
 
 

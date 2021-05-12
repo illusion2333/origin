@@ -8,9 +8,9 @@
 
 ## 文档
 
-文档目录：工蜂平台：ChainMaker/docs /docsify /docs
+文档目录：工蜂平台：ChainMaker/docs /readthedocs/docs
 
-图片目录：所有图片放在docs /docsify /docs/images 文件夹下
+图片目录：所有图片放在docs /readthedocs /docs/images 文件夹下
 
 
 
@@ -29,7 +29,7 @@
     quickstart.rst
 ```
 
-2.md文档可以没有一级标题，若有一级标题则只能有一个；若没有则必须在对应索引中的 :caption: 后加上标题替代一级标题。
+2.md文档有且仅有一个一级标题
 
 3.图片要用相对路径
 

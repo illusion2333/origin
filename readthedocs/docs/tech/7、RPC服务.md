@@ -65,11 +65,12 @@ service RpcNode {
 
 交易请求（`TxRequest`）包含交易头（`TxHeader`）、`Payload`和签名（`Signature`），`Payload`是字节数组，根据不同的`TxType`可以解码成各种类型的`Payload`。
 
-![image-20210407204935793](../images/rpc-交易请求结构说明.png)
+
+<img src="../images/rpc-交易请求结构说明.png" style="zoom:50%;" />
 
 ### 消息订阅（事件通知）实现原理
 
-![image-20210205110331710](../images/rpc-subscribe.png)
+<img src="../images/rpc-subscribe.png" style="zoom:50%;" />
 
 （1）订阅者发起消息订阅请求，当前支持订阅区块消息和交易消息
 
