@@ -30,7 +30,7 @@
     :caption: 快速入门
     :numbered:
 
-    tutorial/1、快速入门
+    tutorial/快速入门.md
 ```
 
 2.  **每个MD文档有且仅有一个一级标题**
