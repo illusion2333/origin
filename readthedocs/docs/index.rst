@@ -71,10 +71,9 @@ chainmaker文档
     :caption: 应用场景
     :numbered:
 
-    usecase/1、政务场景
-    usecase/2、金融场景
-    usecase/3、社会场景
-    usecase/4、商业场景
+    usecase/1、供应链金融
+    usecase/2、碳交易
+    usecase/3、冷链溯源
 
 .. toctree::
     :maxdepth: 2
