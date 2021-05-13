@@ -8,13 +8,15 @@
 
 ## 文档
 
-文档目录：工蜂平台：[ChainMaker/docs /readthedocs/docs](https://git.code.tencent.com/ChainMaker/docs/tree/readthedocs/readthedocs/docs)
+**文档目录**：工蜂平台：[ChainMaker/docs /readthedocs/docs](https://git.code.tencent.com/ChainMaker/docs/tree/readthedocs/readthedocs/docs)
 
-图片目录：所有图片放在[docs /readthedocs /docs/images](https://git.code.tencent.com/ChainMaker/docs/tree/readthedocs/readthedocs/docs/images) 文件夹下
+**图片目录**：所有图片放在[docs /readthedocs /docs/images](https://git.code.tencent.com/ChainMaker/docs/tree/readthedocs/readthedocs/docs/images) 文件夹下
 
 
 
 ## 编写格式规范
+
+0. **新加的文件需要添加到索引`index.rst`中**
 
 1.  **标题无须手动添加序号**
 
@@ -22,7 +24,7 @@
 
 样例：
 
-```
+```rst
 .. toctree::
     :maxdepth: 2
     :caption: 快速入门
@@ -44,3 +46,4 @@
 其中：width按需指定宽度
 
 4. 新添加的图片需要提交UI由UI重新做图
+5. 支持标准html标签
