@@ -39,3 +39,4 @@
 <img src="../images/add-sdk-jar.png" style="zoom:50%;" />
 ```
 
+4.新添加的图片需要提交UI由UI重新做图
