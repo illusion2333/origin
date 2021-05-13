@@ -24,7 +24,7 @@ chainmaker文档
     :caption: 快速入门
     :numbered:
 
-    tutorial/1、快速入门
+    tutorial/1、快速入门.md
 
 .. toctree::
     :maxdepth: 2
