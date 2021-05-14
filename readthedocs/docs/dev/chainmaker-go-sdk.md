@@ -84,7 +84,7 @@ func createClient() (*ChainClient, error) {
 
 ### 接口调用
 
-> 具体接口调用示例，请参看单元测试用例中的用法。
+具体接口调用示例，请参看单元测试用例中的用法。
 
 | 功能     | 单测代码                    |
 | -------- | --------------------------- |
@@ -298,7 +298,7 @@ func createClient() (*ChainClient, error) {
 	SendChainConfigUpdateRequest(mergeSignedPayloadBytes []byte) (*common.TxResponse, error)
 ```
 
-> 以下CreateChainConfigXXXXXXPayload方法，用于生成链配置待签名payload，在进行多签收集后(需机构Admin权限账号签名)，用于链配置的更新
+以下CreateChainConfigXXXXXXPayload方法，用于生成链配置待签名payload，在进行多签收集后(需机构Admin权限账号签名)，用于链配置的更新
 
 #### 更新Core模块待签名payload生成
 **参数说明**
@@ -626,7 +626,7 @@ func createClient() (*ChainClient, error) {
 ```
 
 ### 层级属性加密类接口
-> 注意：层级属性加密模块 `Id` 使用 `/` 作为分隔符，例如： Org1/Ou1/Member1
+**注意：**层级属性加密模块 `Id` 使用 `/` 作为分隔符，例如： Org1/Ou1/Member1
 #### 生成层级属性参数初始化交易 payload
 **参数说明**
   - orgId: 参与方组织 id

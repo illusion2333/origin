@@ -12,7 +12,7 @@ chainmaker文档
    :caption: 长安链介绍:
    :numbered:
 
-   intro/项目名称.md
+   intro/平台简介.md
    intro/背景.md
    intro/基础术语.md
    intro/编写语言.md
