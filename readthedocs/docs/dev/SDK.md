@@ -272,7 +272,7 @@ func invokeUserContract(client *ChainClient, contractName, method, txId string, 
 
 **java**
 
-> openjdk 1.8.x
+> openjdk 1.8.151+
 
 下载地址：https://www.oracle.com/java/technologies/javase/javase-jdk8-downloads.html
 

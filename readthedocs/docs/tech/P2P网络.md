@@ -84,11 +84,11 @@ net:
 
 例如：
 
-1.假设节点N有两个链分别是blockchain1、blockchain2，
+1.假设节点N有两个链分别是blockchain1、blockchain2；
 
-2.假设节点N的TLS证书是由组织ID为“wx-org2.chainmaker.org”的CA证书签发
+2.假设节点N的TLS证书是由组织ID为“wx-org2.chainmaker.org”的CA证书签发；
 
-3.假设blockchain1链的配置文件为bc1.xml，blockchain2链的配置文件为bc2.xml
+3.假设blockchain1链的配置文件为bc1.xml，blockchain2链的配置文件为bc2.xml。
 
 那么bc1.xml中trust_roots配置：
 ```yaml

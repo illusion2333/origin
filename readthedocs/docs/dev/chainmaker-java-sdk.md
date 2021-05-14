@@ -1,7 +1,5 @@
 # ChainMaker Java SDK README
 
-[TOC]
-
 ## 基本概念定义
 
 Java SDK定义了User、Node、ChainClient、ChainManager和ResponseInfo几个类，分别介绍如下：
