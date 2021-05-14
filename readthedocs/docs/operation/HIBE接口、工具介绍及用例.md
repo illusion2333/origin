@@ -19,7 +19,7 @@ CMC 中的 hibe 命令是管理、使用HIBE身份层级加密的辅助工具，
 
 使用命令`./cmc -hibe -h` 查看命令该子命令详细提示：
 
-```shell
+```sh
 ./cmc hibe -h
 ChainMaker hibe command
 
@@ -43,7 +43,7 @@ Use "cmc hibe [command] --help" for more information about a command.
 
 查看命令详情`./ cmc hibe init -h`：
 
-```shell
+```sh
 ./cmc hibe init -h
 setup generates the system parameters
 
@@ -72,7 +72,7 @@ Flags:
 
 `./cmc hibe getParams -h`查看命令详情：
 
-```shell
+```sh
 ./cmc hibe getParams -h
 getParams storage path
 
@@ -101,7 +101,7 @@ Flags:
 
 查看该命令详细提示：
 
-```shell
+```sh
 ./cmc hibe genPrvKey -h
 generates a key for an Id using the master key
 
@@ -254,7 +254,7 @@ DecryptHibeTxByTxId(localId string, hibeParams []byte, hibePrvKey []byte, txId s
 
 打印文件存储信息，文件存储在指定目录，并根据组织名进行管理：
 
-```shell
+```sh
 ./cmc hibe init \
 -o wx-org1.chainmaker.org \
 -l 5 \

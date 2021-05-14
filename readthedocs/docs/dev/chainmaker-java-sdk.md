@@ -878,7 +878,7 @@ public Request.EndorsementEntry signPayloadOfMultiSign(byte[] payload, boolean i
 
 ```
 git clone https://git.code.tencent.com/ChainMaker/chainmaker-sdk-java.git
-// 说明：需要使用openjdk 1.8.x并提前安装gradle，也可以使用intelliJ IDEA打开项目进行编译
+// 说明：需要使用openjdk 1.8.151+并提前安装gradle，也可以使用intelliJ IDEA打开项目进行编译
 cd chainamker-sdk-java
 ./gradle build
 ```

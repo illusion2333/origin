@@ -5,7 +5,7 @@ RocksDB是使用C++开发的开源嵌入式数据库，长安链采用golang开�
 - 2.gorocksdb安装：https://github.com/tecbot/gorocksdb
 - 3.使用rocksdb需要通过-tag方式启动，build方式：
 
-```shell
+```sh
 go build -tags=rocksdb 
 ```
 
@@ -15,7 +15,7 @@ Linux下Rocksdb环境安装
 
 安装gcc、zlib、snappy、lz4等依赖工具
 
-```shell
+```sh
 yum -y install lrzsz git gcc gcc-c++ lz4-devel
 yum -y install snappy snappy-devel zlib zlib-devel bzip2 bzip2-devel lz4 lz4-devel zstd
 ```
@@ -24,7 +24,7 @@ yum -y install snappy snappy-devel zlib zlib-devel bzip2 bzip2-devel lz4 lz4-dev
 
 gflags-2.2.2对cmake版本有要求，所以需要指定版本的cmake
 
-```shell
+```sh
 curl -O   https://cmake.org/files/v3.6/cmake-3.6.0-Linux-x86_64.tar.gz
 mv cmake-3.6.0-Linux-x86_64.tar.gz /opt/
 cd /opt/
@@ -41,7 +41,7 @@ source /etc/profile
 
 3 安装gflags
 
-```shell
+```sh
 wget -O gflags-2.2.2.tar.gz https://github.com/gflags/gflags/archive/v2.2.2.tar.gz
 tar -xvzf gflags-2.2.2.tar.gz
 cd gflags-2.2.2/
@@ -60,7 +60,7 @@ source /etc/profile
 
 4 下载并安装rocksdb
 
-```shell
+```sh
 wget -O rocksdb-5.18.3.tar.gz https://github.com/facebook/rocksdb/archive/v5.18.3.tar.gz
 tar -xzvf rocksdb-5.18.3.tar.gz
 
@@ -86,7 +86,7 @@ source /etc/profile
 
 5 使用测试
 
-```shell
+```sh
 [root@VM-219-157-centos /opt/rocksdb-5.18.3/build]# cd tools/
 [root@VM-219-157-centos /opt/rocksdb-5.18.3/build/tools]# ll
 total 2608
@@ -211,7 +211,7 @@ zstd是facebook为适配rocksdb开发的zstandard数据压缩工具，如果不�
 
 安装步骤如下：
 
-```shell
+```sh
 cd /usr/local
 git clone https://github.com/facebook/zstd.git
 cd zstd
@@ -227,7 +227,7 @@ make install
 
 安装上述的安装路径，使用下面的命令即可：
 
-```shell
+```sh
 CGO_CFLAGS="-I/usr/local/rocksdb/include" \
 CGO_LDFLAGS="-L/usr/local/rocksdb -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd" \
   go get github.com/tecbot/gorocksdb
