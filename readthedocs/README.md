@@ -35,15 +35,13 @@
 
 2.  **每个MD文档有且仅有一个一级标题**
 
-3.  **图片要用相对路径**
+3.  **图片要用相对路径并且统一用英文名称**
 
-   且需使用html img方式，样例如下：
+   还需要使用markdown方式，样例如下：
 
 ```html
-<img src="../images/add-sdk-jar.png" style="width: 700px" />
+![标签](../images/add-sdk-jar.png)
 ```
-
-其中：width按需指定宽度
 
 4. 新添加的图片需要提交UI由UI重新做图
 5. 支持标准html标签
