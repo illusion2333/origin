@@ -9,14 +9,14 @@ chainmaker文档
 
 .. toctree::
    :maxdepth: 2
-   :caption: 长安链介绍:
+   :caption: 长安链介绍
    :numbered:
 
-   intro/平台简介.md
-   intro/背景.md
-   intro/基础术语.md
-   intro/编写语言.md
-   intro/版本迭代.md
+   intro/平台简介
+   intro/背景
+   intro/基础术语
+   intro/编写语言
+   intro/版本迭代
    
 
 .. toctree::
@@ -24,25 +24,25 @@ chainmaker文档
     :caption: 快速入门
     :numbered:
 
-    tutorial/快速入门.md
+    tutorial/快速入门
 
 .. toctree::
     :maxdepth: 2
-    :caption: 技术设计文档:
+    :caption: 技术设计文档
     :numbered:
 
-    tech/整体架构.md
-    tech/核心流程.md
-    tech/数据结构.md
-    tech/智能合约与虚拟机.md
-    tech/共识算法.md
-    tech/P2P网络.md
-    tech/RPC服务.md
-    tech/数据存储.md
-    tech/身份权限管理.md
-    tech/加密算法.md
-    tech/交易缓存.md
-    tech/并行调度.md
+    tech/整体架构
+    tech/核心流程
+    tech/数据结构
+    tech/智能合约与虚拟机
+    tech/共识算法
+    tech/P2P网络
+    tech/RPC服务
+    tech/数据存储
+    tech/身份权限管理
+    tech/加密算法
+    tech/交易缓存
+    tech/并行调度
 
 .. toctree::
     :maxdepth: 2
@@ -59,33 +59,33 @@ chainmaker文档
     :caption: 进阶开发
     :numbered:
 
-    operation/多机部署.md
-    operation/监控运维.md
-    operation/自拉起服务.md
-    operation/配置变更.md
-    operation/HIBE接口、工具介绍及用例.md
-    operation/版本升级操作指南.md
+    operation/多机部署
+    operation/监控运维
+    operation/自拉起服务
+    operation/配置变更
+    operation/HIBE接口、工具介绍及用例
+    operation/版本升级操作指南
 
 .. toctree::
     :maxdepth: 2
     :caption: 应用场景
     :numbered:
 
-    usecase/供应链金融.md
-    usecase/碳交易.md
-    usecase/冷链溯源.md
+    usecase/供应链金融
+    usecase/碳交易
+    usecase/冷链溯源
 
 .. toctree::
     :maxdepth: 2
     :caption: 关于作者
     :numbered:
 
-    author/关于作者.md
+    author/关于作者
 
 .. toctree::
     :maxdepth: 2
     :caption: 鸣谢
     :numbered:
 
-    thanks/鸣谢.md
+    thanks/鸣谢
 
