@@ -14,15 +14,5 @@
     :numbered:
 
     tutorial/快速入门
-    operation/版本升级操作指南
-
-.. toctree::
-    :maxdepth: 2
-    :caption: 应用场景
-    :numbered:
-
-    usecase/供应链金融
-    usecase/碳交易
-    usecase/冷链溯源
 
 
