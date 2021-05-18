@@ -878,3 +878,6 @@ func testUserHibeContractMsgGoQuery(t *testing.T, client *ChainClient) {
 PASS
 ```
 
+
+
+<br><br>
