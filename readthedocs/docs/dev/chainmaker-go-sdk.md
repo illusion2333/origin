@@ -535,7 +535,7 @@ func createClient() (*ChainClient, error) {
   - endorsementEntry: 签名收集信息
   - deadlineBlockHeight: 过期的区块高度，若设置为0，表示永不过期
   - timeout: 超时时间，单位：s，若传入-1，将使用默认超时时间：10s
-  **返回值**
+    **返回值**
     若成功调用，common.TxResponse.ContractResult.Result为txId
 ```go
 	SendMultiSignReq(txType common.TxType, payloadBytes []byte, endorsementEntry *common.EndorsementEntry, deadlineBlockHeight int,
@@ -550,7 +550,7 @@ func createClient() (*ChainClient, error) {
   - payloadBytes: 待签名payload
   - endorsementEntry: 签名收集信息
   - timeout: 超时时间，单位：s，若传入-1，将使用默认超时时间：10s
-  **返回值**
+    **返回值**
     若成功调用，common.TxResponse.ContractResult.Result为txId
 ```go
 	SendMultiSignVote(voteStatus common.VoteStatus, multiSignReqTxId, payloadHash string,
@@ -693,4 +693,12 @@ func createClient() (*ChainClient, error) {
 ```go
 	GetChainMakerServerVersion() (string, error)
 ```
+
+
+
+
+
+
+
+<br><br>
 
