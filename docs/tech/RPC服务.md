@@ -66,7 +66,7 @@ service RpcNode {
 交易请求（`TxRequest`）包含交易头（`TxHeader`）、`Payload`和签名（`Signature`），`Payload`是字节数组，根据不同的`TxType`可以解码成各种类型的`Payload`。
 
 
-![](../images/RPC-Transaction Request Structure.png)
+![](../images/RPC-TransactionRequestStructure.png)
 
 ### 消息订阅（事件通知）实现原理
 
