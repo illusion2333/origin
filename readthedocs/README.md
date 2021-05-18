@@ -1,8 +1,14 @@
 [toc]
 
-# docs MD编写规范
+
+
+
+
+# readthecods docs MD编写规范
 
 本文档主要描述MD文档在sphinx环境下需要注意的事项
+
+地址： <a href="https://docs.chainmaker.org.cn" target="_blank">docs.chainmaker.org.cn</a>
 
 
 
@@ -30,18 +36,18 @@
     :caption: 快速入门
     :numbered:
 
-    tutorial/快速入门.md
+    tutorial/quick_start.md
 ```
 
 2.  **每个MD文档有且仅有一个一级标题**
 
-3.  **图片要用相对路径并且统一用英文名称**
+3. **图片要用相对路径（必须用英文路径和命名）**
 
-   还需要使用markdown方式，样例如下：
+   样例如下：
 
-```html
-![标签](../images/add-sdk-jar.png)
+```markdown
+![quick_start_add-sdk-jar.png](../images/quick_start_add-sdk-jar.png) 
 ```
 
 4. 新添加的图片需要提交UI由UI重新做图
-5. 支持标准html标签
+5. 可支持标准html标签，但标准html标签内写入markdown语法可能不会被识别。
