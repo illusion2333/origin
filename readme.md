@@ -8,7 +8,7 @@
 
 本文档主要描述MD文档在sphinx环境下需要注意的事项
 
-地址： <a href="https://doc.chainmaker.org.cn" target="_blank">doc.chainmaker.org.cn</a>
+地址： <a href="https://docs.chainmaker.org.cn" target="_blank">docs.chainmaker.org.cn</a>
 
 
 
@@ -36,20 +36,18 @@
     :caption: 快速入门
     :numbered:
 
-    tutorial/1、快速入门
+    tutorial/quick_start.md
 ```
 
 2.  **每个MD文档有且仅有一个一级标题**
 
-3.  **图片要用相对路径**
+3. **图片要用相对路径（必须用英文路径和命名）**
 
-   且需使用html img方式，样例如下：
+   样例如下：
 
-```html
-<img src="../images/add-sdk-jar.png" style="width: 700px" />
+```markdown
+![quick_start_add-sdk-jar.png](../images/quick_start_add-sdk-jar.png) 
 ```
 
-其中：width按需指定宽度
-
 4. 新添加的图片需要提交UI由UI重新做图
-5. 支持标准html标签
+5. 可支持标准html标签，但标准html标签内写入markdown语法可能不会被识别。

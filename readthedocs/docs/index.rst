@@ -9,7 +9,7 @@ chainmaker文档
 
 .. toctree::
    :maxdepth: 2
-   :caption: 长安链介绍:
+   :caption: 长安链介绍
    :numbered:
 
    intro/平台简介.md
@@ -28,7 +28,7 @@ chainmaker文档
 
 .. toctree::
     :maxdepth: 2
-    :caption: 技术设计文档:
+    :caption: 技术设计文档
     :numbered:
 
     tech/整体架构.md
