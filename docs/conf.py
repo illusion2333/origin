@@ -58,7 +58,7 @@ templates_path = ['_templates']
 master_doc = 'index'
 
 # General information about the project.
-project = u'chainmaker-docs'
+project = u'长安链技术文档'
 copyright = u'chainmaker.org'
 author = u'chainmaker.org'
 
